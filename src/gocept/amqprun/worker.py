@@ -47,4 +47,4 @@ class Worker(threading.Thread):
 
 
 def logging_handler(message):
-    log.debug(message)
+    log.debug(message.body)

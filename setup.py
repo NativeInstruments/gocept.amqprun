@@ -23,11 +23,12 @@ setup(
     license='ZPL',
     namespace_packages = ['gocept'],
     install_requires=[
+        'ZConfig',
         'pika',
         'setuptools',
         'transaction',
-        'ZConfig',
         'zope.dottedname',
+        'zope.interface',
     ],
     extras_require=dict(test=[
         'amqplib',
