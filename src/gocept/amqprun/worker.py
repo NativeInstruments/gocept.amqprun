@@ -4,6 +4,7 @@
 import Queue
 import logging
 import threading
+import transaction
 
 
 log = logging.getLogger(__name__)
@@ -13,9 +14,10 @@ class Worker(threading.Thread):
 
     timeout = 1
 
-    def __init__(self, queue, handler):
+    def __init__(self, queue, handler, datamanager_factory):
         self.queue = queue
         self.handler = handler
+        self.datamanager_factory = datamanager_factory
         super(Worker, self).__init__()
 
     def run(self):
@@ -27,7 +29,17 @@ class Worker(threading.Thread):
             except Queue.Empty:
                 pass
             else:
-                self.handler(message)
+                transaction.begin()
+                datamanager = self.datamanager_factory(message)
+                transaction.get().join(datamanager)
+                try:
+                    self.handler(message)
+                    # for msg in response:
+                    #     datamanager.send(msg)
+                except:
+                    transaction.abort()
+                else:
+                    transaction.commit()
 
     def stop(self):
         self.running = False

@@ -7,6 +7,7 @@ import gocept.amqprun.worker
 import logging
 import pika
 import pkg_resources
+import threading
 import zope.dottedname.resolve
 
 
@@ -20,6 +21,7 @@ class MessageReader(object):
 
     def __init__(self, hostname):
         self.hostname = hostname
+        self.lock = threading.Lock()
         self.tasks = Queue.Queue()
         self.running = False
 
@@ -39,16 +41,21 @@ class MessageReader(object):
             pika.asyncore_loop(count=1)
 
     def handle_message(self, channel, method, header, body):
-        self.tasks.put(Message(header, body))
+        self.tasks.put(Message(channel, method, header, body))
 
     def stop(self):
         self.running = False
         self.connection.close()
 
+    def create_datamanager(self):
+        pass
+
 
 class Message(object):
 
-    def __init__(self, header, body):
+    def __init__(self, channel, method, header, body):
+        self.channel = channel
+        self.method = method
         self.header = header
         self.body = body
 
@@ -63,7 +70,7 @@ def main(config_file):
     handler = zope.dottedname.resolve.resolve(conf.worker.handler)
     for i in range(conf.worker.amount):
         worker = gocept.amqprun.worker.Worker(
-            reader.tasks, handler)
+            reader.tasks, handler, reader.create_datamanager)
         worker.start()
 
     reader.start()
