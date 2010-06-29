@@ -7,7 +7,7 @@ import time
 import unittest
 
 
-class ServerTest(unittest.TestCase):
+class MessageReaderTest(unittest.TestCase):
 
     queue_name = 'test'
 
