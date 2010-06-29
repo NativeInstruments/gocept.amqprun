@@ -25,9 +25,14 @@ setup(
     install_requires=[
         'pika',
         'setuptools',
+        'ZConfig',
+        'zope.dottedname',
     ],
     extras_require=dict(test=[
         'amqplib',
         'zope.testing',
+    ]),
+    entry_points=dict(console_scripts=[
+        'server = gocept.amqprun.server:main',
     ]),
 )

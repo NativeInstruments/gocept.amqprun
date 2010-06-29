@@ -2,20 +2,29 @@
 # See also LICENSE.txt
 
 import Queue
+import ZConfig
+import gocept.amqprun.worker
+import logging
 import pika
+import pkg_resources
+import zope.dottedname.resolve
+
+
+log = logging.getLogger(__name__)
 
 
 class MessageReader(object):
 
-    # XXX make configurable
-    hostname = 'localhost'
+    # XXX make configurable?
     queue_name = 'test'
 
-    def __init__(self):
+    def __init__(self, hostname):
+        self.hostname = hostname
         self.tasks = Queue.Queue()
         self.running = False
 
     def start(self):
+        log.info('starting message consumer for %s' % self.hostname)
         self.connection = pika.AsyncoreConnection(
             pika.ConnectionParameters(self.hostname))
         self.channel = self.connection.channel()
@@ -42,3 +51,19 @@ class Message(object):
     def __init__(self, header, body):
         self.header = header
         self.body = body
+
+
+def main(config_file):
+    schema = ZConfig.loadSchemaFile(pkg_resources.resource_stream(
+        __name__, 'schema.xml'))
+    conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
+    conf.eventlog.startup()
+    reader = MessageReader(conf.amqp_server.hostname)
+
+    handler = zope.dottedname.resolve.resolve(conf.worker.handler)
+    for i in range(conf.worker.amount):
+        worker = gocept.amqprun.worker.Worker(
+            reader.tasks, handler)
+        worker.start()
+
+    reader.start()

@@ -21,6 +21,7 @@ class WorkerTest(unittest.TestCase):
         self.worker.start()
 
     def test_worker_can_be_stopped_from_outside(self):
+        # this test simply should not hang indefinitely
         self._create_worker(lambda x: None)
 
     def test_worker_gets_messages_from_queue(self):
