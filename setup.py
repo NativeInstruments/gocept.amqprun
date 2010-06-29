@@ -27,6 +27,7 @@ setup(
         'setuptools',
     ],
     extras_require=dict(test=[
+        'amqplib',
         'zope.testing',
     ]),
 )
