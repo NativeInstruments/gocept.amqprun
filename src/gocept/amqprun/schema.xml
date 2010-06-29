@@ -1,0 +1,19 @@
+<schema>
+    <import package='ZConfig.components.logger'/>
+    <import package='ZConfig.components.basic' file='mapping.xml'/>
+
+    <sectiontype name="amqp-server">
+        <key name="hostname" datatype="string" required="yes" />
+    </sectiontype>
+
+    <sectiontype name="worker">
+        <key name="amount" datatype="integer" required="yes" />
+        <key name="handler" datatype="dotted-name" required="yes" />
+    </sectiontype>
+
+    <section type="eventlog" name="*" attribute="eventlog" required="yes" />
+    <section type="amqp-server" name="*" attribute="amqp_server" required="yes" />
+    <section type="worker" name="*" attribute="worker" required="yes" />
+
+
+</schema>
