@@ -23,27 +23,32 @@ class ServerTest(unittest.TestCase):
 
     def test_loop_can_be_stopped_from_outside(self):
         import gocept.amqprun.server
-        loop = gocept.amqprun.server.Mainloop()
-        t = threading.Thread(target=loop.start)
+        reader = gocept.amqprun.server.MessageReader()
+        t = threading.Thread(target=reader.start)
         t.start()
         time.sleep(0.1)
-        loop.stop()
+        reader.stop()
         t.join()
 
     def test_messages_arrive_in_task_queue(self):
         import gocept.amqprun.server
-        loop = gocept.amqprun.server.Mainloop()
-        t = threading.Thread(target=loop.start)
+        reader = gocept.amqprun.server.MessageReader()
+        t = threading.Thread(target=reader.start)
         t.start()
-        self.send_message('foo')
-        time.sleep(0.1)
 
-        self.assertEqual(1, loop.tasks.qsize())
-        message = loop.tasks.get()
+        self.send_message('foo')
+        self.assertEqual(1, reader.tasks.qsize())
+        message = reader.tasks.get()
         self.assertEqual('foo', message.body)
 
-        loop.stop()
+        self.send_message('bar')
+        self.assertEqual(1, reader.tasks.qsize())
+        message = reader.tasks.get()
+        self.assertEqual('bar', message.body)
+
+        reader.stop()
         t.join()
 
     def send_message(self, body):
         self.channel.basic_publish(amqp.Message(body), 'amq.fanout')
+        time.sleep(0.1)
