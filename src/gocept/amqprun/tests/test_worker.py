@@ -4,6 +4,7 @@
 import Queue
 import mock
 import time
+import transaction.interfaces
 import unittest
 
 
@@ -11,7 +12,8 @@ class WorkerTest(unittest.TestCase):
 
     def setUp(self):
         self.queue = Queue.Queue()
-        self.datamanager = mock.Mock()
+        self.datamanager = mock.Mock(spec=list(
+            transaction.interfaces.IDataManager))
         self.dm_factory = mock.Mock(return_value=self.datamanager)
 
     def tearDown(self):
@@ -55,6 +57,8 @@ class WorkerTest(unittest.TestCase):
         self.assertEqual(0, self.queue.qsize())
         self.assertTrue(self.datamanager.tpc_begin.called)
         self.assertTrue(self.datamanager.commit.called)
+        self.assertTrue(self.datamanager.tpc_vote.called)
+        self.assertTrue(self.datamanager.tpc_finish.called)
 
     def test_on_exception_transaction_should_abort(self):
         def provoke_error():
@@ -65,6 +69,6 @@ class WorkerTest(unittest.TestCase):
         self.queue.put('foo')
         time.sleep(0.1)
         self.assertEqual(0, self.queue.qsize())
-        self.assertTrue(self.datamanager.begin.called)
+        self.assertFalse(self.datamanager.tpc_begin.called)
         self.assertFalse(self.datamanager.commit.called)
         self.assertTrue(self.datamanager.abort.called)
