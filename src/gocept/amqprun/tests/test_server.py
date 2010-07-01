@@ -130,3 +130,28 @@ class DataManagerTest(unittest.TestCase):
         self.connection_lock.acquire()
         dm.tpc_abort(None)
         self.assertTrue(self.channel.tx_rollback.called)
+
+    def test_tpc_abort_should_reject_message(self):
+        dm = self.get_dm()
+        self.connection_lock.acquire()
+        dm.tpc_abort(None)
+        self.assertTrue(self.channel.tx_reject.called)
+
+    def test_abort_should_reject_message(self):
+        dm = self.get_dm()
+        dm.abort(None)
+        self.assertTrue(self.channel.tx_reject.called)
+
+    def test_abort_should_acquire_and_release_lock(self):
+        dm = self.get_dm()
+        self.connection_lock.acquire()
+        self.assertFalse(self.channel.tx_reject.called)
+        t = threading.Thread(target=dm.abort, args=(None,))
+        t.start()
+        time.sleep(0.1)  # Let the thread start up
+        self.assertFalse(self.channel.tx_reject.called)
+        # After releasing the lock, tx_reject gets called
+        self.connection_lock.release()
+        time.sleep(0.1)
+        self.assertTrue(self.channel.tx_reject.called)
+        self.assertTrue(self.connection_lock.acquire(False))

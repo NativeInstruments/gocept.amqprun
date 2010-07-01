@@ -3,10 +3,16 @@
 
 import Queue
 import ZConfig
+import asyncore
 import gocept.amqprun.worker
 import logging
+import os
 import pika
+import pika.asyncore_adapter
 import pkg_resources
+import signal
+import socket
+import tempfile
 import threading
 import time
 import transaction.interfaces
@@ -15,6 +21,58 @@ import zope.interface
 
 
 log = logging.getLogger(__name__)
+
+
+class WriteDispatcher(asyncore.file_dispatcher):
+
+    def handle_read(self):
+        # Read and discard byte.
+        os.read(self.fileno(), 1)
+
+
+class Connection(pika.AsyncoreConnection):
+
+    _close_now = False
+
+    def __init__(self, *args, **kw):
+        self.lock = threading.Lock()
+        self._loop_lock = threading.RLock()
+        self._loop_lock.acquire()
+        pika.AsyncoreConnection.__init__(self, *args, **kw)
+
+    def connect(self, host, port):
+        self.notifier_r, self.notifier_w = os.pipe()
+        self.notifier_dispatcher = WriteDispatcher(self.notifier_r)
+        self.dispatcher = pika.asyncore_adapter.RabbitDispatcher(self)
+        self.dispatcher.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.dispatcher.connect((host, port))
+
+    def drain_events(self):
+        # The actual communication takes *only* place in the main thread. If
+        # another thread detects that there is data to be written, it notifies
+        # the main thread about it using the notifier pipe.
+        if self._loop_lock.acquire(False):
+            # This is true for the main thread, which opened the connection
+            pika.asyncore_loop(count=1)
+            if self._close_now:
+                self.close()
+        else:
+            # Another thread may notify the main thread about changes. Write
+            # exactly 1 byte. This corresponds to handle_read() reading exactly
+            # one byte.
+            if self.outbound_buffer:
+                os.write(self.notifier_w, 'W')
+                time.sleep(0.05)
+
+    def close(self):
+        if not self.connection_open:
+            return
+        if self._loop_lock.acquire(False):
+            pika.AsyncoreConnection.close(self)
+            self._loop_lock.release()
+        else:
+            self._close_now = True
+            os.write(self.notifier_w, 'C')
 
 
 class MessageReader(object):
@@ -27,12 +85,10 @@ class MessageReader(object):
         self.lock = threading.Lock()
         self.tasks = Queue.Queue()
         self.running = False
-        self.connection_lock = threading.Lock()
 
     def start(self):
         log.info('starting message consumer for %s' % self.hostname)
-        self.connection = pika.AsyncoreConnection(
-            pika.ConnectionParameters(self.hostname))
+        self.connection = Connection(pika.ConnectionParameters(self.hostname))
         self.channel = self.connection.channel()
         self.channel.queue_declare(
             queue=self.queue_name, durable=True,
@@ -42,17 +98,7 @@ class MessageReader(object):
 
         self.running = True
         while self.running:
-            locked = self.connection_lock.acquire(False)
-            if locked:
-                try:
-                    # This makes the loop only delay 1s. But I have the feeling
-                    # that we actually should do that differently.
-                    self.connection.delayed_call(1, lambda: None)
-                    pika.asyncore_loop(count=1)
-                finally:
-                    self.connection_lock.release()
-            else:
-                time.sleep(1)
+            self.connection.drain_events()
         self.connection.close()
 
     def handle_message(self, channel, method, header, body):
@@ -61,9 +107,10 @@ class MessageReader(object):
 
     def stop(self):
         self.running = False
+        self.connection.close()
 
     def create_datamanager(self, message):
-        return AMQPDataManager(self.connection_lock, message)
+        return AMQPDataManager(self.connection.lock, message)
 
 
 class Message(object):
@@ -87,8 +134,8 @@ class AMQPDataManager(object):
         self._channel = message.channel
 
     def abort(self, transaction):
-        # Does nothing for now.
-        pass
+        with self.connection_lock:
+            self._channel.tx_reject(self.message.method.delivery_tag)
 
     def tpc_begin(self, transaction):
         log.debug("Acquire commit lock for %s", transaction)
@@ -101,6 +148,7 @@ class AMQPDataManager(object):
 
     def tpc_abort(self, transaction):
         self._channel.tx_rollback()
+        self._channel.tx_reject(self.message.method.delivery_tag)
         self.connection_lock.release()
 
     def tpc_vote(self, transaction):
