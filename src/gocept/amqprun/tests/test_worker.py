@@ -72,3 +72,4 @@ class WorkerTest(unittest.TestCase):
         self.assertFalse(self.datamanager.tpc_begin.called)
         self.assertFalse(self.datamanager.commit.called)
         self.assertTrue(self.datamanager.abort.called)
+        self.assertFalse(self.datamanager.tpc_abort.called)
