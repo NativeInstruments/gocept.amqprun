@@ -36,8 +36,8 @@ class Connection(pika.AsyncoreConnection):
 
     def __init__(self, *args, **kw):
         self.lock = threading.Lock()
-        self._loop_lock = threading.RLock()
-        self._loop_lock.acquire()
+        self._main_thread_lock = threading.RLock()
+        self._main_thread_lock.acquire()
         pika.AsyncoreConnection.__init__(self, *args, **kw)
 
     def connect(self, host, port):
@@ -51,8 +51,7 @@ class Connection(pika.AsyncoreConnection):
         # The actual communication takes *only* place in the main thread. If
         # another thread detects that there is data to be written, it notifies
         # the main thread about it using the notifier pipe.
-        if self._loop_lock.acquire(False):
-            # This is true for the main thread, which opened the connection
+        if self.is_main_thread:
             pika.asyncore_loop(count=1)
             if self._close_now:
                 self.close()
@@ -64,12 +63,16 @@ class Connection(pika.AsyncoreConnection):
                 os.write(self.notifier_w, 'W')
                 time.sleep(0.05)
 
+    @property
+    def is_main_thread(self):
+        return self._main_thread_lock.acquire(False)
+
     def close(self):
         if not self.connection_open:
             return
-        if self._loop_lock.acquire(False):
+        if self.is_main_thread:
             pika.AsyncoreConnection.close(self)
-            self._loop_lock.release()
+            self._main_thread_lock.release()
         else:
             self._close_now = True
             os.write(self.notifier_w, 'C')
