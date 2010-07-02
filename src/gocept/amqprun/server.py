@@ -17,6 +17,8 @@ import tempfile
 import threading
 import time
 import transaction.interfaces
+import zope.component
+import zope.configuration.xmlconfig
 import zope.dottedname.resolve
 import zope.interface
 
@@ -110,8 +112,8 @@ class MessageReader(object):
         self.running = False
         self.connection.close()
 
-    def create_datamanager(self, message):
-        return AMQPDataManager(self.connection.lock, message)
+    def create_datamanager(self, handler):
+        return AMQPDataManager(self.connection.lock, handler.message)
 
     def _declare_and_bind_queues(self):
         for name, declaration in zope.component.getUtilitiesFor(
@@ -151,7 +153,7 @@ class AMQPDataManager(object):
 
     def abort(self, transaction):
         with self.connection_lock:
-            self._channel.tx_reject(self.message.method.delivery_tag)
+            self._channel.basic_reject(self.message.method.delivery_tag)
 
     def tpc_begin(self, transaction):
         log.debug("Acquire commit lock for %s", transaction)
@@ -164,7 +166,7 @@ class AMQPDataManager(object):
 
     def tpc_abort(self, transaction):
         self._channel.tx_rollback()
-        self._channel.tx_reject(self.message.method.delivery_tag)
+        self._channel.basic_reject(self.message.method.delivery_tag)
         self.connection_lock.release()
 
     def tpc_vote(self, transaction):
@@ -184,12 +186,12 @@ def main(config_file):
         __name__, 'schema.xml'))
     conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
     conf.eventlog.startup()
+    zope.configuration.xmlconfig.file(conf.worker.component_configuration)
     reader = MessageReader(conf.amqp_server.hostname)
 
-    handler = zope.dottedname.resolve.resolve(conf.worker.handler)
     for i in range(conf.worker.amount):
         worker = gocept.amqprun.worker.Worker(
-            reader.tasks, handler, reader.create_datamanager)
+            reader.tasks, reader.create_datamanager)
         worker.start()
 
     reader.start()

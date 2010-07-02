@@ -20,18 +20,18 @@ class WorkerTest(unittest.TestCase):
         if hasattr(self, 'worker'):
             self.worker.stop()
 
-    def _create_worker(self, handler):
+    def _create_worker(self):
         import gocept.amqprun.worker
         self.worker = gocept.amqprun.worker.Worker(
-            self.queue, handler, self.dm_factory)
+            self.queue, self.dm_factory)
         self.worker.start()
 
     def test_worker_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
-        self._create_worker(lambda x: None)
+        self._create_worker()
 
     def test_worker_gets_messages_from_queue(self):
-        self._create_worker(lambda x: None)
+        self._create_worker()
 
         self.queue.put('foo')
         time.sleep(0.1)
@@ -42,17 +42,24 @@ class WorkerTest(unittest.TestCase):
         self.assertEqual(0, self.queue.qsize())
 
     def test_handle_message(self):
+        import gocept.amqprun.handler
         messages = []
-        self._create_worker(lambda x: messages.append(x))
-        self.queue.put('foo')
+        self._create_worker()
+
+        handler = gocept.amqprun.handler.FactoredHandler(
+            lambda x: messages.append(x), mock.sentinel.message)
+
+        self.queue.put(handler)
         time.sleep(0.1)
         self.assertEqual(1, len(messages))
-        self.assertEqual('foo', messages[0])
+        self.assertEqual(mock.sentinel.message, messages[0])
 
     def test_transaction_should_commit(self):
-        self._create_worker(lambda x: None)
-
-        self.queue.put('foo')
+        import gocept.amqprun.handler
+        self._create_worker()
+        handler = gocept.amqprun.handler.FactoredHandler(
+            lambda x: None, mock.sentinel.message)
+        self.queue.put(handler)
         time.sleep(0.1)
         self.assertEqual(0, self.queue.qsize())
         self.assertTrue(self.datamanager.tpc_begin.called)
@@ -61,10 +68,14 @@ class WorkerTest(unittest.TestCase):
         self.assertTrue(self.datamanager.tpc_finish.called)
 
     def test_on_exception_transaction_should_abort(self):
+        import gocept.amqprun.handler
         def provoke_error():
             raise RuntimeError('provoked error')
 
-        self._create_worker(provoke_error)
+        self._create_worker()
+
+        handler = gocept.amqprun.handler.FactoredHandler(
+            provoke_error, mock.sentinel.message)
 
         self.queue.put('foo')
         time.sleep(0.1)
