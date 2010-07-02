@@ -25,6 +25,11 @@ class WorkerTest(unittest.TestCase):
         self.worker = gocept.amqprun.worker.Worker(
             self.queue, handler, self.dm_factory)
         self.worker.start()
+        # wait for thread to start
+        for i in range(10):
+            time.sleep(0.025)
+            if self.worker.running:
+                break
 
     def test_worker_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
