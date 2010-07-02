@@ -82,7 +82,6 @@ class MessageReader(object):
 
     def __init__(self, hostname):
         self.hostname = hostname
-        self.lock = threading.Lock()
         self.tasks = Queue.Queue()
         self.running = False
 
