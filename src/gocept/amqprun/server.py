@@ -4,6 +4,7 @@
 import Queue
 import ZConfig
 import asyncore
+import gocept.amqprun.interfaces
 import gocept.amqprun.worker
 import logging
 import os
@@ -75,10 +76,18 @@ class Connection(pika.AsyncoreConnection):
             os.write(self.notifier_w, 'C')
 
 
-class MessageReader(object):
+class Consumer(object):
 
-    # XXX make configurable?
-    queue_name = 'test'
+    def __init__(self, handler, tasks):
+        self.handler = handler
+        self.tasks = tasks
+
+    def __call__(self, channel, method, header, body):
+        log.debug("Adding message %s to queue", body)
+        self.tasks.put(self.handler(Message(channel, method, header, body)))
+
+
+class MessageReader(object):
 
     def __init__(self, hostname):
         self.hostname = hostname
@@ -89,21 +98,13 @@ class MessageReader(object):
     def start(self):
         log.info('starting message consumer for %s' % self.hostname)
         self.connection = Connection(pika.ConnectionParameters(self.hostname))
-        self.channel = self.connection.channel()
-        self.channel.queue_declare(
-            queue=self.queue_name, durable=True,
-            exclusive=False, auto_delete=False)
-        self.channel.queue_bind(queue=self.queue_name, exchange='amq.fanout')
-        self.channel.basic_consume(self.handle_message, queue=self.queue_name)
-
-        self.running = True
+        with self.connection.lock:
+            self.channel = self.connection.channel()
+            self._declare_and_bind_queues()
+            self.running = True
         while self.running:
             self.connection.drain_events()
         self.connection.close()
-
-    def handle_message(self, channel, method, header, body):
-        log.debug("Adding message %s to queue", body)
-        self.tasks.put(Message(channel, method, header, body))
 
     def stop(self):
         self.running = False
@@ -112,6 +113,21 @@ class MessageReader(object):
     def create_datamanager(self, message):
         return AMQPDataManager(self.connection.lock, message)
 
+    def _declare_and_bind_queues(self):
+        for name, declaration in zope.component.getUtilitiesFor(
+            gocept.amqprun.interfaces.IHandlerDeclaration):
+            log.info("Declaring queue: %s", declaration.queue_name)
+            self.channel.queue_declare(
+                queue=declaration.queue_name, durable=True,
+                exclusive=False, auto_delete=False)
+            log.info("Binding queue: %s to routing key %s",
+                     declaration.queue_name, declaration.routing_key)
+            self.channel.queue_bind(
+                queue=declaration.queue_name, exchange='amq.topic',
+                routing_key=declaration.routing_key)
+            self.channel.basic_consume(
+                Consumer(declaration, self.tasks),
+                queue=declaration.queue_name)
 
 class Message(object):
 

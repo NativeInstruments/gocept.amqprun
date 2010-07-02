@@ -2,3 +2,25 @@
 # See also LICENSE.txt
 
 import zope.interface
+
+
+class IHandlerDeclaration(zope.interface.Interface):
+
+    queue_name = zope.interface.Attribute(
+        'Name of the queue to declare/bind')
+
+    routing_key = zope.interface.Attribute(
+        'Routing key of messages this handler is interested in')
+
+    def __call__(message):
+        """Return IHandler for given message."""
+
+
+class IHandler(zope.interface.Interface):
+
+    def __call__():
+        """Handle message.
+
+        Returns a sequence of IMessage objects to be passed to AMQP.
+
+        """
