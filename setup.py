@@ -28,12 +28,12 @@ setup(
         'setuptools',
         'transaction',
         'zope.component',
-        'zope.dottedname',
         'zope.interface',
     ],
     extras_require=dict(test=[
         'amqplib',
         'mock',
+        'zope.component[zcml]',
         'zope.testing',
     ]),
     entry_points=dict(console_scripts=[

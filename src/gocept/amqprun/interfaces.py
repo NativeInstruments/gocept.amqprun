@@ -18,9 +18,16 @@ class IHandlerDeclaration(zope.interface.Interface):
 
 class IHandler(zope.interface.Interface):
 
+    message = zope.interface.Attribute(
+        "IMessage instance the handler handles.")
+
     def __call__():
         """Handle message.
 
         Returns a sequence of IMessage objects to be passed to AMQP.
 
         """
+
+
+class IMessage(zope.interface.Interface):
+    """A message received from or sent to the queue."""

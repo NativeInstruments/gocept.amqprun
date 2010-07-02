@@ -3,6 +3,11 @@
 
 import amqplib.client_0_8 as amqp
 import mock
+import pkg_resources
+import string
+import subprocess
+import sys
+import tempfile
 import threading
 import time
 import unittest
@@ -189,23 +194,56 @@ class DataManagerTest(unittest.TestCase):
         dm = self.get_dm()
         self.connection_lock.acquire()
         dm.tpc_abort(None)
-        self.assertTrue(self.channel.tx_reject.called)
+        self.assertTrue(self.channel.basic_reject.called)
 
     def test_abort_should_reject_message(self):
         dm = self.get_dm()
         dm.abort(None)
-        self.assertTrue(self.channel.tx_reject.called)
+        self.assertTrue(self.channel.basic_reject.called)
 
     def test_abort_should_acquire_and_release_lock(self):
         dm = self.get_dm()
         self.connection_lock.acquire()
-        self.assertFalse(self.channel.tx_reject.called)
+        self.assertFalse(self.channel.basic_reject.called)
         t = threading.Thread(target=dm.abort, args=(None,))
         t.start()
         time.sleep(0.1)  # Let the thread start up
-        self.assertFalse(self.channel.tx_reject.called)
-        # After releasing the lock, tx_reject gets called
+        self.assertFalse(self.channel.basic_reject.called)
+        # After releasing the lock, basic_reject gets called
         self.connection_lock.release()
         time.sleep(0.1)
-        self.assertTrue(self.channel.tx_reject.called)
+        self.assertTrue(self.channel.basic_reject.called)
         self.assertTrue(self.connection_lock.acquire(False))
+
+
+class TestMain(unittest.TestCase):
+
+    def setUp(self):
+        zope.component.testing.setUp()
+
+    def tearDown(self):
+        zope.component.testing.tearDown()
+
+    def make_config(self, name):
+        base = string.Template(
+            pkg_resources.resource_string(__name__, '%s.conf' % name))
+        zcml = pkg_resources.resource_filename(__name__, '%s.zcml' % name)
+        self.config = tempfile.NamedTemporaryFile()
+        self.config.write(
+            base.substitute({'site_zcml': zcml}))
+        self.config.flush()
+        return self.config.name
+
+    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.worker.Worker')
+    def test_basic_configuration_should_load_zcml(self, worker, reader):
+        import gocept.amqprun.interfaces
+        import gocept.amqprun.server
+        config = self.make_config('basic')
+        gocept.amqprun.server.main(config)
+        self.assertEquals(1, reader.call_count)
+        self.assertEquals(10, worker.call_count)
+        utilities = list(zope.component.getUtilitiesFor(
+            gocept.amqprun.interfaces.IHandlerDeclaration))
+        self.assertEquals(1, len(utilities))
+        self.assertEquals('basic', utilities[0][0])
