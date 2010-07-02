@@ -27,6 +27,7 @@ setup(
         'pika',
         'setuptools',
         'transaction',
+        'zope.component',
         'zope.dottedname',
         'zope.interface',
     ],
