@@ -18,6 +18,7 @@ class Worker(threading.Thread):
         self.queue = queue
         self.handler = handler
         self.datamanager_factory = datamanager_factory
+        self.running = False
         super(Worker, self).__init__()
 
     def run(self):
