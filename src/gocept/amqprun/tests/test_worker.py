@@ -11,12 +11,17 @@ import unittest
 class WorkerTest(unittest.TestCase):
 
     def setUp(self):
+        import gocept.amqprun.worker
         self.queue = Queue.Queue()
         self.session_factory = mock.Mock()
+        self._timeout = gocept.amqprun.worker.Worker.timeout
+        gocept.amqprun.worker.Worker.timeout = 0.05
 
     def tearDown(self):
+        import gocept.amqprun.worker
         if hasattr(self, 'worker'):
             self.worker.stop()
+        gocept.amqprun.worker.Worker.timeout = self._timeout
 
     def _create_worker(self):
         import gocept.amqprun.worker
