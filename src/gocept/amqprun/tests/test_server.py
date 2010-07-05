@@ -3,28 +3,43 @@
 
 import amqplib.client_0_8 as amqp
 import mock
+import pkg_resources
+import string
+import subprocess
+import sys
+import tempfile
 import threading
 import time
 import unittest
+import zope.component
+import zope.component.testing
 
 
 class MessageReaderTest(unittest.TestCase):
 
     hostname = 'localhost'
-    queue_name = 'test'
 
     def setUp(self):
+        self._queue_prefix = 'test.%f.' % time.time()
+        self._queues = []
+        zope.component.testing.setUp()
         self.connection = amqp.Connection(host=self.hostname)
         self.channel = self.connection.channel()
-        self.channel.queue_purge(self.queue_name)
 
     def tearDown(self):
         self.reader.stop()
         self.thread.join()
 
-        self.channel.queue_purge(self.queue_name)
+        for queue_name in self._queues:
+            self.channel.queue_delete(queue_name)
         self.channel.close()
         self.connection.close()
+        zope.component.testing.tearDown()
+
+    def get_queue_name(self, suffix):
+        queue_name = self._queue_prefix + suffix
+        self._queues.append(queue_name)
+        return queue_name
 
     def _create_reader(self):
         import gocept.amqprun.server
@@ -38,23 +53,66 @@ class MessageReaderTest(unittest.TestCase):
         else:
             self.fail('Reader did not start up.')
 
-
     def test_loop_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
         self._create_reader()
 
-    def test_messages_arrive_in_task_queue(self):
+    def test_messages_wo_handler_declaration_should_not_arrive_in_tasks(self):
+        self._create_reader()
+        self.send_message('foo')
+        self.assertEqual(0, self.reader.tasks.qsize())
+
+    def test_messages_with_handler_should_arrive_in_task_queue(self):
+        import gocept.amqprun.handler
+        # Provide a handler
+        handle_message = mock.Mock()
+        decl = gocept.amqprun.handler.HandlerDeclaration(
+            self.get_queue_name('test.case.1'),
+            'test.messageformat.1', handle_message)
+        zope.component.provideUtility(decl, name='queue')
+
+        # Start up the reader
         self._create_reader()
 
+        # Without routing key, the message is not delivered
+        self.assertEqual(0, self.reader.tasks.qsize())
         self.send_message('foo')
+        self.assertEqual(0, self.reader.tasks.qsize())
+        # With routing key, the message is delivered
+        self.send_message('foo', routing_key='test.messageformat.1')
         self.assertEqual(1, self.reader.tasks.qsize())
-        message = self.reader.tasks.get()
-        self.assertEqual('foo', message.body)
+        handler = self.reader.tasks.get()
+        handler()
+        self.assertTrue(handle_message.called)
+        message = handle_message.call_args[0][0]
+        self.assertEquals('foo', message.body)
 
-        self.send_message('bar')
+    def test_different_handlers_should_be_handled_separately(self):
+        import gocept.amqprun.handler
+        # Provide two handlers
+        handle_message_1 = mock.Mock()
+        handle_message_2 = mock.Mock()
+        decl_1 = gocept.amqprun.handler.HandlerDeclaration(
+            self.get_queue_name('test.case.2'),
+            'test.messageformat.2', handle_message_1)
+        decl_2 = gocept.amqprun.handler.HandlerDeclaration(
+            self.get_queue_name('test.case.3'),
+            'test.messageformat.3', handle_message_2)
+        zope.component.provideUtility(decl_1, name='1')
+        zope.component.provideUtility(decl_2, name='2')
+
+        # Start up the reader
+        self._create_reader()
+
+        self.assertEqual(0, self.reader.tasks.qsize())
+        # With routing key, the message is delivered to the correct handler
+        self.send_message('foo', routing_key='test.messageformat.2')
         self.assertEqual(1, self.reader.tasks.qsize())
-        message = self.reader.tasks.get()
-        self.assertEqual('bar', message.body)
+        handler = self.reader.tasks.get()
+        handler()
+        self.assertFalse(handle_message_2.called)
+        self.assertTrue(handle_message_1.called)
+
 
     def test_create_datamanager_returns_dm_with_lock_and_message(self):
         self._create_reader()
@@ -63,9 +121,10 @@ class MessageReaderTest(unittest.TestCase):
         dm2 = self.reader.create_datamanager(message)
         self.assertTrue(dm1.connection_lock is dm2.connection_lock)
 
-    def send_message(self, body):
-        self.channel.basic_publish(amqp.Message(body), 'amq.fanout')
-        time.sleep(0.1)
+    def send_message(self, body, routing_key=''):
+        self.channel.basic_publish(amqp.Message(body), 'amq.topic',
+                                   routing_key=routing_key)
+        time.sleep(0.05)
 
 
 class DataManagerTest(unittest.TestCase):
@@ -135,23 +194,56 @@ class DataManagerTest(unittest.TestCase):
         dm = self.get_dm()
         self.connection_lock.acquire()
         dm.tpc_abort(None)
-        self.assertTrue(self.channel.tx_reject.called)
+        self.assertTrue(self.channel.basic_reject.called)
 
     def test_abort_should_reject_message(self):
         dm = self.get_dm()
         dm.abort(None)
-        self.assertTrue(self.channel.tx_reject.called)
+        self.assertTrue(self.channel.basic_reject.called)
 
     def test_abort_should_acquire_and_release_lock(self):
         dm = self.get_dm()
         self.connection_lock.acquire()
-        self.assertFalse(self.channel.tx_reject.called)
+        self.assertFalse(self.channel.basic_reject.called)
         t = threading.Thread(target=dm.abort, args=(None,))
         t.start()
         time.sleep(0.1)  # Let the thread start up
-        self.assertFalse(self.channel.tx_reject.called)
-        # After releasing the lock, tx_reject gets called
+        self.assertFalse(self.channel.basic_reject.called)
+        # After releasing the lock, basic_reject gets called
         self.connection_lock.release()
         time.sleep(0.1)
-        self.assertTrue(self.channel.tx_reject.called)
+        self.assertTrue(self.channel.basic_reject.called)
         self.assertTrue(self.connection_lock.acquire(False))
+
+
+class TestMain(unittest.TestCase):
+
+    def setUp(self):
+        zope.component.testing.setUp()
+
+    def tearDown(self):
+        zope.component.testing.tearDown()
+
+    def make_config(self, name):
+        base = string.Template(
+            pkg_resources.resource_string(__name__, '%s.conf' % name))
+        zcml = pkg_resources.resource_filename(__name__, '%s.zcml' % name)
+        self.config = tempfile.NamedTemporaryFile()
+        self.config.write(
+            base.substitute({'site_zcml': zcml}))
+        self.config.flush()
+        return self.config.name
+
+    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.worker.Worker')
+    def test_basic_configuration_should_load_zcml(self, worker, reader):
+        import gocept.amqprun.interfaces
+        import gocept.amqprun.server
+        config = self.make_config('basic')
+        gocept.amqprun.server.main(config)
+        self.assertEquals(1, reader.call_count)
+        self.assertEquals(10, worker.call_count)
+        utilities = list(zope.component.getUtilitiesFor(
+            gocept.amqprun.interfaces.IHandlerDeclaration))
+        self.assertEquals(1, len(utilities))
+        self.assertEquals('basic', utilities[0][0])

@@ -1,0 +1,8 @@
+<configure xmlns="http://namespaces.zope.org/zope">
+
+  <include package="zope.component" file="meta.zcml" />
+  <include package="zope.component" />
+
+  <utility component="gocept.amqprun.tests.basic.basic_handler" name="basic" />
+
+</configure>
