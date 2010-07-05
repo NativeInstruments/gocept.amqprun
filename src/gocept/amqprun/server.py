@@ -117,7 +117,7 @@ class MessageReader(object):
 
     def create_session(self, handler):
         session = Session()
-        dm = AMQPDataManager(self.connection, handler.message, session)
+        dm = AMQPDataManager(self, handler.message, session)
         transaction.get().join(dm)
         return session
 
@@ -186,13 +186,21 @@ class AMQPDataManager(object):
 
     transaction_manager = None
 
-    def __init__(self, connection, message, session):
-        self.connection_lock = connection.lock
-        self._channel = connection.channel
+    def __init__(self, reader, message, session):
+        self.connection_lock = reader.connection.lock
+        self._channel = reader.channel
         self.message = message
         self.session = session
+        self._tpc_begin = False
 
     def abort(self, transaction):
+        # Called on transaction.abort() *and* on errors in tpc_vote/tpc_finish
+        # of any datamanger *if* self has *not* voted, yet.
+        #
+        if self._tpc_begin:
+            # If a TPC has begun already, do nothing. tpc_abort handles
+            # everythin we do as well.
+            return
         with self.connection_lock:
             self._channel.basic_reject(self.message.delivery_tag)
             self.session.clear()
@@ -200,6 +208,7 @@ class AMQPDataManager(object):
     def tpc_begin(self, transaction):
         log.debug("Acquire commit lock for %s", transaction)
         self.connection_lock.acquire()
+        self._tpc_begin = True
         self._channel.tx_select()
 
     def commit(self, transaction):
@@ -229,7 +238,13 @@ class AMQPDataManager(object):
         return '\xff'
 
 
+# Holds a reference to the reader stared by main(). This is to make testing
+# easier where main() is started in a thread.
+main_reader = None
+
+
 def main(config_file):
+    global main_reader
     schema = ZConfig.loadSchemaFile(pkg_resources.resource_stream(
         __name__, 'schema.xml'))
     conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
@@ -241,10 +256,11 @@ def main(config_file):
         settings.update(conf.settings)
 
     reader = MessageReader(conf.amqp_server.hostname)
+    main_reader = reader
 
     for i in range(conf.worker.amount):
         worker = gocept.amqprun.worker.Worker(
-            reader.tasks, reader.create_datamanager)
+            reader.tasks, reader.create_session)
         worker.start()
-
-    reader.start()
+    reader.start()  # this blocks until reader is stoped from outside.
+    main_reader = None
