@@ -11,6 +11,6 @@ log = logging.getLogger(__name__)
 def log_message(message):
     log.info(message.body)
 
+
 basic_handler = gocept.amqprun.handler.HandlerDeclaration(
     'queue', 'routing', log_message)
-
