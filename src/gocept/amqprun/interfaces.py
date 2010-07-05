@@ -31,3 +31,7 @@ class IHandler(zope.interface.Interface):
 
 class IMessage(zope.interface.Interface):
     """A message received from or sent to the queue."""
+
+    header = zope.interface.Attribute('Message headers (dict)')
+    body = zope.interface.Attribute('Message body')
+    delivery_tag = zope.interface.Attribute('Message delivery tag (if any)')
