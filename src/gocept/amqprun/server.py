@@ -202,7 +202,7 @@ class AMQPDataManager(object):
             # everythin we do as well.
             return
         with self.connection_lock:
-            self._channel.basic_reject(self.message.delivery_tag)
+            #self._channel.basic_reject(self.message.delivery_tag)
             self.session.clear()
 
     def tpc_begin(self, transaction):
@@ -222,7 +222,7 @@ class AMQPDataManager(object):
 
     def tpc_abort(self, transaction):
         self._channel.tx_rollback()
-        self._channel.basic_reject(self.message.delivery_tag)
+        #self._channel.basic_reject(self.message.delivery_tag)
         self.session.clear()
         self.connection_lock.release()
 
