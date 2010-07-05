@@ -92,9 +92,10 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
 class DataManagerTest(unittest.TestCase):
 
     def setUp(self):
-        self.connection = mock.Mock()
+        self.reader = mock.Mock()
+        self.reader.connection = self.connection = mock.Mock()
         self.connection.lock = threading.Lock()
-        self.connection.channel = self.channel = mock.Mock()
+        self.reader.channel = self.channel = mock.Mock()
 
     def get_message(self):
         import gocept.amqprun.server
@@ -103,7 +104,7 @@ class DataManagerTest(unittest.TestCase):
     def get_dm(self):
         import gocept.amqprun.server
         self.session = gocept.amqprun.server.Session()
-        return gocept.amqprun.server.AMQPDataManager(self.connection,
+        return gocept.amqprun.server.AMQPDataManager(self.reader,
                                                      self.get_message(),
                                                      self.session)
 
@@ -203,14 +204,14 @@ class DataManagerTest(unittest.TestCase):
         self.assertEqual([], self.session.messages)
         self.assertTrue(self.connection.lock.acquire(False))
 
+    def test_abort_should_not_do_anything_after_tpc_begin(self):
+        dm = self.get_dm()
+        dm.tpc_begin(None)
+        dm.abort(None)
+        self.assertFalse(self.channel.basic_reject.called)
 
-class TestMain(unittest.TestCase):
 
-    def setUp(self):
-        zope.component.testing.setUp()
-
-    def tearDown(self):
-        zope.component.testing.tearDown()
+class MainTestBase(object):
 
     def make_config(self, name):
         base = string.Template(
@@ -222,6 +223,16 @@ class TestMain(unittest.TestCase):
         self.config.flush()
         return self.config.name
 
+
+class TestMain(MainTestBase,
+               unittest.TestCase):
+
+    def setUp(self):
+        zope.component.testing.setUp()
+
+    def tearDown(self):
+        zope.component.testing.tearDown()
+
     @mock.patch('gocept.amqprun.server.MessageReader')
     @mock.patch('gocept.amqprun.worker.Worker')
     def test_basic_configuration_should_load_zcml(self, worker, reader):
@@ -230,7 +241,7 @@ class TestMain(unittest.TestCase):
         config = self.make_config('basic')
         gocept.amqprun.server.main(config)
         self.assertEquals(1, reader.call_count)
-        self.assertEquals(10, worker.call_count)
+        self.assertEquals(2, worker.call_count)
         utilities = list(zope.component.getUtilitiesFor(
             gocept.amqprun.interfaces.IHandlerDeclaration))
         self.assertEquals(1, len(utilities))
@@ -247,6 +258,56 @@ class TestMain(unittest.TestCase):
             gocept.amqprun.interfaces.ISettings)
         self.assertEquals('foo', settings.get('test.setting.1'))
         self.assertEquals('bar', settings.get('test.setting.2'))
+
+
+class TestMainWithQueue(MainTestBase,
+                        gocept.amqprun.testing.QueueTestCase):
+
+    def setUp(self):
+        import gocept.amqprun.worker
+        self._timeout = gocept.amqprun.worker.Worker.timeout
+        gocept.amqprun.worker.Worker.timeout = 0.05
+        super(TestMainWithQueue, self).setUp()
+
+    def tearDown(self):
+        import gocept.amqprun.worker
+        for t in list(threading.enumerate()):
+            if isinstance(t, gocept.amqprun.worker.Worker):
+                t.stop()
+        super(TestMainWithQueue, self).tearDown()
+        gocept.amqprun.worker.Worker.timeout = self._timeout
+
+    def create_reader(self):
+        import gocept.amqprun.server
+        self.thread = threading.Thread(
+            target=gocept.amqprun.server.main, args=(self.config.name,))
+        self.thread.start()
+        for i in range(100):
+            if (gocept.amqprun.server.main_reader is not None and
+                gocept.amqprun.server.main_reader.running):
+                break
+            time.sleep(0.025)
+        else:
+            self.fail('Reader did not start up.')
+        self.reader = gocept.amqprun.server.main_reader
+
+    def test_message_should_be_processed(self):
+        config = self.make_config('integration')
+        self._queues.append('test.queue')
+        self.create_reader()
+
+        self.assertTrue(gocept.amqprun.server.main_reader is not None)
+        self.reader = gocept.amqprun.server.main_reader
+
+        from gocept.amqprun.tests.integration import messages_received
+        self.assertEquals([], messages_received)
+        self.send_message('blarf', routing_key='test.routing')
+        for i in range(100):
+            if messages_received:
+                break
+        else:
+            self.fail('Message was not received')
+        self.assertEquals(1, len(messages_received))
 
 
 class TestMessage(unittest.TestCase):

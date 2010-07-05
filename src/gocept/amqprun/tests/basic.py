@@ -13,4 +13,4 @@ def log_message(message):
 
 
 basic_handler = gocept.amqprun.handler.HandlerDeclaration(
-    'queue', 'routing', log_message)
+    'test.queue', 'test.routing', log_message)
