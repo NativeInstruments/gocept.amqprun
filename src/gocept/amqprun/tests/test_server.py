@@ -2,6 +2,7 @@
 # See also LICENSE.txt
 
 import amqplib.client_0_8 as amqp
+import gocept.amqprun.testing
 import mock
 import pkg_resources
 import string
@@ -14,50 +15,14 @@ import zope.component.testing
 import zope.interface.verify
 
 
-class MessageReaderTest(unittest.TestCase):
-
-    hostname = 'localhost'
-
-    def setUp(self):
-        self._queue_prefix = 'test.%f.' % time.time()
-        self._queues = []
-        zope.component.testing.setUp()
-        self.connection = amqp.Connection(host=self.hostname)
-        self.channel = self.connection.channel()
-
-    def tearDown(self):
-        self.reader.stop()
-        self.thread.join()
-
-        for queue_name in self._queues:
-            self.channel.queue_delete(queue_name)
-        self.channel.close()
-        self.connection.close()
-        zope.component.testing.tearDown()
-
-    def get_queue_name(self, suffix):
-        queue_name = self._queue_prefix + suffix
-        self._queues.append(queue_name)
-        return queue_name
-
-    def _create_reader(self):
-        import gocept.amqprun.server
-        self.reader = gocept.amqprun.server.MessageReader(self.hostname)
-        self.thread = threading.Thread(target=self.reader.start)
-        self.thread.start()
-        for i in range(100):
-            if self.reader.running:
-                break
-            time.sleep(0.025)
-        else:
-            self.fail('Reader did not start up.')
+class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
 
     def test_loop_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
-        self._create_reader()
+        self.create_reader()
 
     def test_messages_wo_handler_declaration_should_not_arrive_in_tasks(self):
-        self._create_reader()
+        self.create_reader()
         self.send_message('foo')
         self.assertEqual(0, self.reader.tasks.qsize())
 
@@ -71,7 +36,7 @@ class MessageReaderTest(unittest.TestCase):
         zope.component.provideUtility(decl, name='queue')
 
         # Start up the reader
-        self._create_reader()
+        self.create_reader()
 
         # Without routing key, the message is not delivered
         self.assertEqual(0, self.reader.tasks.qsize())
@@ -101,7 +66,7 @@ class MessageReaderTest(unittest.TestCase):
         zope.component.provideUtility(decl_2, name='2')
 
         # Start up the reader
-        self._create_reader()
+        self.create_reader()
 
         self.assertEqual(0, self.reader.tasks.qsize())
         # With routing key, the message is delivered to the correct handler
@@ -115,18 +80,13 @@ class MessageReaderTest(unittest.TestCase):
     @mock.patch('transaction.get')
     def test_create_session_returns_session_and_joins_transaction(
         self, transaction_get):
-        self._create_reader()
+        self.create_reader()
         handler = mock.Mock()
         session = self.reader.create_session(handler)
         self.assertTrue(transaction_get().join.called)
         dm = transaction_get().join.call_args[0][0]
         self.assertEqual(session, dm.session)
         self.assertEqual(self.reader.connection.lock, dm.connection_lock)
-
-    def send_message(self, body, routing_key=''):
-        self.channel.basic_publish(amqp.Message(body), 'amq.topic',
-                                   routing_key=routing_key)
-        time.sleep(0.05)
 
 
 class DataManagerTest(unittest.TestCase):
@@ -287,7 +247,6 @@ class TestMain(unittest.TestCase):
             gocept.amqprun.interfaces.ISettings)
         self.assertEquals('foo', settings.get('test.setting.1'))
         self.assertEquals('bar', settings.get('test.setting.2'))
-
 
 
 class TestMessage(unittest.TestCase):
