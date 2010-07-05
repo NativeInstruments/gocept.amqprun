@@ -130,19 +130,17 @@ class MessageReaderTest(unittest.TestCase):
 class DataManagerTest(unittest.TestCase):
 
     def setUp(self):
-        self.connection_lock = threading.Lock()
-        self.channel = mock.Mock()
+        self.connection = mock.Mock()
+        self.connection.lock = threading.Lock()
+        self.connection.channel = self.channel = mock.Mock()
 
     def get_message(self):
         import gocept.amqprun.server
-        method = mock.Mock()
-        method.delivery_tag = 'mytag'
-        return gocept.amqprun.server.Message(
-            self.channel, method, {}, '')
+        return gocept.amqprun.server.Message({}, '', 'mytag')
 
     def get_dm(self):
         import gocept.amqprun.server
-        return gocept.amqprun.server.AMQPDataManager(self.connection_lock,
+        return gocept.amqprun.server.AMQPDataManager(self.connection,
                                                      self.get_message())
 
     def test_interface(self):
@@ -154,7 +152,7 @@ class DataManagerTest(unittest.TestCase):
     def test_tpc_begin_should_acquire_connection_lock(self):
         dm = self.get_dm()
         dm.tpc_begin(None)
-        self.assertFalse(self.connection_lock.acquire(False))
+        self.assertFalse(self.connection.lock.acquire(False))
 
     def test_tpc_begin_should_call_tx_select(self):
         dm = self.get_dm()
@@ -174,25 +172,25 @@ class DataManagerTest(unittest.TestCase):
 
     def test_tpc_finish_should_release_connection_lock(self):
         dm = self.get_dm()
-        self.connection_lock.acquire()
+        self.connection.lock.acquire()
         dm.tpc_finish(None)
-        self.assertTrue(self.connection_lock.acquire(False))
+        self.assertTrue(self.connection.lock.acquire(False))
 
     def test_tpc_abort_should_release_connection_lock(self):
         dm = self.get_dm()
-        self.connection_lock.acquire()
+        self.connection.lock.acquire()
         dm.tpc_abort(None)
-        self.assertTrue(self.connection_lock.acquire(False))
+        self.assertTrue(self.connection.lock.acquire(False))
 
     def test_tpc_abort_should_tx_rollback(self):
         dm = self.get_dm()
-        self.connection_lock.acquire()
+        self.connection.lock.acquire()
         dm.tpc_abort(None)
         self.assertTrue(self.channel.tx_rollback.called)
 
     def test_tpc_abort_should_reject_message(self):
         dm = self.get_dm()
-        self.connection_lock.acquire()
+        self.connection.lock.acquire()
         dm.tpc_abort(None)
         self.assertTrue(self.channel.basic_reject.called)
 
@@ -203,17 +201,17 @@ class DataManagerTest(unittest.TestCase):
 
     def test_abort_should_acquire_and_release_lock(self):
         dm = self.get_dm()
-        self.connection_lock.acquire()
+        self.connection.lock.acquire()
         self.assertFalse(self.channel.basic_reject.called)
         t = threading.Thread(target=dm.abort, args=(None,))
         t.start()
         time.sleep(0.1)  # Let the thread start up
         self.assertFalse(self.channel.basic_reject.called)
         # After releasing the lock, basic_reject gets called
-        self.connection_lock.release()
+        self.connection.lock.release()
         time.sleep(0.1)
         self.assertTrue(self.channel.basic_reject.called)
-        self.assertTrue(self.connection_lock.acquire(False))
+        self.assertTrue(self.connection.lock.acquire(False))
 
 
 class TestMain(unittest.TestCase):
@@ -247,3 +245,15 @@ class TestMain(unittest.TestCase):
             gocept.amqprun.interfaces.IHandlerDeclaration))
         self.assertEquals(1, len(utilities))
         self.assertEquals('basic', utilities[0][0])
+
+
+class TestMessage(unittest.TestCase):
+
+    def test_message_should_provide_IMessage(self):
+        from gocept.amqprun.server import Message
+        import gocept.amqprun.interfaces
+        import zope.interface.verify
+        message = Message(1, 2, 3)
+        zope.interface.verify.verifyObject(
+            gocept.amqprun.interfaces.IMessage,
+            message)

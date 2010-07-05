@@ -89,7 +89,8 @@ class Consumer(object):
 
     def __call__(self, channel, method, header, body):
         log.debug("Adding message %s to queue", body)
-        self.tasks.put(self.handler(Message(channel, method, header, body)))
+        self.tasks.put(self.handler(
+            Message(header, body, method.delivery_tag)))
 
 
 class MessageReader(object):
@@ -115,7 +116,7 @@ class MessageReader(object):
         self.connection.close()
 
     def create_datamanager(self, handler):
-        return AMQPDataManager(self.connection.lock, handler.message)
+        return AMQPDataManager(self.connection, handler.message)
 
     def _declare_and_bind_queues(self):
         for name, declaration in zope.component.getUtilitiesFor(
@@ -133,13 +134,15 @@ class MessageReader(object):
                 Consumer(declaration, self.tasks),
                 queue=declaration.queue_name)
 
+
 class Message(object):
 
-    def __init__(self, channel, method, header, body):
-        self.channel = channel
-        self.method = method
+    zope.interface.implements(gocept.amqprun.interfaces.IMessage)
+
+    def __init__(self, header, body, delivery_tag=None):
         self.header = header
         self.body = body
+        self.delivery_tag = delivery_tag
 
 
 class AMQPDataManager(object):
@@ -148,14 +151,14 @@ class AMQPDataManager(object):
 
     transaction_manager = None
 
-    def __init__(self, connection_lock, message):
-        self.connection_lock = connection_lock
+    def __init__(self, connection, message):
+        self.connection_lock = connection.lock
+        self._channel = connection.channel
         self.message = message
-        self._channel = message.channel
 
     def abort(self, transaction):
         with self.connection_lock:
-            self._channel.basic_reject(self.message.method.delivery_tag)
+            self._channel.basic_reject(self.message.delivery_tag)
 
     def tpc_begin(self, transaction):
         log.debug("Acquire commit lock for %s", transaction)
@@ -164,11 +167,11 @@ class AMQPDataManager(object):
 
     def commit(self, transaction):
         log.debug("Acking")
-        self._channel.basic_ack(self.message.method.delivery_tag)
+        self._channel.basic_ack(self.message.delivery_tag)
 
     def tpc_abort(self, transaction):
         self._channel.tx_rollback()
-        self._channel.basic_reject(self.message.method.delivery_tag)
+        self._channel.basic_reject(self.message.delivery_tag)
         self.connection_lock.release()
 
     def tpc_vote(self, transaction):
