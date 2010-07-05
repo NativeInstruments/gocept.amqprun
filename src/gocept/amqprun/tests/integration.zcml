@@ -2,6 +2,13 @@
 
   <include package="gocept.amqprun" />
 
-  <utility component="gocept.amqprun.tests.integration.handler" name="int" />
+  <utility 
+    component="gocept.amqprun.tests.integration.handler"
+    name="int"
+    />
+  <utility 
+    component="gocept.amqprun.tests.integration.handler_error"
+    name="error"
+    />
 
 </configure>
