@@ -8,7 +8,7 @@
 
     <sectiontype name="worker">
         <key name="amount" datatype="integer" required="yes" />
-        <key name="handler" datatype="dotted-name" required="yes" />
+        <key name="component-configuration" datatype="existing-file" required="yes" />
     </sectiontype>
 
     <section type="eventlog" name="*" attribute="eventlog" required="yes" />
