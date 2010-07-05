@@ -12,6 +12,8 @@ class HandlerDeclaration(object):
     def __init__(self, queue_name, routing_key, handler_function):
         self.queue_name = queue_name
         self.routing_key = routing_key
+        if not callable(handler_function):
+            raise TypeError('handler_function not callable')
         self.handler_function = handler_function
 
     def __call__(self, message):

@@ -14,7 +14,7 @@ class TestDeclaration(unittest.TestCase):
 
     def test_factory_should_create_handler_declaration(self):
         import gocept.amqprun.interfaces
-        decl = self.get_decl(None)
+        decl = self.get_decl(lambda x: None)
         self.assertTrue(zope.interface.verify.verifyObject(
             gocept.amqprun.interfaces.IHandlerDeclaration, decl))
         self.assertEquals('queue.name', decl.queue_name)
@@ -44,3 +44,6 @@ class TestDeclaration(unittest.TestCase):
         factored_handler = decl(message)
         result = factored_handler()
         self.assertEquals([mock.sentinel.msg1, mock.sentinel.msg2], result)
+
+    def test_invalid_handler_function_should_raise_typeerror(self):
+        self.assertRaises(TypeError, self.get_decl, 'i-am-not-callable')
