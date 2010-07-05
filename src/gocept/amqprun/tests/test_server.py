@@ -5,8 +5,6 @@ import amqplib.client_0_8 as amqp
 import mock
 import pkg_resources
 import string
-import subprocess
-import sys
 import tempfile
 import threading
 import time
