@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 class Worker(threading.Thread):
 
-    timeout = 1
+    timeout = 5
 
     def __init__(self, queue, session_factory):
         self.queue = queue
