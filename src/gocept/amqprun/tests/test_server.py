@@ -278,6 +278,19 @@ class TestMain(unittest.TestCase):
         self.assertEquals(1, len(utilities))
         self.assertEquals('basic', utilities[0][0])
 
+    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.worker.Worker')
+    def test_settings_should_be_available_through_utility(self, _1, _2):
+        import gocept.amqprun.interfaces
+        import gocept.amqprun.server
+        config = self.make_config('settings')
+        gocept.amqprun.server.main(config)
+        settings = zope.component.getUtility(
+            gocept.amqprun.interfaces.ISettings)
+        self.assertEquals('foo', settings.get('test.setting.1'))
+        self.assertEquals('bar', settings.get('test.setting.2'))
+
+
 
 class TestMessage(unittest.TestCase):
 
