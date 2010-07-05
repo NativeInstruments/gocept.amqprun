@@ -34,7 +34,7 @@ class TestDeclaration(unittest.TestCase):
         result = factored_handler()
         self.assertEquals([], result)
         self.assertTrue(handler.called)
-        self.assertEquals((message,), handler.call_args[0])
+        handler.assert_called_with(message)
 
     def test_factored_handler_should_return_messages(self):
         handler = mock.Mock()

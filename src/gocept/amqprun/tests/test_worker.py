@@ -4,7 +4,7 @@
 import Queue
 import mock
 import time
-import transaction.interfaces
+import transaction
 import unittest
 
 
@@ -12,9 +12,7 @@ class WorkerTest(unittest.TestCase):
 
     def setUp(self):
         self.queue = Queue.Queue()
-        self.datamanager = mock.Mock(spec=list(
-            transaction.interfaces.IDataManager))
-        self.dm_factory = mock.Mock(return_value=self.datamanager)
+        self.session_factory = mock.Mock()
 
     def tearDown(self):
         if hasattr(self, 'worker'):
@@ -23,7 +21,7 @@ class WorkerTest(unittest.TestCase):
     def _create_worker(self):
         import gocept.amqprun.worker
         self.worker = gocept.amqprun.worker.Worker(
-            self.queue, self.dm_factory)
+            self.queue, self.session_factory)
         self.worker.start()
         # wait for thread to start
         for i in range(10):
@@ -50,16 +48,36 @@ class WorkerTest(unittest.TestCase):
         import gocept.amqprun.handler
         messages = []
         self._create_worker()
+        self.assertFalse(self.session_factory.called)
 
         handler = gocept.amqprun.handler.FactoredHandler(
-            lambda x: messages.append(x), mock.sentinel.message)
+            lambda msg: messages.append(msg), mock.sentinel.message)
 
         self.queue.put(handler)
         time.sleep(0.1)
         self.assertEqual(1, len(messages))
         self.assertEqual(mock.sentinel.message, messages[0])
+        self.assertTrue(self.session_factory.called)
 
-    def test_transaction_should_commit(self):
+    def test_messages_returned_by_handler_should_be_sent(self):
+        import gocept.amqprun.handler
+        self._create_worker()
+        self.assertFalse(self.session_factory.called)
+
+        def func(msg):
+            return [mock.sentinel.msg1, mock.sentinel.msg2]
+
+        handler = gocept.amqprun.handler.FactoredHandler(
+            func, mock.sentinel.message)
+
+        self.queue.put(handler)
+        time.sleep(0.1)
+        session = self.session_factory()
+        self.assertEqual(2, session.send.call_count)
+        session.send.assert_called_with(mock.sentinel.msg2)
+
+    @mock.patch('transaction.commit')
+    def test_transaction_should_commit(self, transaction_commit):
         import gocept.amqprun.handler
         self._create_worker()
         handler = gocept.amqprun.handler.FactoredHandler(
@@ -67,25 +85,25 @@ class WorkerTest(unittest.TestCase):
         self.queue.put(handler)
         time.sleep(0.1)
         self.assertEqual(0, self.queue.qsize())
-        self.assertTrue(self.datamanager.tpc_begin.called)
-        self.assertTrue(self.datamanager.commit.called)
-        self.assertTrue(self.datamanager.tpc_vote.called)
-        self.assertTrue(self.datamanager.tpc_finish.called)
+        self.assertTrue(transaction_commit.called)
 
-    def test_on_exception_transaction_should_abort(self):
+    @mock.patch('transaction.commit')
+    @mock.patch('transaction.abort')
+    def test_on_exception_transaction_should_abort(self, mock1, mock2):
         import gocept.amqprun.handler
-        def provoke_error():
+        provoke_called = []
+
+        def provoke_error(msg):
+            provoke_called.append(True)
             raise RuntimeError('provoked error')
 
         self._create_worker()
 
         handler = gocept.amqprun.handler.FactoredHandler(
             provoke_error, mock.sentinel.message)
-
-        self.queue.put('foo')
+        self.queue.put(handler)
         time.sleep(0.1)
         self.assertEqual(0, self.queue.qsize())
-        self.assertFalse(self.datamanager.tpc_begin.called)
-        self.assertFalse(self.datamanager.commit.called)
-        self.assertTrue(self.datamanager.abort.called)
-        self.assertFalse(self.datamanager.tpc_abort.called)
+        self.assertEqual([True], provoke_called)
+        self.assertFalse(transaction.commit.called)
+        self.assertTrue(transaction.abort.called)

@@ -13,6 +13,7 @@ import time
 import unittest
 import zope.component
 import zope.component.testing
+import zope.interface.verify
 
 
 class MessageReaderTest(unittest.TestCase):
@@ -113,13 +114,16 @@ class MessageReaderTest(unittest.TestCase):
         self.assertFalse(handle_message_2.called)
         self.assertTrue(handle_message_1.called)
 
-
-    def test_create_datamanager_returns_dm_with_lock_and_message(self):
+    @mock.patch('transaction.get')
+    def test_create_session_returns_session_and_joins_transaction(
+        self, transaction_get):
         self._create_reader()
-        message = mock.Mock()
-        dm1 = self.reader.create_datamanager(message)
-        dm2 = self.reader.create_datamanager(message)
-        self.assertTrue(dm1.connection_lock is dm2.connection_lock)
+        handler = mock.Mock()
+        session = self.reader.create_session(handler)
+        self.assertTrue(transaction_get().join.called)
+        dm = transaction_get().join.call_args[0][0]
+        self.assertEqual(session, dm.session)
+        self.assertEqual(self.reader.connection.lock, dm.connection_lock)
 
     def send_message(self, body, routing_key=''):
         self.channel.basic_publish(amqp.Message(body), 'amq.topic',
@@ -140,12 +144,13 @@ class DataManagerTest(unittest.TestCase):
 
     def get_dm(self):
         import gocept.amqprun.server
+        self.session = gocept.amqprun.server.Session()
         return gocept.amqprun.server.AMQPDataManager(self.connection,
-                                                     self.get_message())
+                                                     self.get_message(),
+                                                     self.session)
 
     def test_interface(self):
         import transaction.interfaces
-        import zope.interface.verify
         zope.interface.verify.verifyObject(
             transaction.interfaces.IDataManager, self.get_dm())
 
@@ -213,6 +218,33 @@ class DataManagerTest(unittest.TestCase):
         self.assertTrue(self.channel.basic_reject.called)
         self.assertTrue(self.connection.lock.acquire(False))
 
+    def test_commit_should_send_queued_messages(self):
+        dm = self.get_dm()
+        m1 = mock.Mock()
+        m2 = mock.Mock()
+        self.session.send(m1)
+        self.session.send(m2)
+        dm.commit(None)
+        self.assertEqual(2, self.channel.basic_publish.call_count)
+        self.channel.basic_publish.assert_called_with(
+            m2.exchange, m2.routing_key, m2.body, m2.header)
+
+    def test_abort_should_discard_queued_messages(self):
+        dm = self.get_dm()
+        m1 = mock.Mock()
+        self.session.send(m1)
+        dm.abort(None)
+        self.assertEqual([], self.session.messages)
+
+    def test_tpc_abort_should_discard_queued_messages(self):
+        dm = self.get_dm()
+        m1 = mock.Mock()
+        self.session.send(m1)
+        self.connection.lock.acquire()
+        dm.tpc_abort(None)
+        self.assertEqual([], self.session.messages)
+        self.assertTrue(self.connection.lock.acquire(False))
+
 
 class TestMain(unittest.TestCase):
 
@@ -252,8 +284,45 @@ class TestMessage(unittest.TestCase):
     def test_message_should_provide_IMessage(self):
         from gocept.amqprun.server import Message
         import gocept.amqprun.interfaces
-        import zope.interface.verify
-        message = Message(1, 2, 3)
+        message = Message({}, 2, 3)
         zope.interface.verify.verifyObject(
             gocept.amqprun.interfaces.IMessage,
             message)
+        self.assertEqual(2, message.body)
+
+    def test_header_should_be_converted_to_BasicProperties(self):
+        from gocept.amqprun.server import Message
+        import pika.spec
+        now = int(time.time())
+        message = Message(
+            dict(foo='bar', content_type='text/xml', app_id='myapp'), None,
+            delivery_tag=1)
+        header = message.header
+        self.assertTrue(isinstance(header, pika.spec.BasicProperties))
+        self.assertEqual(dict(foo='bar'), header.headers)
+        self.assertTrue(header.timestamp >= now)
+        self.assertEqual('text/xml', header.content_type)
+        self.assertEqual(2, header.delivery_mode) # persistent
+        self.assertEqual('myapp', header.app_id)
+
+    def test_routing_key_and_delivery_tag_should_be_exclusive(self):
+        from gocept.amqprun.server import Message
+        self.assertRaises(
+            zope.interface.Invalid,
+            Message, {}, None, delivery_tag=1, routing_key=2)
+
+
+class SessionTest(unittest.TestCase):
+
+    def test_send_should_queue_messages(self):
+        from gocept.amqprun.server import Session
+        message = mock.sentinel.message
+        session = Session()
+        session.send(message)
+        self.assertEqual([message], session.messages)
+
+    def test_session_provides_interface(self):
+        from gocept.amqprun.server import Session
+        import gocept.amqprun.interfaces
+        zope.interface.verify.verifyObject(
+            gocept.amqprun.interfaces.ISession, Session())
