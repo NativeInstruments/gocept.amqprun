@@ -32,6 +32,28 @@ class IHandler(zope.interface.Interface):
 class IMessage(zope.interface.Interface):
     """A message received from or sent to the queue."""
 
-    header = zope.interface.Attribute('Message headers (dict)')
+    header = zope.interface.Attribute('Message headers/properties')
     body = zope.interface.Attribute('Message body')
     delivery_tag = zope.interface.Attribute('Message delivery tag (if any)')
+    routing_key = zope.interface.Attribute('Routing key (if any)')
+    exchange = zope.interface.Attribute('Exchange (default: amqp.topic)')
+
+    @zope.interface.invariant
+    def delivery_tag_xor_routing_key(obj):
+        if (obj.delivery_tag is None) == (obj.routing_key is None):
+            raise zope.interface.Invalid(
+                'Exactly one of {delivery_tag, routing_key}'
+                ' is required, got {%r, %r}'
+                % (obj.delivery_tag, obj.routing_key))
+
+
+class ISession(zope.interface.Interface):
+    """AMQP session."""
+
+    messages = zope.interface.Attribute('List of messages to send.')
+
+    def send(message):
+        """Queues up message for sending upon transaction commit."""
+
+    def clear():
+        """Discards all queued messages."""

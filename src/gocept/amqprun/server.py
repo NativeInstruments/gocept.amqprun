@@ -10,6 +10,7 @@ import logging
 import os
 import pika
 import pika.asyncore_adapter
+import pika.spec
 import pkg_resources
 import signal
 import socket
@@ -114,8 +115,11 @@ class MessageReader(object):
         self.running = False
         self.connection.close()
 
-    def create_datamanager(self, handler):
-        return AMQPDataManager(self.connection, handler.message)
+    def create_session(self, handler):
+        session = Session()
+        dm = AMQPDataManager(self.connection, handler.message, session)
+        transaction.get().join(dm)
+        return session
 
     def _declare_and_bind_queues(self):
         for name, declaration in zope.component.getUtilitiesFor(
@@ -138,10 +142,42 @@ class Message(object):
 
     zope.interface.implements(gocept.amqprun.interfaces.IMessage)
 
-    def __init__(self, header, body, delivery_tag=None):
+    exchange = 'amqp.topic'
+
+    def __init__(self, header, body, delivery_tag=None, routing_key=None):
+        if not isinstance(header, pika.spec.BasicProperties):
+            header = self.convert_header(header)
         self.header = header
         self.body = body
         self.delivery_tag = delivery_tag
+        self.routing_key = routing_key
+        gocept.amqprun.interfaces.IMessage.validateInvariants(self)
+
+    def convert_header(self, header):
+        header = header.copy()
+        result = pika.spec.BasicProperties()
+        result.timestamp = time.time()
+        result.delivery_mode = 2 # persistent
+        for key in dir(result):
+            value = header.pop(key, self)
+            if value is not self:
+                setattr(result, key, value)
+        result.headers = header
+        return result
+
+
+class Session(object):
+
+    zope.interface.implements(gocept.amqprun.interfaces.ISession)
+
+    def __init__(self):
+        self.messages = []
+
+    def send(self, message):
+        self.messages.append(message)
+
+    def clear(self):
+        self.messages[:] = []
 
 
 class AMQPDataManager(object):
@@ -150,14 +186,16 @@ class AMQPDataManager(object):
 
     transaction_manager = None
 
-    def __init__(self, connection, message):
+    def __init__(self, connection, message, session):
         self.connection_lock = connection.lock
         self._channel = connection.channel
         self.message = message
+        self.session = session
 
     def abort(self, transaction):
         with self.connection_lock:
             self._channel.basic_reject(self.message.delivery_tag)
+            self.session.clear()
 
     def tpc_begin(self, transaction):
         log.debug("Acquire commit lock for %s", transaction)
@@ -167,10 +205,16 @@ class AMQPDataManager(object):
     def commit(self, transaction):
         log.debug("Acking")
         self._channel.basic_ack(self.message.delivery_tag)
+        for message in self.session.messages:
+            log.debug("Publishing %s", message)
+            self._channel.basic_publish(
+                message.exchange, message.routing_key,
+                message.body, message.header)
 
     def tpc_abort(self, transaction):
         self._channel.tx_rollback()
         self._channel.basic_reject(self.message.delivery_tag)
+        self.session.clear()
         self.connection_lock.release()
 
     def tpc_vote(self, transaction):

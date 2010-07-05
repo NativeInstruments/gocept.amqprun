@@ -14,9 +14,9 @@ class Worker(threading.Thread):
 
     timeout = 1
 
-    def __init__(self, queue, datamanager_factory):
+    def __init__(self, queue, session_factory):
         self.queue = queue
-        self.datamanager_factory = datamanager_factory
+        self.session_factory = session_factory
         self.running = False
         super(Worker, self).__init__()
 
@@ -30,12 +30,11 @@ class Worker(threading.Thread):
                 pass
             else:
                 transaction.begin()
-                datamanager = self.datamanager_factory(handler)
-                transaction.get().join(datamanager)
+                session = self.session_factory(handler)
                 try:
-                    handler()
-                    # for msg in response:
-                    #     datamanager.send(msg)
+                    response = handler()
+                    for msg in response:
+                        session.send(msg)
                 except:
                     log.error("Error while processing message",
                               exc_info=True)
