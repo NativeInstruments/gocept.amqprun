@@ -11,9 +11,14 @@
         <key name="component-configuration" datatype="existing-file" required="yes" />
     </sectiontype>
 
+    <sectiontype 
+        name="settings"
+        extends="ZConfig.basic.mapping"
+        />
+
     <section type="eventlog" name="*" attribute="eventlog" required="yes" />
     <section type="amqp-server" name="*" attribute="amqp_server" required="yes" />
     <section type="worker" name="*" attribute="worker" required="yes" />
-
+    <section type="settings" name="*" attribute="settings" required="no" />
 
 </schema>

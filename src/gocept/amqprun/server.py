@@ -235,6 +235,11 @@ def main(config_file):
     conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
     conf.eventlog.startup()
     zope.configuration.xmlconfig.file(conf.worker.component_configuration)
+
+    settings = zope.component.getUtility(gocept.amqprun.interfaces.ISettings)
+    if conf.settings:
+        settings.update(conf.settings)
+
     reader = MessageReader(conf.amqp_server.hostname)
 
     for i in range(conf.worker.amount):

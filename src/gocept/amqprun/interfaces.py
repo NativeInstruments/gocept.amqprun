@@ -2,6 +2,7 @@
 # See also LICENSE.txt
 
 import zope.interface
+import zope.interface.common.mapping
 
 
 class IHandlerDeclaration(zope.interface.Interface):
@@ -57,3 +58,14 @@ class ISession(zope.interface.Interface):
 
     def clear():
         """Discards all queued messages."""
+
+
+class ISettings(zope.interface.common.mapping.IReadMapping):
+    """Runner settings.
+
+    Keys must be dotted names.
+
+    """
+
+    def update(a_dict):
+        """Update the settings with ``a_dict``."""
