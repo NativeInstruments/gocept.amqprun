@@ -28,6 +28,7 @@ setup(
         'setuptools',
         'transaction',
         'zope.component',
+        'zope.configuration',
         'zope.interface',
     ],
     extras_require=dict(test=[
