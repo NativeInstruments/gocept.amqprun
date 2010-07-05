@@ -27,14 +27,13 @@ setup(
         'pika',
         'setuptools',
         'transaction',
-        'zope.component',
+        'zope.component[zcml]',
         'zope.configuration',
         'zope.interface',
     ],
     extras_require=dict(test=[
         'amqplib',
         'mock',
-        'zope.component[zcml]',
         'zope.testing',
     ]),
     entry_points=dict(console_scripts=[

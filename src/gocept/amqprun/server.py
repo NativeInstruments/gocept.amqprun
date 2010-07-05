@@ -19,7 +19,6 @@ import time
 import transaction.interfaces
 import zope.component
 import zope.configuration.xmlconfig
-import zope.dottedname.resolve
 import zope.interface
 
 
