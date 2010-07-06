@@ -83,7 +83,6 @@ class QueueTestCase(unittest.TestCase):
 
 class MainTestCase(QueueTestCase):
 
-
     def setUp(self):
         import gocept.amqprun.worker
         self._timeout = gocept.amqprun.worker.Worker.timeout

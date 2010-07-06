@@ -202,6 +202,7 @@ class AMQPDataManager(object):
             # everythin we do as well.
             return
         with self.connection_lock:
+            # XXX reject is not implemented by RabbitMQ
             #self._channel.basic_reject(self.message.delivery_tag)
             self.session.clear()
 
@@ -222,6 +223,7 @@ class AMQPDataManager(object):
 
     def tpc_abort(self, transaction):
         self._channel.tx_rollback()
+        # XXX reject is not implemented by RabbitMQ
         #self._channel.basic_reject(self.message.delivery_tag)
         self.session.clear()
         self.connection_lock.release()
