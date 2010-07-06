@@ -147,6 +147,7 @@ class DataManagerTest(unittest.TestCase):
         dm.tpc_abort(None)
         self.assertTrue(self.channel.tx_rollback.called)
 
+    # XXX reject is not implemented by RabbitMQ
     #def test_tpc_abort_should_reject_message(self):
     #    dm = self.get_dm()
     #    self.connection.lock.acquire()
@@ -209,8 +210,9 @@ class DataManagerTest(unittest.TestCase):
 class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
 
     def test_message_should_be_processed(self):
-        config = self.make_config(__name__, 'integration')
+        self.make_config(__name__, 'integration')
         self._queues.append('test.queue')
+        self._queues.append('test.queue.error')
         self.create_reader()
 
         from gocept.amqprun.tests.integration import messages_received
@@ -223,23 +225,23 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
             self.fail('Message was not received')
         self.assertEquals(1, len(messages_received))
 
-    def test_message_with_error_should_reject(self):
-        config = self.make_config(__name__, 'integration')
-        self._queues.append('test.error')
+    def test_technical_errors_should_not_crash(self):
+        self.make_config(__name__, 'integration')
+        self._queues.append('test.queue')
+        self._queues.append('test.queue.error')
         self.create_reader()
 
         self.reader = gocept.amqprun.server.main_reader
 
         from gocept.amqprun.tests.integration import messages_received
         self.assertEquals([], messages_received)
-        self.send_message('blarf', routing_key='test.routing')
+        self.send_message('blarf', routing_key='test.error')
         for i in range(100):
             if messages_received:
                 break
         else:
             self.fail('Message was not received')
         self.assertEquals(1, len(messages_received))
-
 
     @mock.patch('gocept.amqprun.server.MessageReader')
     @mock.patch('gocept.amqprun.worker.Worker')

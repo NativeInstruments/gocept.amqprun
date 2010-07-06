@@ -7,8 +7,9 @@ import zope.testing.cleanup
 
 messages_received = []
 
+
 def _clear_msgs():
-  messages_received[:] = []
+    messages_received[:] = []
 zope.testing.cleanup.addCleanUp(_clear_msgs)
 
 
@@ -26,4 +27,4 @@ handler = gocept.amqprun.handler.HandlerDeclaration(
 
 
 handler_error = gocept.amqprun.handler.HandlerDeclaration(
-    'test.queue', 'test.error', handle_message_and_error)
+    'test.queue.error', 'test.error', handle_message_and_error)
