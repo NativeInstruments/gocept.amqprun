@@ -88,9 +88,9 @@ class Consumer(object):
         self.tasks = tasks
 
     def __call__(self, channel, method, header, body):
-        log.debug("Adding message %s to queue", body)
-        self.tasks.put(self.handler(
-            Message(header, body, method.delivery_tag)))
+        message = Message(header, body, method.delivery_tag)
+        log.debug("Adding message: %s", message)
+        self.tasks.put(self.handler(message))
 
 
 class MessageReader(object):
@@ -142,7 +142,7 @@ class Message(object):
 
     zope.interface.implements(gocept.amqprun.interfaces.IMessage)
 
-    exchange = 'amqp.topic'
+    exchange = 'amq.topic'
 
     def __init__(self, header, body, delivery_tag=None, routing_key=None):
         if not isinstance(header, pika.spec.BasicProperties):
