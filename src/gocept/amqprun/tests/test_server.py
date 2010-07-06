@@ -280,6 +280,7 @@ class TestMessage(unittest.TestCase):
             gocept.amqprun.interfaces.IMessage,
             message)
         self.assertEqual(2, message.body)
+        self.assertEqual('amq.topic', message.exchange)
 
     def test_header_should_be_converted_to_BasicProperties(self):
         from gocept.amqprun.server import Message
