@@ -3,6 +3,4 @@
   <include package="zope.component" file="meta.zcml" />
   <include package="zope.component" />
 
-  <utility factory=".settings.Settings" />
-
 </configure>
