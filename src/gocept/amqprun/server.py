@@ -5,6 +5,7 @@ import Queue
 import ZConfig
 import asyncore
 import gocept.amqprun.interfaces
+import gocept.amqprun.settings
 import gocept.amqprun.worker
 import logging
 import os
@@ -251,11 +252,14 @@ def main(config_file):
         __name__, 'schema.xml'))
     conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
     conf.eventlog.startup()
-    zope.configuration.xmlconfig.file(conf.worker.component_configuration)
-
-    settings = zope.component.getUtility(gocept.amqprun.interfaces.ISettings)
+    # Provide utility before xml config to allow components configured via ZCML
+    # to use the utiltiy.
+    settings = gocept.amqprun.settings.Settings()
+    zope.component.provideUtility(settings)
     if conf.settings:
         settings.update(conf.settings)
+
+    zope.configuration.xmlconfig.file(conf.worker.component_configuration)
 
     reader = MessageReader(conf.amqp_server.hostname)
     main_reader = reader
