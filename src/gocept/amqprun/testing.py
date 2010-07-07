@@ -111,13 +111,15 @@ class MainTestCase(QueueTestCase):
             self.fail('Reader did not start up.')
         self.reader = gocept.amqprun.server.main_reader
 
-    def make_config(self, package, name):
+    def make_config(self, package, name, mapping=None):
         base = string.Template(
             pkg_resources.resource_string(package, '%s.conf' % name))
         zcml = pkg_resources.resource_filename(
             package, '%s.zcml' % name)
+        sub = dict(site_zcml=zcml)
+        if mapping:
+            sub.update(mapping)
         self.config = tempfile.NamedTemporaryFile()
-        self.config.write(
-            base.substitute({'site_zcml': zcml}))
+        self.config.write(base.substitute(sub))
         self.config.flush()
         return self.config.name
