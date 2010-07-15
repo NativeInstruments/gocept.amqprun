@@ -162,6 +162,8 @@ class Message(object):
         result.delivery_mode = 2 # persistent
         for key in dir(result):
             value = header.pop(key, self)
+            if isinstance(value, unicode):
+                value = value.encode('UTF-8')
             if value is not self:
                 setattr(result, key, value)
         result.headers = header
