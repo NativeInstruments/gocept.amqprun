@@ -151,7 +151,8 @@ class Message(object):
         self.header = header
         self.body = body
         self.delivery_tag = delivery_tag
-        self.routing_key = routing_key
+        self.routing_key = (
+            unicode(routing_key).encode('UTF-8') if routing_key else None)
         gocept.amqprun.interfaces.IMessage.validateInvariants(self)
 
     def convert_header(self, header):
