@@ -111,6 +111,31 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
         with mock.patch('pika.channel.Channel.basic_ack'):
             transaction.commit()
 
+    def test_unicode_body_should_work_for_message(self):
+        import gocept.amqprun.server
+        import transaction
+        self.create_reader()
+        handler = mock.Mock()
+        session = self.reader.create_session(handler)
+        session.send(gocept.amqprun.server.Message(
+            {}, u'body', routing_key='test.routing'))
+        # Patch out basic_ack because we haven't actually received a message
+        with mock.patch('pika.channel.Channel.basic_ack'):
+            transaction.commit()
+
+    def test_unicode_header_should_work_for_message(self):
+        import gocept.amqprun.server
+        import transaction
+        self.create_reader()
+        handler = mock.Mock()
+        session = self.reader.create_session(handler)
+        session.send(gocept.amqprun.server.Message(
+            {u'content_type': u'text/plain'},
+            'body', routing_key='test.routing'))
+        # Patch out basic_ack because we haven't actually received a message
+        with mock.patch('pika.channel.Channel.basic_ack'):
+            transaction.commit()
+
 
 class DataManagerTest(unittest.TestCase):
 
