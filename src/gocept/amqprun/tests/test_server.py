@@ -91,13 +91,25 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
         zope.component.provideUtility(decl, name='decl')
         self.create_reader()
 
-    def test_unicode_routing_keys_should_work(self):
+    def test_unicode_routing_keys_should_work_for_handler(self):
         import gocept.amqprun.handler
         decl = gocept.amqprun.handler.HandlerDeclaration(
             self.get_queue_name('test.case.2'),
             u'test.messageformat.2', lambda x: None)
         zope.component.provideUtility(decl, name='decl')
         self.create_reader()
+
+    def test_unicode_routing_keys_should_work_for_message(self):
+        import gocept.amqprun.server
+        import transaction
+        self.create_reader()
+        handler = mock.Mock()
+        session = self.reader.create_session(handler)
+        session.send(gocept.amqprun.server.Message(
+            {}, 'body', routing_key=u'test.routing'))
+        # Patch out basic_ack because we haven't actually received a message
+        with mock.patch('pika.channel.Channel.basic_ack'):
+            transaction.commit()
 
 
 class DataManagerTest(unittest.TestCase):
