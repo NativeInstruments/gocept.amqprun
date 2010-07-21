@@ -12,17 +12,18 @@ setup(
     url='',
     description="""\
 """,
-    long_description= (
+    long_description=(
         open('README.txt').read()
         + '\n\n'
         + open('CHANGES.txt').read()),
     packages=find_packages('src'),
-    package_dir = {'': 'src'},
-    include_package_data = True,
+    package_dir={'': 'src'},
+    include_package_data=True,
     zip_safe=False,
     license='ZPL',
-    namespace_packages = ['gocept'],
+    namespace_packages=['gocept'],
     install_requires=[
+        'amqplib',
         'ZConfig',
         'pika',
         'setuptools',
@@ -32,7 +33,6 @@ setup(
         'zope.interface',
     ],
     extras_require=dict(test=[
-        'amqplib',
         'mock',
         'zope.testing',
     ]),
