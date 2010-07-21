@@ -4,8 +4,12 @@
 import ZConfig
 import amqplib.client_0_8 as amqp
 import gocept.filestore
+import logging
 import pkg_resources
 import time
+
+
+log = logging.getLogger(__name__)
 
 
 class FileStoreReader(object):
@@ -30,6 +34,7 @@ class FileStoreReader(object):
 
     def scan(self):
         for filename in self.filestore.list('new'):
+            log.debug('reading %r' % filename)
             self.send(open(filename).read())
             self.filestore.move(filename, 'new', 'cur')
 
