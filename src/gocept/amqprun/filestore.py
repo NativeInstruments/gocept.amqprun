@@ -1,8 +1,10 @@
 # Copyright (c) 2010 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+import ZConfig
 import amqplib.client_0_8 as amqp
 import gocept.filestore
+import pkg_resources
 import time
 
 
@@ -36,3 +38,14 @@ class FileStoreReader(object):
         self.channel.basic_publish(
             amqp.Message(body, content_type='text/xml'),
             'amq.topic', routing_key=self.routing_key)
+
+
+def main(config_file):
+    schema = ZConfig.loadSchemaFile(pkg_resources.resource_stream(
+        __name__, 'filestore.xml'))
+    conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
+    conf.eventlog.startup()
+    reader = FileStoreReader(conf.settings.path,
+                             conf.settings.hostname,
+                             conf.settings.routing_key)
+    reader.start()

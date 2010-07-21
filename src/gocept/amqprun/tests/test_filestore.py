@@ -1,10 +1,12 @@
 # Copyright (c) 2010 gocept gmbh & co. kg
 # See also LICENSE.txt
 
-from gocept.amqprun.file import FileStoreReader
+from gocept.amqprun.filestore import FileStoreReader
+import gocept.amqprun.filestore
 import gocept.amqprun.testing
 import mock
 import os
+import pkg_resources
 import shutil
 import tempfile
 import time
@@ -65,3 +67,14 @@ class QueueTest(gocept.amqprun.testing.QueueTestCase):
         time.sleep(0.05)
         message = self.channel.basic_get(queue)
         self.assertEqual('foo', message.body)
+
+
+class MainTest(unittest.TestCase):
+
+    @mock.patch('gocept.amqprun.filestore.FileStoreReader')
+    def test_main_should_read_config(self, reader):
+        config = tempfile.NamedTemporaryFile()
+        config.write(pkg_resources.resource_string(__name__, 'filestore.conf'))
+        config.flush()
+        gocept.amqprun.filestore.main(config.name)
+        reader.assert_called_with('/tmp', 'localhost', 'route')
