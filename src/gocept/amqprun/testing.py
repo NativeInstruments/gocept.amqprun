@@ -63,6 +63,14 @@ class QueueTestCase(unittest.TestCase):
         self._queues.append(queue_name)
         return queue_name
 
+    def send_message(self, body, routing_key=''):
+        self.channel.basic_publish(amqp.Message(body), 'amq.topic',
+                                   routing_key=routing_key)
+        time.sleep(0.1)
+
+
+class ReaderTestCase(QueueTestCase):
+
     def create_reader(self):
         import gocept.amqprun.server
         self.reader = gocept.amqprun.server.MessageReader(self.layer.hostname)
@@ -74,11 +82,6 @@ class QueueTestCase(unittest.TestCase):
             time.sleep(0.025)
         else:
             self.fail('Reader did not start up.')
-
-    def send_message(self, body, routing_key=''):
-        self.channel.basic_publish(amqp.Message(body), 'amq.topic',
-                                   routing_key=routing_key)
-        time.sleep(0.1)
 
 
 class MainTestCase(QueueTestCase):
