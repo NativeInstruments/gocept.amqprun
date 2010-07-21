@@ -39,24 +39,21 @@ class QueueTestCase(unittest.TestCase):
     layer = QueueLayer
 
     def setUp(self):
+        super(QueueTestCase, self).setUp()
         self._queue_prefix = 'test.%f.' % time.time()
         self._queues = []
         zope.component.testing.setUp()
         self.connection = self.layer.connection
         self.channel = self.layer.channel
-        self.reader = None
 
     def tearDown(self):
-        if self.reader is not None:
-            self.reader.stop()
-            self.thread.join()
-
         for queue_name in self._queues:
             try:
                 self.channel.queue_delete(queue_name)
             except amqp.AMQPChannelException:
                 pass
         zope.component.testing.tearDown()
+        super(QueueTestCase, self).tearDown()
 
     def get_queue_name(self, suffix):
         queue_name = self._queue_prefix + suffix
@@ -69,22 +66,31 @@ class QueueTestCase(unittest.TestCase):
         time.sleep(0.1)
 
 
-class ReaderTestCase(QueueTestCase):
+class LoopTestCase(unittest.TestCase):
 
-    def create_reader(self):
-        import gocept.amqprun.server
-        self.reader = gocept.amqprun.server.MessageReader(self.layer.hostname)
-        self.thread = threading.Thread(target=self.reader.start)
+    def setUp(self):
+        super(LoopTestCase, self).setUp()
+        self.loop = None
+
+    def tearDown(self):
+        if self.loop is not None:
+            self.loop.stop()
+            self.thread.join()
+        super(LoopTestCase, self).tearDown()
+
+    def start_thread(self, loop):
+        self.loop = loop
+        self.thread = threading.Thread(target=self.loop.start)
         self.thread.start()
         for i in range(100):
-            if self.reader.running:
+            if self.loop.running:
                 break
             time.sleep(0.025)
         else:
-            self.fail('Reader did not start up.')
+            self.fail('Loop did not start up.')
 
 
-class MainTestCase(QueueTestCase):
+class MainTestCase(LoopTestCase, QueueTestCase):
 
     def setUp(self):
         import gocept.amqprun.worker
@@ -112,7 +118,7 @@ class MainTestCase(QueueTestCase):
             time.sleep(0.025)
         else:
             self.fail('Reader did not start up.')
-        self.reader = gocept.amqprun.server.main_reader
+        self.loop = gocept.amqprun.server.main_reader
 
     def make_config(self, package, name, mapping=None):
         base = string.Template(
