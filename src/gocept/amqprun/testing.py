@@ -78,7 +78,7 @@ class QueueTestCase(unittest.TestCase):
     def send_message(self, body, routing_key=''):
         self.channel.basic_publish(amqp.Message(body), 'amq.topic',
                                    routing_key=routing_key)
-        time.sleep(0.05)
+        time.sleep(0.1)
 
 
 class MainTestCase(QueueTestCase):
