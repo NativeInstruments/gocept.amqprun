@@ -10,7 +10,7 @@ import zope.component
 import zope.interface.verify
 
 
-class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
+class MessageReaderTest(gocept.amqprun.testing.ReaderTestCase):
 
     def test_loop_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
