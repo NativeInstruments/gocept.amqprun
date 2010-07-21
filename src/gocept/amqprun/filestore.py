@@ -3,16 +3,20 @@
 
 import ZConfig
 import amqplib.client_0_8 as amqp
+import gocept.amqprun.interfaces
 import gocept.filestore
 import logging
 import pkg_resources
 import time
+import zope.interface
 
 
 log = logging.getLogger(__name__)
 
 
 class FileStoreReader(object):
+
+    zope.interface.implements(gocept.amqprun.interfaces.ILoop)
 
     def __init__(self, path, hostname, routing_key):
         self.running = False
@@ -23,6 +27,7 @@ class FileStoreReader(object):
         self.filestore.prepare()
 
     def start(self):
+        self.running = True
         while self.running:
             self.scan()
             time.sleep(1)

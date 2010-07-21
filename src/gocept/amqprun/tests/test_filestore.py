@@ -13,7 +13,7 @@ import time
 import unittest
 
 
-class FileStoreTest(unittest.TestCase):
+class FileStoreTest(gocept.amqprun.testing.LoopTestCase):
 
     def setUp(self):
         super(FileStoreTest, self).setUp()
@@ -46,6 +46,15 @@ class FileStoreTest(unittest.TestCase):
 
         self.assertEqual(0, len(os.listdir(os.path.join(self.tmpdir, 'new'))))
         self.assertEqual(1, len(os.listdir(os.path.join(self.tmpdir, 'cur'))))
+
+    def create_reader(self):
+        reader = FileStoreReader(self.tmpdir, 'localhost', 'route')
+        self.start_thread(reader)
+
+    @mock.patch('amqplib.client_0_8.Connection')
+    def test_loop_can_be_stopped_from_outside(self, connection):
+        # this test simply should not hang indefinitely
+        self.create_reader()
 
 
 class QueueTest(gocept.amqprun.testing.QueueTestCase):

@@ -96,6 +96,8 @@ class Consumer(object):
 
 class MessageReader(object):
 
+    zope.interface.implements(gocept.amqprun.interfaces.ILoop)
+
     def __init__(self, hostname):
         self.hostname = hostname
         self.tasks = Queue.Queue()
