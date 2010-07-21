@@ -23,8 +23,9 @@ setup(
     license='ZPL',
     namespace_packages=['gocept'],
     install_requires=[
-        'amqplib',
         'ZConfig',
+        'amqplib',
+        'gocept.filestore',
         'pika',
         'setuptools',
         'transaction',
@@ -38,5 +39,6 @@ setup(
     ]),
     entry_points=dict(console_scripts=[
         'server = gocept.amqprun.server:main',
+        'filereader = gocept.amqprun.file:main',
     ]),
 )
