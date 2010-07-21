@@ -1,0 +1,14 @@
+<schema>
+    <import package='ZConfig.components.logger'/>
+    <import package='ZConfig.components.basic' file='mapping.xml'/>
+
+    <sectiontype name="settings">
+        <key name="path" datatype="existing-dirpath" required="yes" />
+        <key name="hostname" datatype="string" required="yes" />
+        <key name="routing_key" datatype="string" required="yes" />
+    </sectiontype>
+
+    <section type="eventlog" name="*" attribute="eventlog" required="yes" />
+    <section type="settings" name="*" attribute="settings" required="yes" />
+
+</schema>
