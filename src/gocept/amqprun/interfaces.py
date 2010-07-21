@@ -69,3 +69,14 @@ class ISettings(zope.interface.common.mapping.IReadMapping):
 
     def update(a_dict):
         """Update the settings with ``a_dict``."""
+
+
+class ILoop(zope.interface.Interface):
+
+    running = zope.interface.Attribute('bool: is the loop running?')
+
+    def start():
+        pass
+
+    def stop():
+        pass
