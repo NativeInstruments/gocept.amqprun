@@ -303,6 +303,24 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
             self.fail('Message was not received')
         self.assertEquals(1, len(messages_received))
 
+    def test_rejected_messages_should_be_received_again_later(self):
+        self.make_config(__name__, 'integration')
+        self._queues.append('test.queue')
+        self._queues.append('test.queue.error')
+        self.create_reader()
+
+        self.reader = gocept.amqprun.server.main_reader
+
+        from gocept.amqprun.tests.integration import messages_received
+        self.assertEquals([], messages_received)
+        self.send_message('blarf', routing_key='test.error')
+        for i in range(100):
+            time.sleep(0.1)
+            if len(messages_received) == 2:
+                break
+        else:
+            self.fail('Message was not received again')
+
     @mock.patch('gocept.amqprun.server.MessageReader')
     @mock.patch('gocept.amqprun.worker.Worker')
     def test_basic_configuration_should_load_zcml(self, worker, reader):
