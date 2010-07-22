@@ -111,7 +111,10 @@ class MessageReader(object):
             self._declare_and_bind_queues()
             self.running = True
         while self.running:
-            self.connection.drain_events()
+            try:
+                self.connection.drain_events()
+            except KeyboardInterrupt:
+                self.stop()
         self.connection.close()
 
     def stop(self):
@@ -269,9 +272,18 @@ def main(config_file):
     reader = MessageReader(conf.amqp_server.hostname)
     main_reader = reader
 
+    workers = []
     for i in range(conf.worker.amount):
         worker = gocept.amqprun.worker.Worker(
             reader.tasks, reader.create_session)
         worker.start()
-    reader.start()  # this blocks until reader is stoped from outside.
+        workers.append(worker)
+
+    reader.start()  # this blocks until reader is stopped from outside.
+
+    log.info('waiting for workers to shut down')
+    # each worker might block in its queue.get() until the timeout is reached
+    for worker in workers:
+        worker.stop()
     main_reader = None
+    log.info('exit')
