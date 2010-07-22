@@ -39,6 +39,6 @@ setup(
     ]),
     entry_points=dict(console_scripts=[
         'server = gocept.amqprun.server:main',
-        'filestore-reader = gocept.amqprun.file:main',
+        'filestore-reader = gocept.amqprun.filestore:main',
     ]),
 )
