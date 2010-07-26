@@ -9,6 +9,7 @@ import threading
 import time
 import unittest
 import zope.component.testing
+import zope.configuration.xmlconfig
 
 
 class QueueLayer(object):
@@ -39,10 +40,14 @@ class QueueTestCase(unittest.TestCase):
     layer = QueueLayer
 
     def setUp(self):
+        import gocept.amqprun
         super(QueueTestCase, self).setUp()
         self._queue_prefix = 'test.%f.' % time.time()
         self._queues = []
         zope.component.testing.setUp()
+        zope.configuration.xmlconfig.file(
+            pkg_resources.resource_filename(__name__, 'configure.zcml'),
+            package=gocept.amqprun)
         self.connection = self.layer.connection
         self.channel = self.layer.channel
 
