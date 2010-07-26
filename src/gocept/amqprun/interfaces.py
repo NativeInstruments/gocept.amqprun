@@ -80,3 +80,19 @@ class ILoop(zope.interface.Interface):
 
     def stop():
         pass
+
+
+class IChannelManager(zope.interface.Interface):
+    """Manage channel livecycle."""
+
+    def acquire():
+        """Use the channel."""
+
+    def release():
+        """Indicate channel is no longer being used."""
+
+    def get_count():
+        """Return how often the channel is currenlty being used."""
+
+    def close_if_possible():
+        """Close the channle if it is no longer used by anyone."""

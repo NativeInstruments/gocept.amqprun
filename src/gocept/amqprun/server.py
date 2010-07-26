@@ -98,25 +98,30 @@ class MessageReader(object):
 
     zope.interface.implements(gocept.amqprun.interfaces.ILoop)
 
+    CHANNEL_LIFE_TIME = 360
+
     def __init__(self, hostname):
         self.hostname = hostname
         self.tasks = Queue.Queue()
         self.running = False
+        self._switching_channels = False
+        self._old_channel = None
 
     def start(self):
         log.info('starting message consumer for %s' % self.hostname)
         self.connection = Connection(pika.ConnectionParameters(self.hostname))
-        self.open_channel()
         with self.connection.lock:
+            self.open_channel()
             self.running = True
         while self.running:
-            print 'running'
-            self.connection.drain_events()
-            # duration = time.time() - self.channel_opened
-            # print duration
-            # if duration > 1:
-            #     self.open_channel()
+            self.run_once()
         self.connection.close()
+
+    def run_once(self):
+        self.connection.drain_events()
+        if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
+            self.switch_channel()
+        self.close_old_channel()
 
     def stop(self):
         self.running = False
@@ -129,10 +134,35 @@ class MessageReader(object):
         return session
 
     def open_channel(self):
+        self.channel = self.connection.channel()
+        self._declare_and_bind_queues()
+        self._channel_opened = time.time()
+
+    def switch_channel(self):
+        if self._switching_channels:
+            return False
         with self.connection.lock:
-            self.channel = self.connection.channel()
-            self._declare_and_bind_queues()
-            self.channel_opened = time.time()
+            self._switching_channels = True
+            for consumer_tag in self.channel.callbacks.keys():
+                self.channel.basic_cancel(consumer_tag)
+            while True:
+                try:
+                    self.tasks.get(block=False)
+                except Queue.Empty:
+                    break
+            self._old_channel = self.channel
+            self.open_channel()
+            return True  # Switch successful
+
+    def close_old_channel(self):
+        if self._old_channel is None:
+            return
+        with self.connection.lock:
+            closed = gocept.amqprun.interfaces.IChannelManager(
+                self._old_channel).close_if_possible()
+            if closed:
+                self._old_channel = None
+                self._switching_channels = False
 
     def _declare_and_bind_queues(self):
         for name, declaration in zope.component.getUtilitiesFor(
@@ -149,7 +179,6 @@ class MessageReader(object):
             self.channel.basic_consume(
                 Consumer(declaration, self.tasks),
                 queue=declaration.queue_name)
-
 
 class Message(object):
 
@@ -204,14 +233,11 @@ class AMQPDataManager(object):
 
     def __init__(self, reader, message, session):
         self.connection_lock = reader.connection.lock
-        self.reader = reader
+        self._channel = reader.channel
         self.message = message
         self.session = session
         self._tpc_begin = False
-
-    @property
-    def _channel(self):
-        return self.reader.channel
+        gocept.amqprun.interfaces.IChannelManager(self._channel).acquire()
 
     def abort(self, transaction):
         # Called on transaction.abort() *and* on errors in tpc_vote/tpc_finish
@@ -225,6 +251,7 @@ class AMQPDataManager(object):
             # XXX reject is not implemented by RabbitMQ
             #self._channel.basic_reject(self.message.delivery_tag)
             self.session.clear()
+            gocept.amqprun.interfaces.IChannelManager(self._channel).release()
 
     def tpc_begin(self, transaction):
         log.debug("Acquire commit lock for %s", transaction)
@@ -246,6 +273,7 @@ class AMQPDataManager(object):
         # XXX reject is not implemented by RabbitMQ
         #self._channel.basic_reject(self.message.delivery_tag)
         self.session.clear()
+        gocept.amqprun.interfaces.IChannelManager(self._channel).release()
         self.connection_lock.release()
 
     def tpc_vote(self, transaction):
@@ -254,6 +282,7 @@ class AMQPDataManager(object):
 
     def tpc_finish(self, transaction):
         log.debug("releasing commit lock")
+        gocept.amqprun.interfaces.IChannelManager(self._channel).release()
         self.connection_lock.release()
 
     def sortKey(self):
