@@ -106,12 +106,16 @@ class MessageReader(object):
     def start(self):
         log.info('starting message consumer for %s' % self.hostname)
         self.connection = Connection(pika.ConnectionParameters(self.hostname))
+        self.open_channel()
         with self.connection.lock:
-            self.channel = self.connection.channel()
-            self._declare_and_bind_queues()
             self.running = True
         while self.running:
+            print 'running'
             self.connection.drain_events()
+            # duration = time.time() - self.channel_opened
+            # print duration
+            # if duration > 1:
+            #     self.open_channel()
         self.connection.close()
 
     def stop(self):
@@ -123,6 +127,12 @@ class MessageReader(object):
         dm = AMQPDataManager(self, handler.message, session)
         transaction.get().join(dm)
         return session
+
+    def open_channel(self):
+        with self.connection.lock:
+            self.channel = self.connection.channel()
+            self._declare_and_bind_queues()
+            self.channel_opened = time.time()
 
     def _declare_and_bind_queues(self):
         for name, declaration in zope.component.getUtilitiesFor(
@@ -194,10 +204,14 @@ class AMQPDataManager(object):
 
     def __init__(self, reader, message, session):
         self.connection_lock = reader.connection.lock
-        self._channel = reader.channel
+        self.reader = reader
         self.message = message
         self.session = session
         self._tpc_begin = False
+
+    @property
+    def _channel(self):
+        return self.reader.channel
 
     def abort(self, transaction):
         # Called on transaction.abort() *and* on errors in tpc_vote/tpc_finish
