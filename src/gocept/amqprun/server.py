@@ -37,8 +37,16 @@ class Connection(pika.AsyncoreConnection):
         self.lock = threading.Lock()
         self._main_thread_lock = threading.RLock()
         self._main_thread_lock.acquire()
+        credentials = None
+        if parameters.username and parameters.password:
+            credentials = pika.PlainCredentials(
+                parameters.username, parameters.password)
         pika.AsyncoreConnection.__init__(self, pika.ConnectionParameters(
-            parameters.hostname))
+            host=parameters.hostname,
+            port=parameters.port,
+            virtual_host=parameters.virtual_host,
+            credentials=credentials,
+            heartbeat=parameters.heartbeat_interval))
 
     def connect(self, host, port):
         self.notifier_r, self.notifier_w = os.pipe()
