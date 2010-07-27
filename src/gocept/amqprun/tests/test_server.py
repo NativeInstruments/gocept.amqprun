@@ -18,8 +18,16 @@ class MessageReaderTest(
 
     def create_reader(self):
         import gocept.amqprun.server
+
+        class Parameters(object):
+            hostname = self.layer.hostname
+            port = None
+            virtual_host = '/'
+            username = None
+            password = None
+            heartbeat_interval = 0
         self.reader = gocept.amqprun.server.MessageReader(
-            lambda: gocept.amqprun.server.Connection(self.layer))
+            lambda: gocept.amqprun.server.Connection(Parameters))
         self.start_thread(self.reader)
 
     def test_loop_can_be_stopped_from_outside(self):
@@ -462,3 +470,31 @@ class SessionTest(unittest.TestCase):
         import gocept.amqprun.interfaces
         zope.interface.verify.verifyObject(
             gocept.amqprun.interfaces.ISession, Session())
+
+
+class ConnectionTest(unittest.TestCase):
+
+    def test_parameters_should_be_converted_to_pika(self):
+        from gocept.amqprun.server import Connection
+        with mock.patch('pika.AsyncoreConnection.__init__') as init:
+            Connection(mock.sentinel)
+            params = init.call_args[0][1]
+            self.assertEqual(mock.sentinel.hostname, params.host)
+            self.assertEqual(mock.sentinel.port, params.port)
+            self.assertEqual(mock.sentinel.virtual_host, params.virtual_host)
+            self.assertEqual(
+                mock.sentinel.heartbeat_interval, params.heartbeat)
+            self.assertEqual(
+                mock.sentinel.username, params.credentials.username)
+            self.assertEqual(
+                mock.sentinel.password, params.credentials.password)
+
+    def test_no_username_and_password_should_yield_default_credentials(self):
+        from gocept.amqprun.server import Connection
+        with mock.patch('pika.AsyncoreConnection.__init__') as init:
+            parameters = mock.Mock()
+            parameters.username = None
+            parameters.password = None
+            Connection(parameters)
+            params = init.call_args[0][1]
+            self.assertIsNone(params.credentials)
