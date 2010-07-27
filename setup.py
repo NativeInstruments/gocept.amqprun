@@ -38,7 +38,7 @@ setup(
         'zope.testing',
     ]),
     entry_points=dict(console_scripts=[
-        'server = gocept.amqprun.server:main',
+        'server = gocept.amqprun.main:main',
         'filestore-reader = gocept.amqprun.filestore:main',
     ]),
 )

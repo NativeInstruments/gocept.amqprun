@@ -2,25 +2,19 @@
 # See also LICENSE.txt
 
 import Queue
-import ZConfig
 import asyncore
 import gocept.amqprun.interfaces
-import gocept.amqprun.settings
 import gocept.amqprun.worker
 import logging
 import os
 import pika
 import pika.asyncore_adapter
 import pika.spec
-import pkg_resources
-import signal
 import socket
-import tempfile
 import threading
 import time
 import transaction.interfaces
 import zope.component
-import zope.configuration.xmlconfig
 import zope.interface
 
 
@@ -289,34 +283,3 @@ class AMQPDataManager(object):
     def sortKey(self):
         # Try to sort last, so that we vote last.
         return "~gocept.amqprun:%f" % time.time()
-
-
-# Holds a reference to the reader stared by main(). This is to make testing
-# easier where main() is started in a thread.
-main_reader = None
-
-
-def main(config_file):
-    global main_reader
-    schema = ZConfig.loadSchemaFile(pkg_resources.resource_stream(
-        __name__, 'schema.xml'))
-    conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
-    conf.eventlog.startup()
-    # Provide utility before xml config to allow components configured via ZCML
-    # to use the utility.
-    settings = gocept.amqprun.settings.Settings()
-    zope.component.provideUtility(settings)
-    if conf.settings:
-        settings.update(conf.settings)
-
-    zope.configuration.xmlconfig.file(conf.worker.component_configuration)
-
-    reader = MessageReader(conf.amqp_server.hostname)
-    main_reader = reader
-
-    for i in range(conf.worker.amount):
-        worker = gocept.amqprun.worker.Worker(
-            reader.tasks, reader.create_session)
-        worker.start()
-    reader.start()  # this blocks until reader is stopped from outside.
-    main_reader = None
