@@ -180,6 +180,7 @@ class MessageReader(object):
                 Consumer(declaration, self.tasks),
                 queue=declaration.queue_name)
 
+
 class Message(object):
 
     zope.interface.implements(gocept.amqprun.interfaces.IMessage)
@@ -301,7 +302,7 @@ def main(config_file):
     conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
     conf.eventlog.startup()
     # Provide utility before xml config to allow components configured via ZCML
-    # to use the utiltiy.
+    # to use the utility.
     settings = gocept.amqprun.settings.Settings()
     zope.component.provideUtility(settings)
     if conf.settings:
@@ -316,5 +317,5 @@ def main(config_file):
         worker = gocept.amqprun.worker.Worker(
             reader.tasks, reader.create_session)
         worker.start()
-    reader.start()  # this blocks until reader is stoped from outside.
+    reader.start()  # this blocks until reader is stopped from outside.
     main_reader = None
