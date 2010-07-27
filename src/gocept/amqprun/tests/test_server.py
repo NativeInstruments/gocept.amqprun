@@ -117,36 +117,36 @@ class MessageReaderTest(
         self.create_reader()
 
     def test_unicode_routing_keys_should_work_for_message(self):
-        import gocept.amqprun.server
+        import gocept.amqprun.message
         import transaction
         self.create_reader()
         handler = mock.Mock()
         session = self.reader.create_session(handler)
-        session.send(gocept.amqprun.server.Message(
+        session.send(gocept.amqprun.message.Message(
             {}, 'body', routing_key=u'test.routing'))
         # Patch out basic_ack because we haven't actually received a message
         with mock.patch('pika.channel.Channel.basic_ack'):
             transaction.commit()
 
     def test_unicode_body_should_work_for_message(self):
-        import gocept.amqprun.server
+        import gocept.amqprun.message
         import transaction
         self.create_reader()
         handler = mock.Mock()
         session = self.reader.create_session(handler)
-        session.send(gocept.amqprun.server.Message(
+        session.send(gocept.amqprun.message.Message(
             {}, u'body', routing_key='test.routing'))
         # Patch out basic_ack because we haven't actually received a message
         with mock.patch('pika.channel.Channel.basic_ack'):
             transaction.commit()
 
     def test_unicode_header_should_work_for_message(self):
-        import gocept.amqprun.server
+        import gocept.amqprun.message
         import transaction
         self.create_reader()
         handler = mock.Mock()
         session = self.reader.create_session(handler)
-        session.send(gocept.amqprun.server.Message(
+        session.send(gocept.amqprun.message.Message(
             {u'content_type': u'text/plain'},
             'body', routing_key='test.routing'))
         # Patch out basic_ack because we haven't actually received a message
@@ -313,8 +313,8 @@ class DataManagerTest(unittest.TestCase):
         zope.component.testing.tearDown()
 
     def get_message(self):
-        import gocept.amqprun.server
-        return gocept.amqprun.server.Message({}, '', 'mytag')
+        import gocept.amqprun.message
+        return gocept.amqprun.message.Message({}, '', 'mytag')
 
     def get_dm(self):
         import gocept.amqprun.server
@@ -446,40 +446,6 @@ class DataManagerTest(unittest.TestCase):
         dm = self.get_dm()
         dm.abort(None)
         self.assertTrue(self.channel_manager.release.called)
-
-
-class TestMessage(unittest.TestCase):
-
-    def test_message_should_provide_IMessage(self):
-        from gocept.amqprun.server import Message
-        import gocept.amqprun.interfaces
-        message = Message({}, 2, 3)
-        zope.interface.verify.verifyObject(
-            gocept.amqprun.interfaces.IMessage,
-            message)
-        self.assertEqual(2, message.body)
-        self.assertEqual('amq.topic', message.exchange)
-
-    def test_header_should_be_converted_to_BasicProperties(self):
-        from gocept.amqprun.server import Message
-        import pika.spec
-        now = int(time.time())
-        message = Message(
-            dict(foo='bar', content_type='text/xml', app_id='myapp'), None,
-            delivery_tag=1)
-        header = message.header
-        self.assertTrue(isinstance(header, pika.spec.BasicProperties))
-        self.assertEqual(dict(foo='bar'), header.headers)
-        self.assertTrue(header.timestamp >= now)
-        self.assertEqual('text/xml', header.content_type)
-        self.assertEqual(2, header.delivery_mode) # persistent
-        self.assertEqual('myapp', header.app_id)
-
-    def test_routing_key_and_delivery_tag_should_be_exclusive(self):
-        from gocept.amqprun.server import Message
-        self.assertRaises(
-            zope.interface.Invalid,
-            Message, {}, None, delivery_tag=1, routing_key=2)
 
 
 class SessionTest(unittest.TestCase):
