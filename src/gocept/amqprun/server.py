@@ -33,11 +33,12 @@ class Connection(pika.AsyncoreConnection):
 
     _close_now = False
 
-    def __init__(self, *args, **kw):
+    def __init__(self, parameters):
         self.lock = threading.Lock()
         self._main_thread_lock = threading.RLock()
         self._main_thread_lock.acquire()
-        pika.AsyncoreConnection.__init__(self, *args, **kw)
+        pika.AsyncoreConnection.__init__(self, pika.ConnectionParameters(
+            parameters.hostname))
 
     def connect(self, host, port):
         self.notifier_r, self.notifier_w = os.pipe()
@@ -96,16 +97,16 @@ class MessageReader(object):
 
     CHANNEL_LIFE_TIME = 360
 
-    def __init__(self, hostname):
-        self.hostname = hostname
+    def __init__(self, connection_factory):
+        self.connection_factory = connection_factory
         self.tasks = Queue.Queue()
         self.running = False
         self._switching_channels = False
         self._old_channel = None
 
     def start(self):
-        log.info('starting message consumer for %s' % self.hostname)
-        self.connection = Connection(pika.ConnectionParameters(self.hostname))
+        self.connection = self.connection_factory()
+        log.info('starting message consumer for %s' % self.connection)
         with self.connection.lock:
             self.open_channel()
             self.running = True

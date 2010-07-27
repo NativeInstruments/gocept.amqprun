@@ -4,7 +4,6 @@
 import collections
 import gocept.amqprun.testing
 import mock
-import os
 import threading
 import time
 import unittest
@@ -19,7 +18,8 @@ class MessageReaderTest(
 
     def create_reader(self):
         import gocept.amqprun.server
-        self.reader = gocept.amqprun.server.MessageReader(self.layer.hostname)
+        self.reader = gocept.amqprun.server.MessageReader(
+            lambda: gocept.amqprun.server.Connection(self.layer))
         self.start_thread(self.reader)
 
     def test_loop_can_be_stopped_from_outside(self):
