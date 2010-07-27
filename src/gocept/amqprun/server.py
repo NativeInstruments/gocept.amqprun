@@ -287,7 +287,8 @@ class AMQPDataManager(object):
         self.connection_lock.release()
 
     def sortKey(self):
-        return '\xff'
+        # Try to sort last, so that we vote last.
+        return "~gocept.amqprun:%f" % time.time()
 
 
 # Holds a reference to the reader stared by main(). This is to make testing
