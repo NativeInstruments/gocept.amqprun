@@ -227,7 +227,6 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
             self.connection.delayed_call(1, self.connection.reconnect)
 
 
-
 class Session(object):
 
     zope.interface.implements(gocept.amqprun.interfaces.ISession)

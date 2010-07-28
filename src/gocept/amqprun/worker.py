@@ -30,18 +30,22 @@ class Worker(threading.Thread):
             except Queue.Empty:
                 pass
             else:
-                transaction.begin()
-                session = self.session_factory(handler)
                 try:
-                    response = handler()
-                    for msg in response:
-                        session.send(msg)
+                    transaction.begin()
+                    session = self.session_factory(handler)
+                    try:
+                        response = handler()
+                        for msg in response:
+                            session.send(msg)
+                        transaction.commit()
+                    except:
+                        log.error("Error while processing message",
+                                  exc_info=True)
+                        transaction.abort()
                 except:
-                    log.error("Error while processing message",
-                              exc_info=True)
-                    transaction.abort()
-                else:
-                    transaction.commit()
+                    log.error(
+                        'Unhandled exception, prevent thread from crashing',
+                        exc_info=True)
 
     def stop(self):
         self.running = False
