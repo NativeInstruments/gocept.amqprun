@@ -35,6 +35,7 @@ setup(
     ],
     extras_require=dict(test=[
         'mock',
+        'tcpwatch',
         'zope.testing',
     ]),
     entry_points=dict(console_scripts=[
