@@ -26,8 +26,7 @@ class MessageReaderTest(
             username = None
             password = None
             heartbeat_interval = 0
-        self.reader = gocept.amqprun.server.MessageReader(
-            lambda: gocept.amqprun.server.Connection(Parameters))
+        self.reader = gocept.amqprun.server.MessageReader(Parameters)
         self.start_thread(self.reader)
 
     def test_loop_can_be_stopped_from_outside(self):
@@ -477,7 +476,8 @@ class ConnectionTest(unittest.TestCase):
     def test_parameters_should_be_converted_to_pika(self):
         from gocept.amqprun.server import Connection
         with mock.patch('pika.AsyncoreConnection.__init__') as init:
-            Connection(mock.sentinel)
+            conn = Connection(mock.sentinel)
+            conn.finish_init()
             params = init.call_args[0][1]
             self.assertEqual(mock.sentinel.hostname, params.host)
             self.assertEqual(mock.sentinel.port, params.port)
@@ -495,6 +495,55 @@ class ConnectionTest(unittest.TestCase):
             parameters = mock.Mock()
             parameters.username = None
             parameters.password = None
-            Connection(parameters)
+            conn = Connection(parameters)
+            conn.finish_init()
             params = init.call_args[0][1]
             self.assertIsNone(params.credentials)
+
+
+class DyingRabbitTest(
+    gocept.amqprun.testing.LoopTestCase,
+    gocept.amqprun.testing.QueueTestCase):
+
+    def create_reader(self):
+        import gocept.amqprun.server
+
+        class Parameters(object):
+            hostname = self.layer.hostname
+            port = None
+            virtual_host = '/'
+            username = None
+            password = None
+            heartbeat_interval = 2
+        self.reader = gocept.amqprun.server.MessageReader(Parameters)
+        self.start_thread(self.reader)
+
+    def test_socket_close_should_not_stop_main_loop_and_open_connection(self):
+        # This hopefully simulates local errors
+        return
+        self.create_reader()
+        self.assertTrue(self.reader.connection.is_alive())
+        time.sleep(0.5)
+        self.reader.connection.dispatcher.socket.close()
+        self.reader.connection.notify()
+        time.sleep(3)
+
+        self.assertTrue(self.thread.is_alive())
+        self.assertTrue(self.reader.connection.is_alive())
+        self.assertEqual(self.reader.connection.channels[1],
+                         self.reader.channel.handler)
+        # Do something with the channel
+        self.reader.channel.tx_select()
+
+    def test_remote_close_should_xxx(self):
+        return
+        self.create_reader()
+        self.assertTrue(self.reader.connection.is_alive())
+        import pdb; pdb.set_trace() 
+
+        self.assertTrue(self.thread.is_alive())
+        self.assertTrue(self.reader.connection.is_alive())
+        self.assertEqual(self.reader.connection.channels[1],
+                         self.reader.channel.handler)
+        # Do something with the channel
+        self.reader.channel.tx_select()

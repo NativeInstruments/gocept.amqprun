@@ -11,7 +11,7 @@ import os
 import pika
 import pika.asyncore_adapter
 import pika.spec
-import socket
+import select
 import threading
 import time
 import transaction.interfaces
@@ -33,27 +33,40 @@ class Connection(pika.AsyncoreConnection):
 
     _close_now = False
 
-    def __init__(self, parameters):
+    def __init__(self, parameters, reconnection_strategy=None):
         self.lock = threading.Lock()
         self._main_thread_lock = threading.RLock()
         self._main_thread_lock.acquire()
+        self.notifier_dispatcher = None
         credentials = None
         if parameters.username and parameters.password:
             credentials = pika.PlainCredentials(
                 parameters.username, parameters.password)
-        pika.AsyncoreConnection.__init__(self, pika.ConnectionParameters(
+        self._pika_parameters = pika.ConnectionParameters(
             host=parameters.hostname,
             port=parameters.port,
             virtual_host=parameters.virtual_host,
             credentials=credentials,
-            heartbeat=parameters.heartbeat_interval))
+            heartbeat=parameters.heartbeat_interval)
+        self._reconnection_strategy = reconnection_strategy
+
+    def finish_init(self):
+        pika.AsyncoreConnection.__init__(
+            self, self._pika_parameters, wait_for_open=True,
+            reconnection_strategy=self._reconnection_strategy)
 
     def connect(self, host, port):
-        self.notifier_r, self.notifier_w = os.pipe()
-        self.notifier_dispatcher = WriteDispatcher(self.notifier_r)
-        self.dispatcher = pika.asyncore_adapter.RabbitDispatcher(self)
-        self.dispatcher.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.dispatcher.connect((host, port))
+        if not self.notifier_dispatcher:
+            self.notifier_r, self.notifier_w = os.pipe()
+            self.notifier_dispatcher = WriteDispatcher(self.notifier_r)
+        pika.AsyncoreConnection.connect(self, host, port)
+
+    def reconnect(self):
+        pika.AsyncoreConnection.reconnect(self)
+        self.notify()
+
+    def notify(self):
+        os.write(self.notifier_w, 'R')
 
     def drain_events(self):
         # The actual communication takes *only* place in the main thread. If
@@ -68,7 +81,7 @@ class Connection(pika.AsyncoreConnection):
             # exactly 1 byte. This corresponds to handle_read() reading exactly
             # one byte.
             if self.outbound_buffer:
-                os.write(self.notifier_w, 'W')
+                self.notify()
                 time.sleep(0.05)
 
     @property
@@ -80,10 +93,11 @@ class Connection(pika.AsyncoreConnection):
             return
         if self.is_main_thread:
             pika.AsyncoreConnection.close(self)
+            self.notifier_dispatcher.close()
             self._main_thread_lock.release()
         else:
             self._close_now = True
-            os.write(self.notifier_w, 'C')
+            self.notify()
 
 
 class Consumer(object):
@@ -99,34 +113,45 @@ class Consumer(object):
         self.tasks.put(self.handler(message))
 
 
-class MessageReader(object):
+class MessageReader(object, pika.connection.NullReconnectionStrategy):
 
     zope.interface.implements(gocept.amqprun.interfaces.ILoop)
 
     CHANNEL_LIFE_TIME = 360
 
-    def __init__(self, connection_factory):
-        self.connection_factory = connection_factory
+    def __init__(self, connection_parameters):
+        self.connection_parameters = connection_parameters
         self.tasks = Queue.Queue()
         self.running = False
-        self._switching_channels = False
+        self.connection = None
+        self.channel = None
         self._old_channel = None
+        self._switching_channels = False
 
     def start(self):
-        self.connection = self.connection_factory()
-        log.info('starting message consumer for %s' % self.connection)
-        with self.connection.lock:
-            self.open_channel()
-            self.running = True
+        log.info('Starting message consumer.')
+        self.connection = Connection(self.connection_parameters, self)
+        self.connection.finish_init()
+        self.running = True
         while self.running:
             self.run_once()
-        self.connection.close()
+        # closing
+        self.connection.ensure_closed()
+        self.connection = None
 
     def run_once(self):
-        self.connection.drain_events()
-        if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
-            self.switch_channel()
-        self.close_old_channel()
+        try:
+            self.connection.drain_events()
+        except select.error:
+            log.error("Error while draining events", exc_info=True)
+            self.connection._disconnect_transport(
+                "Select error")
+            self.channel = self._old_channel = None
+            return
+        if self.connection.is_alive():
+            if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
+                self.switch_channel()
+            self.close_old_channel()
 
     def stop(self):
         self.running = False
@@ -139,6 +164,7 @@ class MessageReader(object):
         return session
 
     def open_channel(self):
+        #assert self.channel is None
         self.channel = self.connection.channel()
         self._declare_and_bind_queues()
         self._channel_opened = time.time()
@@ -146,6 +172,7 @@ class MessageReader(object):
     def switch_channel(self):
         if self._switching_channels:
             return False
+        # XXX needs to be non-blocking in main thread
         with self.connection.lock:
             self._switching_channels = True
             for consumer_tag in self.channel.callbacks.keys():
@@ -162,6 +189,7 @@ class MessageReader(object):
     def close_old_channel(self):
         if self._old_channel is None:
             return
+        # XXX needs to be non-blocking in main thread
         with self.connection.lock:
             closed = gocept.amqprun.interfaces.IChannelManager(
                 self._old_channel).close_if_possible()
@@ -184,6 +212,20 @@ class MessageReader(object):
             self.channel.basic_consume(
                 Consumer(declaration, self.tasks),
                 queue=declaration.queue_name)
+
+    # Connection Strategy Interface
+
+    def on_connection_open(self, connection):
+        assert connection == self.connection
+        assert connection.is_alive()
+        self.open_channel()
+
+    def on_connection_closed(self, connection):
+        assert connection == self.connection
+        self._old_channel = self.channel = None
+        if self.running:
+            self.connection.delayed_call(1, self.connection.reconnect)
+
 
 
 class Session(object):

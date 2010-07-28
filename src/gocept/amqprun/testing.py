@@ -2,6 +2,7 @@
 # See also LICENSE.txt
 
 import amqplib.client_0_8 as amqp
+import asyncore
 import pkg_resources
 import string
 import tempfile
@@ -82,6 +83,7 @@ class LoopTestCase(unittest.TestCase):
             self.loop.stop()
             self.thread.join()
         super(LoopTestCase, self).tearDown()
+        self.assertEqual({}, asyncore.socket_map)
 
     def start_thread(self, loop):
         self.loop = loop

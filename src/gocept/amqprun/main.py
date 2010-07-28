@@ -30,8 +30,7 @@ def main(config_file):
 
     zope.configuration.xmlconfig.file(conf.worker.component_configuration)
 
-    reader = gocept.amqprun.server.MessageReader(
-        lambda: gocept.amqprun.server.Connection(conf.amqp_server))
+    reader = gocept.amqprun.server.MessageReader(conf.amqp_server)
     main_reader = reader
 
     for i in range(conf.worker.amount):
