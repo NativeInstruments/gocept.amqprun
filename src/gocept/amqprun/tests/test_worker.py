@@ -38,6 +38,10 @@ class WorkerTest(unittest.TestCase):
         # this test simply should not hang indefinitely
         self._create_worker()
 
+    def test_worker_should_be_daemon_thread(self):
+        self._create_worker()
+        self.assertTrue(self.worker.daemon)
+
     def test_worker_gets_messages_from_queue(self):
         self._create_worker()
 
