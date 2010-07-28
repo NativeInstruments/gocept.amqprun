@@ -3,8 +3,15 @@
 
 import collections
 import gocept.amqprun.testing
+import os
 import mock
+import pika.spec
+import random
+import signal
+import subprocess
+import sys
 import threading
+import tempfile
 import time
 import unittest
 import zope.component
@@ -505,22 +512,28 @@ class DyingRabbitTest(
     gocept.amqprun.testing.LoopTestCase,
     gocept.amqprun.testing.QueueTestCase):
 
-    def create_reader(self):
+    pid = None
+
+    def tearDown(self):
+        super(DyingRabbitTest, self).tearDown()
+        if self.pid:
+            os.kill(self.pid, signal.SIGINT)
+
+    def create_reader(self, _port=None):
         import gocept.amqprun.server
 
         class Parameters(object):
             hostname = self.layer.hostname
-            port = None
+            port = _port
             virtual_host = '/'
             username = None
             password = None
-            heartbeat_interval = 2
+            heartbeat_interval = 0
         self.reader = gocept.amqprun.server.MessageReader(Parameters)
         self.start_thread(self.reader)
 
     def test_socket_close_should_not_stop_main_loop_and_open_connection(self):
         # This hopefully simulates local errors
-        return
         self.create_reader()
         self.assertTrue(self.reader.connection.is_alive())
         time.sleep(0.5)
@@ -535,15 +548,36 @@ class DyingRabbitTest(
         # Do something with the channel
         self.reader.channel.tx_select()
 
-    def test_remote_close_should_xxx(self):
-        return
-        self.create_reader()
+    def test_remote_close_should_reopen_connection(self):
+        port = random.randint(30000, 40000)
+        pid = self.tcpwatch(port)
+        self.create_reader(port)
+        old_channel = self.reader.channel
         self.assertTrue(self.reader.connection.is_alive())
-        import pdb; pdb.set_trace() 
+
+        os.kill(pid, signal.SIGINT)
+        self.pid = self.tcpwatch(port)
+        time.sleep(1)
 
         self.assertTrue(self.thread.is_alive())
         self.assertTrue(self.reader.connection.is_alive())
         self.assertEqual(self.reader.connection.channels[1],
                          self.reader.channel.handler)
+        self.assertNotEqual(old_channel, self.reader.channel)
         # Do something with the channel
         self.reader.channel.tx_select()
+
+    def tcpwatch(self, port):
+        script = tempfile.NamedTemporaryFile(suffix='.py')
+        script.write("""
+import sys
+sys.path[:] = %(path)r
+import tcpwatch
+tcpwatch.main(['-L', '%(src)s:%(dest)s', '-s'])
+        """ % dict(path=sys.path, src=port, dest=pika.spec.PORT))
+        script.flush()
+        process = subprocess.Popen(
+            [sys.executable, script.name],
+            stdout=open('/dev/null', 'w'), stderr=subprocess.STDOUT)
+        time.sleep(0.5)
+        return process.pid
