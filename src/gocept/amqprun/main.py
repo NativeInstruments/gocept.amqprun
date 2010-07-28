@@ -32,7 +32,8 @@ def main(config_file):
     zope.component.provideUtility(settings)
     if conf.settings:
         settings.update(
-            {unicode(k): unicode(v) for k, v in conf.settings.items()})
+            {unicode(k): unicode(v, 'UTF-8')
+             for k, v in conf.settings.items()})
 
     zope.configuration.xmlconfig.file(conf.worker.component_configuration)
 
