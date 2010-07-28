@@ -40,13 +40,6 @@ class MessageReaderTest(
         # this test simply should not hang indefinitely
         self.create_reader()
 
-    @mock.patch('gocept.amqprun.server.Connection')
-    def test_loop_should_exit_on_keyboardinterrupt(self, Connection):
-        Connection().lock = threading.Lock()
-        Connection().drain_events.side_effect = KeyboardInterrupt
-        # this test simply should not hang indefinitely
-        self.create_reader()
-
     def test_messages_wo_handler_declaration_should_not_arrive_in_tasks(self):
         self.create_reader()
         self.send_message('foo')

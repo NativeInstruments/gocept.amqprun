@@ -129,7 +129,7 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
         self._switching_channels = False
 
     def start(self):
-        log.info('Starting message consumer.')
+        log.info('Starting message reader.')
         self.connection = Connection(self.connection_parameters, self)
         self.connection.finish_init()
         self.running = True
@@ -154,6 +154,7 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
             self.close_old_channel()
 
     def stop(self):
+        log.info('Stopping message reader.')
         self.running = False
         self.connection.close()
 
@@ -218,10 +219,12 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
     def on_connection_open(self, connection):
         assert connection == self.connection
         assert connection.is_alive()
+        log.info('AMQP connection opened.')
         self.open_channel()
 
     def on_connection_closed(self, connection):
         assert connection == self.connection
+        log.info('AMQP connection closed.')
         self._old_channel = self.channel = None
         if self.running:
             self.connection.delayed_call(1, self.connection.reconnect)

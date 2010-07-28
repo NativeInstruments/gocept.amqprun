@@ -22,7 +22,7 @@ class Worker(threading.Thread):
         self.daemon = True
 
     def run(self):
-        log.info('started worker')
+        log.info('Starting worker')
         self.running = True
         while self.running:
             try:
@@ -48,5 +48,6 @@ class Worker(threading.Thread):
                         exc_info=True)
 
     def stop(self):
+        log.info('Stopping worker.')
         self.running = False
         self.join()

@@ -5,9 +5,14 @@ import ZConfig
 import gocept.amqprun.server
 import gocept.amqprun.settings
 import gocept.amqprun.worker
+import logging
 import pkg_resources
+import signal
 import zope.component
 import zope.configuration.xmlconfig
+
+
+log = logging.getLogger(__name__)
 
 
 # Holds a reference to the reader stared by main(). This is to make testing
@@ -33,9 +38,21 @@ def main(config_file):
     reader = gocept.amqprun.server.MessageReader(conf.amqp_server)
     main_reader = reader
 
+    def stop_reader(signum, frame):
+        log.info("Received signal %s, terminating." % signum)
+        for worker in workers:
+            worker.stop()
+        reader.stop()
+
+    signal.signal(signal.SIGINT, stop_reader)
+    signal.signal(signal.SIGTERM, stop_reader)
+
+    workers = []
     for i in range(conf.worker.amount):
         worker = gocept.amqprun.worker.Worker(
             reader.tasks, reader.create_session)
+        workers.append(worker)
         worker.start()
+
     reader.start()  # this blocks until reader is stopped from outside.
     main_reader = None

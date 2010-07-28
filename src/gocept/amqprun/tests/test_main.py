@@ -4,6 +4,10 @@
 import gocept.amqprun.testing
 import os
 import mock
+import signal
+import subprocess
+import sys
+import tempfile
 import time
 import zope.component
 
@@ -90,3 +94,37 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
             gocept.amqprun.interfaces.ISettings)
         self.assertEquals('foo', settings.get('test.setting.1'))
         self.assertEquals('bar', settings.get('test.setting.2'))
+
+
+class TestMainProcess(gocept.amqprun.testing.MainTestCase):
+
+    def create_reader(self):
+        self.make_config(__name__, 'process')
+        script = tempfile.NamedTemporaryFile(suffix='.py')
+        script.write("""
+import sys
+sys.path[:] = %(path)r
+import gocept.amqprun.main
+gocept.amqprun.main.main('%(config)s')
+        """ % dict(path=sys.path, config=self.config.name))
+        script.flush()
+        self.log = tempfile.TemporaryFile()
+        process = subprocess.Popen(
+            [sys.executable, script.name],
+            stdout=self.log, stderr=subprocess.STDOUT)
+        time.sleep(0.5)
+        self.pid = process.pid
+
+    def test_sigterm_shuts_down_process_properly(self):
+        self.create_reader()
+        os.kill(self.pid, signal.SIGTERM)
+        time.sleep(1)
+        self.log.seek(0)
+        self.assertIn('Received signal 15, terminating.', self.log.read())
+
+    def test_sigint_shuts_down_process_properly(self):
+        self.create_reader()
+        os.kill(self.pid, signal.SIGINT)
+        time.sleep(1)
+        self.log.seek(0)
+        self.assertIn('Received signal 2, terminating.', self.log.read())
