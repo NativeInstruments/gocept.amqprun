@@ -134,13 +134,14 @@ class MainTestCase(LoopTestCase, QueueTestCase):
 
     def make_config(self, package, name, mapping=None):
         base = string.Template(
-            pkg_resources.resource_string(package, '%s.conf' % name))
+            unicode(pkg_resources.resource_string(package, '%s.conf' % name),
+                    'utf8'))
         zcml = pkg_resources.resource_filename(
             package, '%s.zcml' % name)
         sub = dict(site_zcml=zcml)
         if mapping:
             sub.update(mapping)
         self.config = tempfile.NamedTemporaryFile()
-        self.config.write(base.substitute(sub))
+        self.config.write(base.substitute(sub).encode('utf8'))
         self.config.flush()
         return self.config.name
