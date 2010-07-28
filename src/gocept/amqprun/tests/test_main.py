@@ -1,3 +1,4 @@
+# coding: utf8
 # Copyright (c) 2010 gocept gmbh & co. kg
 # See also LICENSE.txt
 
@@ -105,6 +106,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         settings = zope.component.getUtility(
             gocept.amqprun.interfaces.ISettings)
         self.assertIsInstance(settings.get('test.setting.1'), unicode)
+        self.assertEquals(u'Ümläuten', settings.get('test.setting.unicode'))
 
 
 class TestMainProcess(gocept.amqprun.testing.MainTestCase):
