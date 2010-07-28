@@ -3,7 +3,9 @@
 
 import amqplib.client_0_8 as amqp
 import asyncore
+import mock
 import pkg_resources
+import signal
 import string
 import tempfile
 import threading
@@ -103,6 +105,8 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         import gocept.amqprun.worker
         self._timeout = gocept.amqprun.worker.Worker.timeout
         gocept.amqprun.worker.Worker.timeout = 0.05
+        self.orig_signal = signal.signal
+        signal.signal = mock.Mock()
         super(MainTestCase, self).setUp()
 
     def tearDown(self):
@@ -110,6 +114,7 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         for t in list(threading.enumerate()):
             if isinstance(t, gocept.amqprun.worker.Worker):
                 t.stop()
+        signal.signal = self.orig_signal
         super(MainTestCase, self).tearDown()
         gocept.amqprun.worker.Worker.timeout = self._timeout
 
