@@ -112,7 +112,7 @@ gocept.amqprun.main.main('%(config)s')
         process = subprocess.Popen(
             [sys.executable, script.name],
             stdout=self.log, stderr=subprocess.STDOUT)
-        time.sleep(0.5)
+        time.sleep(1)
         self.pid = process.pid
 
     def test_sigterm_shuts_down_process_properly(self):
