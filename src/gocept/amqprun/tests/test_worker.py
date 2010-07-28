@@ -100,19 +100,41 @@ class WorkerTest(unittest.TestCase):
     @mock.patch('transaction.abort')
     def test_on_exception_transaction_should_abort(self, mock1, mock2):
         import gocept.amqprun.handler
-        provoke_called = []
-
-        def provoke_error(msg):
-            provoke_called.append(True)
-            raise RuntimeError('provoked error')
-
         self._create_worker()
-
+        provoke_error = mock.Mock(side_effect=RuntimeError('provoked error'))
         handler = gocept.amqprun.handler.FactoredHandler(
             provoke_error, mock.sentinel.message)
         self.queue.put(handler)
         time.sleep(0.1)
         self.assertEqual(0, self.queue.qsize())
-        self.assertEqual([True], provoke_called)
+        self.assertTrue(provoke_error.called)
         self.assertFalse(transaction.commit.called)
         self.assertTrue(transaction.abort.called)
+
+    @mock.patch('transaction.commit')
+    @mock.patch('transaction.abort')
+    def test_error_on_commit_should_abort_transaction(self, mock1, mock2):
+        import gocept.amqprun.handler
+        self._create_worker()
+        handler = gocept.amqprun.handler.FactoredHandler(
+            lambda x: None, mock.sentinel.message)
+        transaction.commit.side_effect = RuntimeError('commit error')
+        self.queue.put(handler)
+        time.sleep(0.1)
+        self.assertEqual(0, self.queue.qsize())
+        self.assertTrue(transaction.commit.called)
+        self.assertTrue(transaction.abort.called)
+
+    @mock.patch('transaction.abort')
+    def test_error_on_abort_should_not_crash_thread(self, mock1):
+        import gocept.amqprun.handler
+        self._create_worker()
+        provoke_error = mock.Mock(side_effect=RuntimeError('provoked error'))
+        handler = gocept.amqprun.handler.FactoredHandler(
+            provoke_error, mock.sentinel.message)
+        transaction.abort.side_effect = RuntimeError('abort error')
+        self.queue.put(handler)
+        time.sleep(0.1)
+        self.assertEqual(0, self.queue.qsize())
+        self.assertTrue(transaction.abort.called)
+        self.assertTrue(self.worker.is_alive())
