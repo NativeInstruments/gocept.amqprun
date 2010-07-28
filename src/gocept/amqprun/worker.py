@@ -19,6 +19,7 @@ class Worker(threading.Thread):
         self.session_factory = session_factory
         self.running = False
         super(Worker, self).__init__()
+        self.daemon = True
 
     def run(self):
         log.info('started worker')
