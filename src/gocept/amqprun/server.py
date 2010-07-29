@@ -108,7 +108,7 @@ class Consumer(object):
 
     def __call__(self, channel, method, header, body):
         message = gocept.amqprun.message.Message(
-            header, body, method.delivery_tag)
+            header, body, method.delivery_tag, method.routing_key)
         log.debug("Adding message: %s", message)
         self.tasks.put(self.handler(message))
 

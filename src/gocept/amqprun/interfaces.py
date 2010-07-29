@@ -39,14 +39,6 @@ class IMessage(zope.interface.Interface):
     routing_key = zope.interface.Attribute('Routing key (if any)')
     exchange = zope.interface.Attribute('Exchange (default: amqp.topic)')
 
-    @zope.interface.invariant
-    def delivery_tag_xor_routing_key(obj):
-        if (obj.delivery_tag is None) == (obj.routing_key is None):
-            raise zope.interface.Invalid(
-                'Exactly one of {delivery_tag, routing_key}'
-                ' is required, got {%r, %r}'
-                % (obj.delivery_tag, obj.routing_key))
-
 
 class ISession(zope.interface.Interface):
     """AMQP session."""

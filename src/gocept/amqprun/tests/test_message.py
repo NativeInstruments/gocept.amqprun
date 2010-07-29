@@ -29,9 +29,3 @@ class TestMessage(unittest.TestCase):
         self.assertEqual('text/xml', header.content_type)
         self.assertEqual(2, header.delivery_mode) # persistent
         self.assertEqual('myapp', header.app_id)
-
-    def test_routing_key_and_delivery_tag_should_be_exclusive(self):
-        from gocept.amqprun.message import Message
-        self.assertRaises(
-            zope.interface.Invalid,
-            Message, {}, None, delivery_tag=1, routing_key=2)
