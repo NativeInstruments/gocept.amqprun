@@ -224,9 +224,14 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
 
     def on_connection_closed(self, connection):
         assert connection == self.connection
-        log.info('AMQP connection closed.')
+        if self.connection.connection_close:
+            message = self.connection.connection_close.reply_text
+        else:
+            message = 'no detail available'
+        log.info('AMQP connection closed (%s)', message)
         self._old_channel = self.channel = None
         if self.running:
+            log.info('Reconnecting in 1s')
             self.connection.delayed_call(1, self.connection.reconnect)
 
 
