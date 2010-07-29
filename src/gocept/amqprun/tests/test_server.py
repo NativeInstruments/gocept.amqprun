@@ -574,3 +574,17 @@ tcpwatch.main(['-L', '%(src)s:%(dest)s', '-s'])
             stdout=open('/dev/null', 'w'), stderr=subprocess.STDOUT)
         time.sleep(0.5)
         return process.pid
+
+
+class ConsumerTest(unittest.TestCase):
+
+    def test_routing_key_should_be_transferred_to_message(self):
+        from gocept.amqprun.server import Consumer
+        handler = mock.Mock()
+        tasks = mock.Mock()
+        consumer = Consumer(handler, tasks)
+        method = mock.Mock()
+        method.routing_key = 'route'
+        consumer(mock.sentinel.channel, method, {}, '')
+        message = handler.call_args[0][0]
+        self.assertEqual('route', message.routing_key)
