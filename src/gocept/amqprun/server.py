@@ -68,12 +68,12 @@ class Connection(pika.AsyncoreConnection):
     def notify(self):
         os.write(self.notifier_w, 'R')
 
-    def drain_events(self):
+    def drain_events(self, timeout=None):
         # The actual communication takes *only* place in the main thread. If
         # another thread detects that there is data to be written, it notifies
         # the main thread about it using the notifier pipe.
         if self.is_main_thread:
-            pika.asyncore_loop(count=1)
+            pika.asyncore_loop(count=1, timeout=timeout)
             if self._close_now:
                 self.close()
         else:
