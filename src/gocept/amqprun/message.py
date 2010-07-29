@@ -21,7 +21,6 @@ class Message(object):
         self.delivery_tag = delivery_tag
         self.routing_key = (
             unicode(routing_key).encode('UTF-8') if routing_key else None)
-        gocept.amqprun.interfaces.IMessage.validateInvariants(self)
 
     def convert_header(self, header):
         header = header.copy()
