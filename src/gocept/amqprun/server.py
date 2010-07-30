@@ -109,7 +109,7 @@ class Consumer(object):
     def __call__(self, channel, method, header, body):
         message = gocept.amqprun.message.Message(
             header, body, method.delivery_tag, method.routing_key)
-        log.debug("Adding message: %s", message)
+        log.debug('Received message: %s', method.routing_key)
         self.tasks.put(self.handler(message))
 
 
@@ -165,7 +165,7 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
         return session
 
     def open_channel(self):
-        #assert self.channel is None
+        assert self.channel is None
         self.channel = self.connection.channel()
         self._declare_and_bind_queues()
         self._channel_opened = time.time()
@@ -184,6 +184,7 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
                 except Queue.Empty:
                     break
             self._old_channel = self.channel
+            self.channel = None
             self.open_channel()
             return True  # Switch successful
 
