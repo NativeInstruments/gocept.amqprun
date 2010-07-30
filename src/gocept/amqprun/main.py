@@ -60,7 +60,7 @@ def main(config_file):
     # Start the reader in a separate thread. When we receive a signal
     # (INT/TERM) the main thread is busy handling the signal (stop_reader()
     # above). If the reader was running in the main thread it could not longer
-    # do the communication with the amqp server. This leads wo frozen workers
+    # do the communication with the amqp server. This leads to frozen workers
     # because they wait for a commit or abort which requires communication.
     # Using a separate thread for the reader allows the reader to run until it
     # is explicitly stopped by the signal handler.
