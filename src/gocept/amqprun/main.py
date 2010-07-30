@@ -8,9 +8,10 @@ import gocept.amqprun.worker
 import logging
 import pkg_resources
 import signal
+import threading
+import time
 import zope.component
 import zope.configuration.xmlconfig
-
 
 log = logging.getLogger(__name__)
 
@@ -56,5 +57,17 @@ def main(config_file):
         workers.append(worker)
         worker.start()
 
-    reader.start()  # this blocks until reader is stopped from outside.
+    # Start the reader in a separate thread. When we receive a signal
+    # (INT/TERM) the main thread is busy handling the signal (stop_reader()
+    # above). If the reader was running in the main thread it could not longer
+    # do the communication with the amqp server. This leads wo frozen workers
+    # because they wait for a commit or abort which requires communication.
+    # Using a separate thread for the reader allows the reader to run until it
+    # is explicitly stopped by the signal handler.
+    reader_thread = threading.Thread(target=reader.start)
+    reader_thread.start()
+    while reader_thread.is_alive():
+        time.sleep(1)
+    reader_thread.join()
+    log.info('Exiting')
     main_reader = None
