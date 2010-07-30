@@ -109,7 +109,8 @@ class Consumer(object):
     def __call__(self, channel, method, header, body):
         message = gocept.amqprun.message.Message(
             header, body, method.delivery_tag, method.routing_key)
-        log.debug('Received message: %s', method.routing_key)
+        log.debug("Received message %s via routing key '%s'",
+                  message.delivery_tag, method.routing_key)
         self.tasks.put(self.handler(message))
 
 
@@ -174,6 +175,7 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
     def switch_channel(self):
         if self._switching_channels:
             return False
+        log.info('Switching to a new channel')
         # XXX needs to be non-blocking in main thread
         with self.connection.lock:
             self._switching_channels = True
@@ -201,14 +203,16 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
                 self._switching_channels = False
 
     def _declare_and_bind_queues(self):
+        assert self.channel is not None
         for name, declaration in zope.component.getUtilitiesFor(
             gocept.amqprun.interfaces.IHandlerDeclaration):
-            log.info("Declaring queue: %s", declaration.queue_name)
+            log.info(
+                "Channel[%s]: Handling routing key '%s' on queue '%s' via '%s'",
+                self.channel.handler.channel_number,
+                declaration.routing_key, declaration.queue_name, name)
             self.channel.queue_declare(
                 queue=declaration.queue_name, durable=True,
                 exclusive=False, auto_delete=False)
-            log.info("Binding queue: %s to routing key %s",
-                     declaration.queue_name, declaration.routing_key)
             self.channel.queue_bind(
                 queue=declaration.queue_name, exchange='amq.topic',
                 routing_key=declaration.routing_key)
