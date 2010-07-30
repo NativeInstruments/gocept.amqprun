@@ -151,16 +151,27 @@ gocept.amqprun.main.main('%(config)s')
         time.sleep(1)
         self.pid = process.pid
 
-    def test_sigterm_shuts_down_process_properly(self):
+    def assert_shutdown(self, signal_):
         self.create_reader()
-        os.kill(self.pid, signal.SIGTERM)
+        self._queues.append('test.queue')
+        for i in range(50):
+            self.send_message('honk', 'test.routing')
+        os.kill(self.pid, signal_)
         time.sleep(1)
         self.log.seek(0)
-        self.assertIn('Received signal 15, terminating.', self.log.read())
+        for i in range(22):
+            result = os.waitpid(self.pid, os.WNOHANG)
+            if result != (0, 0):
+                break
+            time.sleep(0.5)
+        else:
+            os.kill(self.pid, signal.SIGKILL)
+            self.fail('Child process did not exit')
+        self.assertIn('Received signal %s, terminating.' % signal_,
+                      self.log.read())
+
+    def test_sigterm_shuts_down_process_properly(self):
+        self.assert_shutdown(signal.SIGTERM)
 
     def test_sigint_shuts_down_process_properly(self):
-        self.create_reader()
-        os.kill(self.pid, signal.SIGINT)
-        time.sleep(1)
-        self.log.seek(0)
-        self.assertIn('Received signal 2, terminating.', self.log.read())
+        self.assert_shutdown(signal.SIGINT)
