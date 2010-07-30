@@ -166,6 +166,7 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
 
     def open_channel(self):
         assert self.channel is None
+        log.debug('Opening new channel')
         self.channel = self.connection.channel()
         self._declare_and_bind_queues()
         self._channel_opened = time.time()
@@ -223,6 +224,7 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
         log.info('AMQP connection opened.')
         with self.connection.lock:
             self.open_channel()
+        log.info('Finished connection initialization')
 
     def on_connection_closed(self, connection):
         assert connection == self.connection
