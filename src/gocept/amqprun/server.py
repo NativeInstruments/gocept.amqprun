@@ -288,10 +288,10 @@ class AMQPDataManager(object):
         self._channel.tx_select()
 
     def commit(self, transaction):
-        log.debug("Acking")
+        log.debug("Ack'ing message %s", self.message.delivery_tag)
         self._channel.basic_ack(self.message.delivery_tag)
         for message in self.session.messages:
-            log.debug("Publishing %s", message)
+            log.debug("Publishing message to %s", message.routing_key)
             self._channel.basic_publish(
                 message.exchange, message.routing_key,
                 message.body, message.header)
