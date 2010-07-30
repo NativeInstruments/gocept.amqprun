@@ -31,6 +31,29 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
             self.fail('Message was not received')
         self.assertEquals(1, len(messages_received))
 
+    def test_existing_messages_in_queue_should_not_crash_startup(self):
+        self.make_config(__name__, 'integration')
+        self._queues.append('test.queue')
+        self._queues.append('test.queue.error')
+        # Start the reader so it creates and binds queues
+        self.create_reader()
+        # Stop the reader so it doesn't consume messages
+        self.loop.stop()
+        self.thread.join()
+        # Send a message while the reader is not active
+        message_count = 50
+        for i in range(message_count):
+            self.send_message('blarf', routing_key='test.routing')
+        self.create_reader()
+
+        from gocept.amqprun.tests.integration import messages_received
+        for i in range(200):
+            if len(messages_received) >= message_count:
+                break
+            time.sleep(0.25)
+        else:
+            self.fail('Message was not received')
+
     def test_technical_errors_should_not_crash(self):
         import gocept.amqprun.main
         self.make_config(__name__, 'integration')

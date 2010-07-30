@@ -221,7 +221,8 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
         assert connection == self.connection
         assert connection.is_alive()
         log.info('AMQP connection opened.')
-        self.open_channel()
+        with self.connection.lock:
+            self.open_channel()
 
     def on_connection_closed(self, connection):
         assert connection == self.connection
