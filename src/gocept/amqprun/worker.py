@@ -22,7 +22,7 @@ class Worker(threading.Thread):
         self.daemon = True
 
     def run(self):
-        log.info('Starting worker')
+        log.info('Worker[%s] starting', self.ident)
         self.running = True
         while self.running:
             try:
@@ -31,6 +31,9 @@ class Worker(threading.Thread):
                 pass
             else:
                 try:
+                    log.info('Worker[%s] Processing message %s (%s)',
+                             self.ident, handler.message.delivery_tag,
+                             handler.message.routing_key)
                     transaction.begin()
                     session = self.session_factory(handler)
                     try:
@@ -39,8 +42,10 @@ class Worker(threading.Thread):
                             session.send(msg)
                         transaction.commit()
                     except:
-                        log.error("Error while processing message",
-                                  exc_info=True)
+                        log.error(
+                            "Worker[%s] Error while processing message %s",
+                            self.ident, handler.message.delivery_tag,
+                            exc_info=True)
                         transaction.abort()
                 except:
                     log.error(
@@ -48,6 +53,6 @@ class Worker(threading.Thread):
                         exc_info=True)
 
     def stop(self):
-        log.info('Stopping worker.')
+        log.info('Worker[%s] stopping', self.ident)
         self.running = False
         self.join()

@@ -59,13 +59,14 @@ class WorkerTest(unittest.TestCase):
         self._create_worker()
         self.assertFalse(self.session_factory.called)
 
+        message = mock.Mock()
         handler = gocept.amqprun.handler.FactoredHandler(
-            lambda msg: messages.append(msg), mock.sentinel.message)
+            lambda msg: messages.append(msg), message)
 
         self.queue.put(handler)
         time.sleep(0.1)
         self.assertEqual(1, len(messages))
-        self.assertEqual(mock.sentinel.message, messages[0])
+        self.assertEqual(message, messages[0])
         self.assertTrue(self.session_factory.called)
 
     def test_messages_returned_by_handler_should_be_sent(self):
@@ -77,7 +78,7 @@ class WorkerTest(unittest.TestCase):
             return [mock.sentinel.msg1, mock.sentinel.msg2]
 
         handler = gocept.amqprun.handler.FactoredHandler(
-            func, mock.sentinel.message)
+            func, mock.Mock())
 
         self.queue.put(handler)
         time.sleep(0.1)
@@ -90,7 +91,7 @@ class WorkerTest(unittest.TestCase):
         import gocept.amqprun.handler
         self._create_worker()
         handler = gocept.amqprun.handler.FactoredHandler(
-            lambda x: None, mock.sentinel.message)
+            lambda x: None, mock.Mock())
         self.queue.put(handler)
         time.sleep(0.1)
         self.assertEqual(0, self.queue.qsize())
@@ -103,7 +104,7 @@ class WorkerTest(unittest.TestCase):
         self._create_worker()
         provoke_error = mock.Mock(side_effect=RuntimeError('provoked error'))
         handler = gocept.amqprun.handler.FactoredHandler(
-            provoke_error, mock.sentinel.message)
+            provoke_error, mock.Mock())
         self.queue.put(handler)
         time.sleep(0.1)
         self.assertEqual(0, self.queue.qsize())
@@ -117,7 +118,7 @@ class WorkerTest(unittest.TestCase):
         import gocept.amqprun.handler
         self._create_worker()
         handler = gocept.amqprun.handler.FactoredHandler(
-            lambda x: None, mock.sentinel.message)
+            lambda x: None, mock.Mock())
         transaction.commit.side_effect = RuntimeError('commit error')
         self.queue.put(handler)
         time.sleep(0.1)
@@ -131,7 +132,7 @@ class WorkerTest(unittest.TestCase):
         self._create_worker()
         provoke_error = mock.Mock(side_effect=RuntimeError('provoked error'))
         handler = gocept.amqprun.handler.FactoredHandler(
-            provoke_error, mock.sentinel.message)
+            provoke_error, mock.Mock())
         transaction.abort.side_effect = RuntimeError('abort error')
         self.queue.put(handler)
         time.sleep(0.1)

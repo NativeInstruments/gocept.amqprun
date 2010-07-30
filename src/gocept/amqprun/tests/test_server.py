@@ -184,6 +184,7 @@ class TestChannelSwitch(unittest.TestCase):
         reader.channel.callbacks = collections.OrderedDict()
         new_channel = mock.Mock(pika.channel.Channel)
         new_channel.callbacks = {}
+        new_channel.handler = mock.Mock()
         reader.connection.channel.return_value = new_channel
         return reader
 
