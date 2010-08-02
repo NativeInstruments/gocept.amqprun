@@ -176,8 +176,10 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
         if self._switching_channels:
             return False
         log.info('Switching to a new channel')
-        # XXX needs to be non-blocking in main thread
-        with self.connection.lock:
+        locked = self.connection.lock.acquire(False)
+        if not locked:
+            return False
+        try:
             self._switching_channels = True
             for consumer_tag in self.channel.callbacks.keys():
                 self.channel.basic_cancel(consumer_tag)
@@ -190,17 +192,23 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
             self.channel = None
             self.open_channel()
             return True  # Switch successful
+        finally:
+            self.connection.lock.release()
 
     def close_old_channel(self):
         if self._old_channel is None:
             return
-        # XXX needs to be non-blocking in main thread
-        with self.connection.lock:
+        locked = self.connection.lock.acquire(False)
+        if not locked:
+            return False
+        try:
             closed = gocept.amqprun.interfaces.IChannelManager(
                 self._old_channel).close_if_possible()
             if closed:
                 self._old_channel = None
                 self._switching_channels = False
+        finally:
+            self.connection.lock.release()
 
     def _declare_and_bind_queues(self):
         assert self.channel is not None

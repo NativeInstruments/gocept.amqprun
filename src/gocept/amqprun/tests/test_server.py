@@ -232,28 +232,20 @@ class TestChannelSwitch(unittest.TestCase):
 
     def test_switch_channel_should_acquire_and_release_connection_lock(self):
         reader = self.get_reader()
-        reader.connection.lock.acquire()
-        t = threading.Thread(target=reader.switch_channel)
-        t.start()
-        time.sleep(0.1)
-        self.assertFalse(reader._switching_channels)
-        reader.connection.lock.release()
-        time.sleep(0.1)
+        reader.connection.lock = mock.Mock()
+        reader.switch_channel()
+        self.assertTrue(reader.connection.lock.acquire.called)
+        self.assertTrue(reader.connection.lock.release.called)
         self.assertTrue(reader._switching_channels)
-        self.assertTrue(reader.connection.lock.acquire(False))
 
     def test_close_old_channel_should_acquire_and_release_lock(self):
         reader = self.get_reader()
+        reader.connection.lock = mock.Mock()
         reader.switch_channel()
-        reader.connection.lock.acquire()
-        t = threading.Thread(target=reader.close_old_channel)
-        t.start()
-        time.sleep(0.1)
-        self.assertTrue(reader._switching_channels)
-        reader.connection.lock.release()
-        time.sleep(0.1)
+        reader.close_old_channel()
+        self.assertTrue(reader.connection.lock.acquire.called)
+        self.assertTrue(reader.connection.lock.release.called)
         self.assertFalse(reader._switching_channels)
-        self.assertTrue(reader.connection.lock.acquire(False))
 
     def test_run_calls_switch_channel_once_in_a_while(self):
         import gocept.amqprun.interfaces
@@ -299,6 +291,18 @@ class TestChannelSwitch(unittest.TestCase):
         reader.run_once()
         self.assertTrue(old_channel.close.called)
         self.assertIsNone(reader._old_channel)
+
+    def test_active_connection_lock_should_defer_switch_channel(self):
+        reader = self.get_reader()
+        reader.connection.lock.acquire()
+        self.assertFalse(reader.switch_channel())
+
+    def test_active_connection_lock_should_defer_close_old_channel(self):
+        reader = self.get_reader()
+        reader.connection.lock.acquire()
+        reader._old_channel = mock.sentinel.channel
+        # The assertion is that the call doesn't hang :/
+        reader.close_old_channel()
 
 
 class DataManagerTest(unittest.TestCase):
