@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='gocept.amqprun',
-    version='0.1',
+    version='0.2dev',
     author='gocept',
     author_email='mail@gocept.com',
     url='',
