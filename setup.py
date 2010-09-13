@@ -9,8 +9,11 @@ setup(
     version='0.2dev',
     author='gocept',
     author_email='mail@gocept.com',
-    url='',
+    url='https://intra.gocept.com/projects/projects/gocept-amqprun',
     description="""\
+gocept.amqprun helps you writing and running AMQP consumers. It currently only
+supports AMQP 0-8 and integrates with the Zope Tool Kit (ZTK) so you can use
+adapters, utilities and all the buzz.
 """,
     long_description=(
         open('README.txt').read()
@@ -20,6 +23,15 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     zip_safe=False,
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Framework :: Zope3',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: Zope Public License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Topic :: Software Development'
+    ],
     license='ZPL',
     namespace_packages=['gocept'],
     install_requires=[
