@@ -47,3 +47,14 @@ class TestDeclaration(unittest.TestCase):
 
     def test_invalid_handler_function_should_raise_typeerror(self):
         self.assertRaises(TypeError, self.get_decl, 'i-am-not-callable')
+
+    def test_decorator_should_create_handler(self):
+        from gocept.amqprun.handler import handle
+        import gocept.amqprun.interfaces
+        @handle('queue.name', 'routing.key')
+        def decl(message):
+            return None
+        self.assertTrue(zope.interface.verify.verifyObject(
+            gocept.amqprun.interfaces.IHandlerDeclaration, decl))
+        self.assertEquals('queue.name', decl.queue_name)
+        self.assertEquals('routing.key', decl.routing_key)

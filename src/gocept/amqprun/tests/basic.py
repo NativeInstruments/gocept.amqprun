@@ -8,9 +8,6 @@ import gocept.amqprun.handler
 log = logging.getLogger(__name__)
 
 
-def log_message(message):
+@gocept.amqprun.handler.handle('test.queue', 'test.routing')
+def basic_handler(message):
     log.info(message.body)
-
-
-basic_handler = gocept.amqprun.handler.HandlerDeclaration(
-    'test.queue', 'test.routing', log_message)
