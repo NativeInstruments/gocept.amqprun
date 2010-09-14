@@ -158,3 +158,10 @@ section from the configuration available via an ``ISettings`` utility::
     settings = zope.component.getUtility(
         gocept.amqprun.interfaces.ISettings)
     settings.get('your.settings.key')
+
+
+Limitations
+===========
+
+* Currently all messages are send and received through the `amq.topic`
+  exchange.  Other exchanges are not supported at the moment.
