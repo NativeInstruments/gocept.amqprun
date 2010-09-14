@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.2 (unreleased)
+0.2 (2010-09-14)
 ----------------
 
 - Added a decorator ``gocept.amqprun.handler.handle(queue_name, routing_key)``.
