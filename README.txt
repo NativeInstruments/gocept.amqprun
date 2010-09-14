@@ -11,21 +11,23 @@ Basic concepts and terms
 ========================
 
 * A *message handler* is a function which is bound with a routing key to
-  exactly one queue. The result of a message handler is a list of messages.
+  exactly one queue. It is called for each message on that queue, and may
+  return a list of messages as a result.
 
 * The result messages of one handled message are sent in one transaction
   together with the ACK of the handled message.
 
 * When an exception is raised during message processing, the transaction is
-  aborted. The received message would be NACKed if RabbitMQ was supporting it.
+  aborted. (The received message would be NACKed if RabbitMQ was supporting
+  it.)
 
 * A message handler handles exactly one message at a time. Multiple messages
   can be processed at the same time using threads. Those threads are called
   *workers*.
 
 
-Things you don't need to take care about
-========================================
+Things you don't need to take care of
+=====================================
 
 * Threading of multiple workers
 
@@ -38,8 +40,8 @@ Getting started
 ===============
 
 To get started define a function which does the work. In this case, we log the
-message body and send a message. The ``handle`` decorator takes two arguments: The queue name and
-the routing key::
+message body and send a message. The ``handle`` decorator takes two arguments,
+the queue name and the routing key::
 
     import logging
     import gocept.amqprun.handler
@@ -61,7 +63,7 @@ The handler function needs to be registered as a named utility. With ZCML this
 looks like this[1]_::
 
     <configure xmlns="http://namespaces.zope.org/zope">
-      <include package="gocept.amqprun" /> 
+      <include package="gocept.amqprun" />
       <utility component="path.to.package.log_message_body" name="basic" />
     </configure>
 
@@ -70,12 +72,12 @@ looks like this[1]_::
         support to make registering of handlers easier.
 
 
-To set up a server it's recommended to create a buildout. The following
+To set up a server, it's recommended to create a buildout. The following
 buildout creates a config for gocept.amqprun, a ZCML file for the component
-configuration and uses ZDaemon to daemonize the process::
+configuration, and uses ZDaemon to daemonize the process::
 
     [buildout]
-    parts = 
+    parts =
             config
             zcml
             app
