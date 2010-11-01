@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.3 (unreleased)
+----------------
+
+- Renamed decorator from ``handle`` to ``declare``.
+
+
 0.2 (2010-09-14)
 ----------------
 

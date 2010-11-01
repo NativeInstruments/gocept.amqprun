@@ -20,9 +20,11 @@ class HandlerDeclaration(object):
         return FactoredHandler(self.handler_function, message)
 
 
-def handle(queue_name, routing_key):
+def declare(queue_name, routing_key):
     return lambda handler_function: HandlerDeclaration(
         queue_name, routing_key, handler_function)
+
+handle = declare
 
 
 class FactoredHandler(object):
