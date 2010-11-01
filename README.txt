@@ -40,7 +40,7 @@ Getting started
 ===============
 
 To get started define a function which does the work. In this case, we log the
-message body and send a message. The ``handle`` decorator takes two arguments,
+message body and send a message. The ``declare`` decorator takes two arguments,
 the queue name and the routing key::
 
     import logging
@@ -49,7 +49,7 @@ the queue name and the routing key::
 
     log = logging.getLogger(__name__)
 
-    @gocept.amqprun.handler.handle('test.queue', 'test.routing')
+    @gocept.amqprun.handler.declare('test.queue', 'test.routing')
     def log_message_body(message):
         log.info(message.body)
         msg = gocept.amqprun.message.Message(
