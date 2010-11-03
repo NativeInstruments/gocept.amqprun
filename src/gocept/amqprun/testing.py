@@ -57,7 +57,11 @@ class QueueTestCase(unittest.TestCase):
     def tearDown(self):
         for queue_name in self._queues:
             try:
-                self.channel.queue_delete(queue_name)
+                # NOTE: we seem to need a new channel for each delete;
+                # trying to use self.channel for all queues results in its
+                # closing after the first delete
+                with self.connection.channel() as channel:
+                    channel.queue_delete(queue_name)
             except amqp.AMQPChannelException:
                 pass
         zope.component.testing.tearDown()
@@ -103,11 +107,19 @@ class MainTestCase(LoopTestCase, QueueTestCase):
 
     def setUp(self):
         import gocept.amqprun.worker
+        super(MainTestCase, self).setUp()
         self._timeout = gocept.amqprun.worker.Worker.timeout
         gocept.amqprun.worker.Worker.timeout = 0.05
         self.orig_signal = signal.signal
         signal.signal = mock.Mock()
-        super(MainTestCase, self).setUp()
+
+        self.receive_queue = self.get_queue_name('receive')
+        self.channel.queue_declare(queue=self.receive_queue)
+        self._queues.append(self.receive_queue)
+
+    def expect_response_on(self, routing_key):
+        self.channel.queue_bind(
+            self.receive_queue, 'amq.topic', routing_key=routing_key)
 
     def tearDown(self):
         import gocept.amqprun.worker
@@ -145,3 +157,21 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         self.config.write(base.substitute(sub).encode('utf8'))
         self.config.flush()
         return self.config.name
+
+    def wait_for_response(self, timeout=100):
+        for i in range(100):
+            if not self.loop.tasks.qsize():
+                break
+            time.sleep(0.05)
+        else:
+            self.fail('Message was not processed.')
+
+        # message was taken from queue, wait for response messages to arrive
+        for i in range(timeout):
+            message = self.channel.basic_get(self.receive_queue, no_ack=True)
+            if message:
+                break
+            time.sleep(1)
+        else:
+            self.fail('No success message received')
+        return message
