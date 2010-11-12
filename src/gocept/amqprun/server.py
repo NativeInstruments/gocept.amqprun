@@ -289,7 +289,7 @@ class AMQPDataManager(object):
             return
         with self.connection_lock:
             # XXX reject is not implemented by RabbitMQ
-            #self._channel.basic_reject(self.message.delivery_tag)
+            self._channel.basic_reject(self.message.delivery_tag)
             self.session.clear()
             gocept.amqprun.interfaces.IChannelManager(self._channel).release()
 
@@ -310,8 +310,11 @@ class AMQPDataManager(object):
 
     def tpc_abort(self, transaction):
         self._channel.tx_rollback()
-        # XXX reject is not implemented by RabbitMQ
-        #self._channel.basic_reject(self.message.delivery_tag)
+        # The original idea was to reject the message here. Reject with requeue
+        # immediately re-queues the message in the current rabbitmq
+        # implementation (2.1.1). We let the message dangle until the channel
+        # is closed. At this point the message is re-queued and re-submitted to
+        # us.
         self.session.clear()
         gocept.amqprun.interfaces.IChannelManager(self._channel).release()
         self.connection_lock.release()
