@@ -88,7 +88,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         for i in range(200):
             time.sleep(0.025)
             os.write(self.reader.connection.notifier_w, 'W')
-            if len(messages_received) == 2:
+            if len(messages_received) >= 2:
                 break
         else:
             self.fail('Message was not received again')
