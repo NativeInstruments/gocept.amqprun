@@ -47,7 +47,7 @@ adapters, utilities and all the buzz.
         'zope.interface',
     ],
     extras_require=dict(test=[
-        'mock',
+        'mock<0.7dev',
         'tcpwatch',
         'zope.testing',
     ]),
