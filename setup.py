@@ -43,6 +43,7 @@ adapters, utilities and all the buzz.
         'transaction',
         'zope.component[zcml]',
         'zope.configuration',
+        'zope.event',
         'zope.interface',
     ],
     extras_require=dict(test=[

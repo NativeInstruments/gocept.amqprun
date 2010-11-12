@@ -131,6 +131,19 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.assertIsInstance(settings.get('test.setting.1'), unicode)
         self.assertEquals(u'Ümläuten', settings.get('test.setting.unicode'))
 
+    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.worker.Worker')
+    def test_main_should_send_processstart_event(self, worker, reader):
+        import gocept.amqprun.interfaces
+        import gocept.amqprun.main
+        import zope.component
+        config = self.make_config(__name__, 'basic')
+        handler = mock.Mock()
+        zope.component.provideHandler(
+            handler, (gocept.amqprun.interfaces.IProcessStarting,))
+        gocept.amqprun.main.main(config)
+        self.assertTrue(handler.called)
+
 
 class TestMainProcess(gocept.amqprun.testing.MainTestCase):
 

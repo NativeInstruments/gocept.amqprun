@@ -12,6 +12,7 @@ import threading
 import time
 import zope.component
 import zope.configuration.xmlconfig
+import zope.event
 
 log = logging.getLogger(__name__)
 
@@ -49,6 +50,8 @@ def main(config_file):
 
     signal.signal(signal.SIGINT, stop_reader)
     signal.signal(signal.SIGTERM, stop_reader)
+
+    zope.event.notify(gocept.amqprun.interfaces.ProcessStarting())
 
     workers = []
     for i in range(conf.worker.amount):

@@ -88,3 +88,13 @@ class IChannelManager(zope.interface.Interface):
 
     def close_if_possible():
         """Close the channle if it is no longer used by anyone."""
+
+
+class IProcessStarting(zope.interface.Interface):
+    """Event to indicate the process is being started."""
+
+
+class ProcessStarting(object):
+    """Event to indicate the process is being started."""
+
+    zope.interface.implements(IProcessStarting)
