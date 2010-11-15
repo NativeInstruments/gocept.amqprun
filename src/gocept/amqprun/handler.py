@@ -10,8 +10,8 @@ class HandlerDeclaration(object):
     zope.interface.implements(gocept.amqprun.interfaces.IHandlerDeclaration)
 
     def __init__(self, queue_name, routing_key, handler_function):
-        self.queue_name = unicode(queue_name).encode('UTF-8')
-        self.routing_key = unicode(routing_key).encode('UTF-8')
+        self.queue_name = queue_name
+        self.routing_key = routing_key
         if not callable(handler_function):
             raise TypeError('handler_function not callable')
         self.handler_function = handler_function
