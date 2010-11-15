@@ -214,19 +214,21 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
         assert self.channel is not None
         for name, declaration in zope.component.getUtilitiesFor(
             gocept.amqprun.interfaces.IHandlerDeclaration):
+            queue_name = unicode(declaration.queue_name).encode('UTF-8')
+            routing_key = unicode(declaration.routing_key).encode('UTF-8')
             log.info(
                 "Channel[%s]: Handling routing key '%s' on queue '%s' via '%s'",
                 self.channel.handler.channel_number,
-                declaration.routing_key, declaration.queue_name, name)
+                routing_key, queue_name, name)
             self.channel.queue_declare(
-                queue=declaration.queue_name, durable=True,
+                queue=queue_name, durable=True,
                 exclusive=False, auto_delete=False)
             self.channel.queue_bind(
-                queue=declaration.queue_name, exchange='amq.topic',
-                routing_key=declaration.routing_key)
+                queue=queue_name, exchange='amq.topic',
+                routing_key=routing_key)
             self.channel.basic_consume(
                 Consumer(declaration, self.tasks),
-                queue=declaration.queue_name)
+                queue=queue_name)
 
     # Connection Strategy Interface
 

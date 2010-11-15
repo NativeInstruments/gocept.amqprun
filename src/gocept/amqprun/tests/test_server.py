@@ -108,19 +108,23 @@ class MessageReaderTest(
         self.assertEqual(self.reader.connection.lock, dm.connection_lock)
 
     def test_unicode_queue_names_should_work(self):
-        import gocept.amqprun.handler
-        decl = gocept.amqprun.handler.HandlerDeclaration(
-            self.get_queue_name(u'test.case.2'),
-            'test.messageformat.2', lambda x: None)
-        zope.component.provideUtility(decl, name='decl')
+        import gocept.amqprun.interfaces
+        class Decl(object):
+            zope.interface.classProvides(
+                gocept.amqprun.interfaces.IHandlerDeclaration)
+            queue_name = self.get_queue_name(u'test.case.2')
+            routing_key = 'test.messageformat.2'
+        zope.component.provideUtility(Decl, name='decl')
         self.create_reader()
 
     def test_unicode_routing_keys_should_work_for_handler(self):
-        import gocept.amqprun.handler
-        decl = gocept.amqprun.handler.HandlerDeclaration(
-            self.get_queue_name('test.case.2'),
-            u'test.messageformat.2', lambda x: None)
-        zope.component.provideUtility(decl, name='decl')
+        import gocept.amqprun.interfaces
+        class Decl(object):
+            zope.interface.classProvides(
+                gocept.amqprun.interfaces.IHandlerDeclaration)
+            queue_name = self.get_queue_name('test.case.2')
+            routing_key = u'test.messageformat.2'
+        zope.component.provideUtility(Decl, name='decl')
         self.create_reader()
 
     def test_unicode_routing_keys_should_work_for_message(self):
