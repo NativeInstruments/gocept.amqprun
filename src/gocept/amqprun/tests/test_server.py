@@ -383,30 +383,28 @@ class DataManagerTest(unittest.TestCase):
         dm.tpc_abort(None)
         self.assertTrue(self.channel.tx_rollback.called)
 
-    # XXX reject is not implemented by RabbitMQ
-    #def test_tpc_abort_should_reject_message(self):
-    #    dm = self.get_dm()
-    #    self.connection.lock.acquire()
-    #    dm.tpc_abort(None)
-    #    self.assertTrue(self.channel.basic_reject.called)
+    def test_tpc_abort_should_not_reject_message(self):
+        dm = self.get_dm()
+        self.connection.lock.acquire()
+        dm.tpc_abort(None)
+        self.assertFalse(self.channel.basic_reject.called)
 
-    #def test_abort_should_reject_message(self):
-    #    dm = self.get_dm()
-    #    dm.abort(None)
-    #    self.assertTrue(self.channel.basic_reject.called)
+    def test_abort_should_not_reject_message(self):
+        dm = self.get_dm()
+        dm.abort(None)
+        self.assertFalse(self.channel.basic_reject.called)
 
     def test_abort_should_acquire_and_release_lock(self):
         dm = self.get_dm()
         self.connection.lock.acquire()
-        #self.assertFalse(self.channel.basic_reject.called)
+        self.assertFalse(self.channel.basic_reject.called)
         t = threading.Thread(target=dm.abort, args=(None,))
         t.start()
         time.sleep(0.1)  # Let the thread start up
-        #self.assertFalse(self.channel.basic_reject.called)
-        # After releasing the lock, basic_reject gets called
+        self.assertFalse(self.channel.basic_reject.called)
         self.connection.lock.release()
         time.sleep(0.1)
-        #self.assertTrue(self.channel.basic_reject.called)
+        self.assertFalse(self.channel.basic_reject.called)
         self.assertTrue(self.connection.lock.acquire(False))
 
     def test_commit_should_send_queued_messages(self):

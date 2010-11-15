@@ -290,8 +290,6 @@ class AMQPDataManager(object):
             # everythin we do as well.
             return
         with self.connection_lock:
-            # XXX reject is not implemented by RabbitMQ
-            self._channel.basic_reject(self.message.delivery_tag)
             self.session.clear()
             gocept.amqprun.interfaces.IChannelManager(self._channel).release()
 
