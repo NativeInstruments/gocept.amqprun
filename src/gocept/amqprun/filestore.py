@@ -3,13 +3,16 @@
 
 import ZConfig
 import amqplib.client_0_8 as amqp
+import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import gocept.filestore
 import logging
 import os.path
 import pkg_resources
 import time
+import zope.configuration.fields
 import zope.interface
+import zope.schema
 
 
 log = logging.getLogger(__name__)
@@ -80,3 +83,23 @@ class FileWriter(object):
         # uniquify the filename -- we have to take care about the precision,
         # though: '%s' loses digits, but '%f' doesn't.
         return '%s_%f' % (self.routing_key, time.time())
+
+
+class IWriteFilesDirective(zope.interface.Interface):
+
+    routing_key = zope.schema.TextLine(title=u"Routing key to listen on")
+
+    queue_name = zope.schema.TextLine(title=u"Queue name")
+
+    directory = zope.configuration.fields.Path(
+        title=u"Path to the directory in which to write the files")
+
+
+def writefiles_directive(_context, routing_key, queue_name, directory):
+    writer = FileWriter(routing_key, directory)
+    handler = gocept.amqprun.handler.HandlerDeclaration(
+        queue_name, routing_key, writer)
+    zope.component.zcml.utility(
+        _context,
+        component=handler,
+        name=unicode('gocept.amqprun.amqpwrite.%s' % routing_key))

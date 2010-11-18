@@ -165,3 +165,28 @@ Limitations
 
 * Currently all messages are send and received through the `amq.topic`
   exchange.  Other exchanges are not supported at the moment.
+
+
+Interfacing with the filesystem
+===============================
+
+gocept.amqprun provides a quick way to set up a handler that writes incoming
+messages as individual files to a given directory, using the
+``<amqp:writefiles>`` ZCML directive::
+
+    <configure xmlns="http://namespaces.zope.org/zope"
+               xmlns:amqp="http://namespaces.gocept.com/amqp">
+
+      <include package="gocept.amqprun" />
+
+      <amqp:writefiles
+        routing_key="test.data"
+        queue_name="test.queue"
+        directory="/path/to/output-directory"
+        />
+    </configure>
+
+All messages with routing key 'test.data' would then be written to
+'output-directory'. (Note that in the buildout example above, you would need to
+put the writefiles directive into the ``[zcml]`` section, not the ``[config]``
+section.)

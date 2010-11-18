@@ -11,6 +11,7 @@ import shutil
 import tempfile
 import time
 import unittest
+import zope.component
 
 
 class ReaderTest(gocept.amqprun.testing.LoopTestCase):
@@ -118,3 +119,49 @@ class FileWriterTest(unittest.TestCase):
         self.assertRegexpMatches(filename, '^routing')
         contents = open(os.path.join(self.tmpdir, filename)).read()
         self.assertEqual(message.body, contents)
+
+
+class AMQPWriteDirectiveTest(unittest.TestCase):
+
+    def setUp(self):
+        zope.component.testing.setUp()
+
+    def tearDown(self):
+        zope.component.testing.tearDown()
+
+    def test_directive_registers_handler_as_utility(self):
+        import gocept.amqprun.interfaces
+        zope.configuration.xmlconfig.file(
+            pkg_resources.resource_filename(__name__, 'filewriter.zcml'),
+            package=gocept.amqprun)
+        handler = zope.component.getUtility(
+            gocept.amqprun.interfaces.IHandlerDeclaration,
+            name='gocept.amqprun.amqpwrite.test.data')
+        self.assertEqual('test.data', handler.routing_key)
+
+
+class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
+
+    def setUp(self):
+        super(WriterIntegrationTest, self).setUp()
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+        super(WriterIntegrationTest, self).tearDown()
+
+    def test_message_should_be_processed(self):
+        self.assertEqual(0, len(os.listdir(self.tmpdir)))
+        self.make_config(
+            __name__, 'filewriter', dict(
+                tmpdir=self.tmpdir, queue_name=self.get_queue_name('test')))
+        self.create_reader()
+        body = 'This is only a test.'
+        self.send_message(body, routing_key='test.data')
+        for i in range(100):
+            if not self.loop.tasks.qsize():
+                break
+            time.sleep(0.05)
+        else:
+            self.fail('Message was not processed.')
+        self.assertEqual(1, len(os.listdir(self.tmpdir)))
