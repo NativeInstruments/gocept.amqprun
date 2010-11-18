@@ -7,6 +7,8 @@ CHANGES
 - Renamed decorator from ``handle`` to ``declare``.
 - Added helper method ``wait_for_response`` to MainTestCase.
 - Added an IProcessStarting event which is sent during startup.
+- Added the <amqp:writefiles/> directive that sets up a handler that writes
+  incoming messages into files.
 
 
 0.2 (2010-09-14)

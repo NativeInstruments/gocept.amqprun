@@ -1,0 +1,12 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:amqp="http://namespaces.gocept.com/amqp">
+
+  <include package="gocept.amqprun" />
+
+  <amqp:writefiles
+    routing_key="test.data"
+    queue_name="${queue_name}"
+    directory="${tmpdir}"
+    />
+
+</configure>

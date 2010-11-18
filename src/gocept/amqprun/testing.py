@@ -145,14 +145,20 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         self.loop = gocept.amqprun.main.main_reader
 
     def make_config(self, package, name, mapping=None):
+        zcml_base = string.Template(
+            unicode(pkg_resources.resource_string(package, '%s.zcml' % name),
+                    'utf8'))
+        self.zcml = tempfile.NamedTemporaryFile()
+        self.zcml.write(zcml_base.substitute(mapping).encode('utf8'))
+        self.zcml.flush()
+
+        sub = dict(site_zcml=self.zcml.name)
+        if mapping:
+            sub.update(mapping)
+
         base = string.Template(
             unicode(pkg_resources.resource_string(package, '%s.conf' % name),
                     'utf8'))
-        zcml = pkg_resources.resource_filename(
-            package, '%s.zcml' % name)
-        sub = dict(site_zcml=zcml)
-        if mapping:
-            sub.update(mapping)
         self.config = tempfile.NamedTemporaryFile()
         self.config.write(base.substitute(sub).encode('utf8'))
         self.config.flush()
