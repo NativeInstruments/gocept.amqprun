@@ -13,15 +13,15 @@ import time
 import unittest
 
 
-class FileStoreTest(gocept.amqprun.testing.LoopTestCase):
+class ReaderTest(gocept.amqprun.testing.LoopTestCase):
 
     def setUp(self):
-        super(FileStoreTest, self).setUp()
+        super(ReaderTest, self).setUp()
         self.tmpdir = tempfile.mkdtemp()
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
-        super(FileStoreTest, self).tearDown()
+        super(ReaderTest, self).tearDown()
 
     @mock.patch('amqplib.client_0_8.Connection')
     def test_empty_new_directory_nothing_happens(self, connection):
@@ -57,15 +57,15 @@ class FileStoreTest(gocept.amqprun.testing.LoopTestCase):
         self.create_reader()
 
 
-class QueueTest(gocept.amqprun.testing.QueueTestCase):
+class ReaderQueueTest(gocept.amqprun.testing.QueueTestCase):
 
     def setUp(self):
-        super(QueueTest, self).setUp()
+        super(ReaderQueueTest, self).setUp()
         self.tmpdir = tempfile.mkdtemp()
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
-        super(QueueTest, self).tearDown()
+        super(ReaderQueueTest, self).tearDown()
 
     def test_send_message(self):
         queue = self.get_queue_name('test.receive')
@@ -87,3 +87,34 @@ class MainTest(unittest.TestCase):
         config.flush()
         gocept.amqprun.filestore.main(config.name)
         reader.assert_called_with('/tmp', 'localhost', 'route')
+
+
+class FileWriterTest(unittest.TestCase):
+
+    def setUp(self):
+        super(FileWriterTest, self).setUp()
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+        super(FileWriterTest, self).tearDown()
+
+    def test_unique_filename_uses_more_than_millisecond_precision(self):
+        from gocept.amqprun.filestore import FileWriter
+        writer = FileWriter('routing', '/dev/null')
+        filename = writer._unique_filename()
+        digits = filename.split('.')[-1]
+        self.assertGreater(digits, 2)
+
+    def test_write_message_body(self):
+        from gocept.amqprun.filestore import FileWriter
+        self.assertEqual(0, len(os.listdir(self.tmpdir)))
+        writer = FileWriter('routing', self.tmpdir)
+        message = mock.Mock()
+        message.body = 'This is only a test.'
+        writer(message)
+        self.assertEqual(1, len(os.listdir(self.tmpdir)))
+        filename = os.listdir(self.tmpdir)[0]
+        self.assertRegexpMatches(filename, '^routing')
+        contents = open(os.path.join(self.tmpdir, filename)).read()
+        self.assertEqual(message.body, contents)

@@ -6,6 +6,7 @@ import amqplib.client_0_8 as amqp
 import gocept.amqprun.interfaces
 import gocept.filestore
 import logging
+import os.path
 import pkg_resources
 import time
 import zope.interface
@@ -59,3 +60,23 @@ def main(config_file):
                              conf.settings.hostname,
                              conf.settings.routing_key)
     reader.start()
+
+
+class FileWriter(object):
+
+    def __init__(self, routing_key, directory):
+        self.routing_key = routing_key
+        self.directory = directory
+
+    def __call__(self, message):
+        output = open(os.path.join(
+            self.directory, self._unique_filename()), 'w')
+        output.write(message.body)
+        output.close()
+
+    def _unique_filename(self):
+        # since CPython doesn't use OS-level threads, there won't be actual
+        # concurrency, so we can get away with using the current time to
+        # uniquify the filename -- we have to take care about the precision,
+        # though: '%s' loses digits, but '%f' doesn't.
+        return '%s_%f' % (self.routing_key, time.time())
