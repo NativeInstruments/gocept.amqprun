@@ -21,8 +21,12 @@ class Worker(threading.Thread):
         super(Worker, self).__init__()
         self.daemon = True
 
+    def log(self, severity, message, *args, **kw):
+        write = getattr(log, severity)
+        write('Worker[%s] %s' % (self.ident, message), *args, **kw)
+
     def run(self):
-        log.info('Worker[%s] starting', self.ident)
+        self.log('info', 'starting')
         self.running = True
         while self.running:
             try:
@@ -31,28 +35,29 @@ class Worker(threading.Thread):
                 pass
             else:
                 try:
-                    log.info('Worker[%s] Processing message %s (%s)',
-                             self.ident, handler.message.delivery_tag,
+                    self.log('info', 'Processing message %s (%s)',
+                             handler.message.delivery_tag,
                              handler.message.routing_key)
                     transaction.begin()
                     session = self.session_factory(handler)
                     try:
                         response = handler()
                         for msg in response:
+                            self.log('info', 'Sending message (%s)',
+                                     msg.routing_key)
                             session.send(msg)
                         transaction.commit()
                     except:
-                        log.error(
-                            "Worker[%s] Error while processing message %s",
-                            self.ident, handler.message.delivery_tag,
-                            exc_info=True)
+                        self.log('error', 'Error while processing message %s',
+                                 handler.message.delivery_tag, exc_info=True)
                         transaction.abort()
                 except:
-                    log.error(
+                    self.log(
+                        'error',
                         'Unhandled exception, prevent thread from crashing',
                         exc_info=True)
 
     def stop(self):
-        log.info('Worker[%s] stopping', self.ident)
+        self.log('info', 'stopping')
         self.running = False
         self.join()
