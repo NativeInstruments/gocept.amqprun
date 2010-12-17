@@ -51,6 +51,7 @@ class Worker(threading.Thread):
                     self.log.info('Processing message %s (%s)',
                                   handler.message.delivery_tag,
                                   handler.message.routing_key)
+                    self.log.debug(handler.message.body)
                     transaction.begin()
                     session = self.session_factory(handler)
                     try:
