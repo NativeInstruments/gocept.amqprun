@@ -303,12 +303,13 @@ class AMQPDataManager(object):
         log.debug("Ack'ing message %s", self.message.delivery_tag)
         self._channel.basic_ack(self.message.delivery_tag)
         for message in self.session.messages:
-            log.debug("Publishing message to %s", message.routing_key)
+            log.debug("Publishing message (%s)", message.routing_key)
             self._channel.basic_publish(
                 message.exchange, message.routing_key,
                 message.body, message.header)
 
     def tpc_abort(self, transaction):
+        log.debug('tx_rollback')
         self._channel.tx_rollback()
         # The original idea was to reject the message here. Reject with requeue
         # immediately re-queues the message in the current rabbitmq
