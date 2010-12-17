@@ -10,6 +10,20 @@ import transaction
 log = logging.getLogger(__name__)
 
 
+class PrefixingLogger(object):
+    """Convenience for spelling log.foo(prefix + message)"""
+
+    def __init__(self, log, prefix):
+        self.log = log
+        self.prefix = prefix
+
+    def __getattr__(self, name):
+        def write(message, *args, **kw):
+            log_method = getattr(self.log, name)
+            return log_method(self.prefix + message, *args, **kw)
+        return write
+
+
 class Worker(threading.Thread):
 
     timeout = 5
@@ -20,13 +34,12 @@ class Worker(threading.Thread):
         self.running = False
         super(Worker, self).__init__()
         self.daemon = True
-
-    def log(self, severity, message, *args, **kw):
-        write = getattr(log, severity)
-        write('Worker[%s] %s' % (self.ident, message), *args, **kw)
+        # just in case we want to log something while not running
+        self.log = log
 
     def run(self):
-        self.log('info', 'starting')
+        self.log = PrefixingLogger(log, 'Worker[%s] ' % self.ident)
+        self.log.info('starting')
         self.running = True
         while self.running:
             try:
@@ -35,29 +48,30 @@ class Worker(threading.Thread):
                 pass
             else:
                 try:
-                    self.log('info', 'Processing message %s (%s)',
-                             handler.message.delivery_tag,
-                             handler.message.routing_key)
+                    self.log.info('Processing message %s (%s)',
+                                  handler.message.delivery_tag,
+                                  handler.message.routing_key)
                     transaction.begin()
                     session = self.session_factory(handler)
                     try:
                         response = handler()
                         for msg in response:
-                            self.log('info', 'Sending message (%s)',
-                                     msg.routing_key)
+                            self.log.info(
+                                'Sending message (%s)', msg.routing_key)
                             session.send(msg)
                         transaction.commit()
                     except:
-                        self.log('error', 'Error while processing message %s',
-                                 handler.message.delivery_tag, exc_info=True)
+                        self.log.error(
+                            'Error while processing message %s',
+                            handler.message.delivery_tag,
+                            exc_info=True)
                         transaction.abort()
                 except:
-                    self.log(
-                        'error',
+                    self.log.error(
                         'Unhandled exception, prevent thread from crashing',
                         exc_info=True)
 
     def stop(self):
-        self.log('info', 'stopping')
+        self.log.info('stopping')
         self.running = False
         self.join()
