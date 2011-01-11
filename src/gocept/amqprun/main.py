@@ -17,7 +17,7 @@ import zope.event
 log = logging.getLogger(__name__)
 
 
-# Holds a reference to the reader stared by main(). This is to make testing
+# Holds a reference to the reader started by main(). This is to make testing
 # easier where main() is started in a thread.
 main_reader = None
 
