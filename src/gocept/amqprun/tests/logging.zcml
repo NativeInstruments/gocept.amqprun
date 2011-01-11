@@ -1,0 +1,7 @@
+<configure xmlns="http://namespaces.zope.org/zope">
+
+  <include package="gocept.amqprun" />
+
+  <utility component="gocept.amqprun.tests.basic.basic_handler" name="basic" />
+
+</configure>
