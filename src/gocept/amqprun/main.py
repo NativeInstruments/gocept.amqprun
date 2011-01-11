@@ -24,10 +24,15 @@ main_reader = None
 
 def main(config_file):
     global main_reader
+
     schema = ZConfig.loadSchemaFile(pkg_resources.resource_stream(
         __name__, 'schema.xml'))
     conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
+
     conf.eventlog.startup()
+    for logger in conf.loggers:
+        logger.startup()
+
     # Provide utility before xml config to allow components configured via ZCML
     # to use the utility.
     settings = gocept.amqprun.settings.Settings()

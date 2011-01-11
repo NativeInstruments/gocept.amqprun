@@ -3,8 +3,9 @@
 # See also LICENSE.txt
 
 import gocept.amqprun.testing
-import os
+import logging
 import mock
+import os
 import signal
 import subprocess
 import sys
@@ -106,6 +107,19 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
             gocept.amqprun.interfaces.IHandlerDeclaration))
         self.assertEquals(1, len(utilities))
         self.assertEquals('basic', utilities[0][0])
+
+    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.worker.Worker')
+    def test_configuration_should_load_logging(self, worker, reader):
+        import gocept.amqprun.interfaces
+        import gocept.amqprun.main
+        config = self.make_config(__name__, 'logging')
+        gocept.amqprun.main.main(config)
+        self.assertEquals(1, reader.call_count)
+        self.assertEquals(2, worker.call_count)
+        self.assertEqual(logging.CRITICAL, logging.getLogger().level)
+        self.assertEqual(logging.INFO, logging.getLogger('foo').level)
+        self.assertEqual(logging.DEBUG, logging.getLogger('foo.bar').level)
 
     @mock.patch('gocept.amqprun.server.MessageReader')
     @mock.patch('gocept.amqprun.worker.Worker')

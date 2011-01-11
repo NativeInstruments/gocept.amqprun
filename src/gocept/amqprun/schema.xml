@@ -22,6 +22,11 @@
         />
 
     <section type="eventlog" name="*" attribute="eventlog" required="yes" />
+    <multisection type="logger" attribute="loggers" name="*" required="no">
+      <description>
+        Additional loggers for specific subsystems
+      </description>
+    </multisection>
     <section type="amqp-server" name="*" attribute="amqp_server" required="yes" />
     <section type="worker" name="*" attribute="worker" required="yes" />
     <section type="settings" name="*" attribute="settings" required="no" />
