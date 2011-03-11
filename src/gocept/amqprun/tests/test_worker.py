@@ -74,8 +74,11 @@ class WorkerTest(unittest.TestCase):
         self._create_worker()
         self.assertFalse(self.session_factory.called)
 
+        message1 = mock.Mock()
+        message2 = mock.Mock()
+
         def func(msg):
-            return [mock.sentinel.msg1, mock.sentinel.msg2]
+            return [message1, message2]
 
         handler = gocept.amqprun.handler.FactoredHandler(
             func, mock.Mock())
@@ -84,7 +87,7 @@ class WorkerTest(unittest.TestCase):
         time.sleep(0.1)
         session = self.session_factory()
         self.assertEqual(2, session.send.call_count)
-        session.send.assert_called_with(mock.sentinel.msg2)
+        session.send.assert_called_with(message2)
 
     @mock.patch('transaction.commit')
     def test_transaction_should_commit(self, transaction_commit):

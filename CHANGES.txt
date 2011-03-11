@@ -4,7 +4,7 @@ CHANGES
 0.4 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Fixed broken tests.
 
 
 0.3 (2011-02-05)
