@@ -19,6 +19,7 @@
     <sectiontype
         name="settings"
         extends="ZConfig.basic.mapping"
+        keytype="string"
         />
 
     <section type="eventlog" name="*" attribute="eventlog" required="yes" />
