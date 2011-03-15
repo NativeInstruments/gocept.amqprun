@@ -5,6 +5,7 @@ CHANGES
 ----------------
 
 - Fixed broken tests.
+- Allow upper case in settings keys
 
 
 0.3 (2011-02-05)

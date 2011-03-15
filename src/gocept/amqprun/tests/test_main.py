@@ -147,6 +147,17 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
 
     @mock.patch('gocept.amqprun.server.MessageReader')
     @mock.patch('gocept.amqprun.worker.Worker')
+    def test_settings_should_allow_upper_case(self, _1, _2):
+        import gocept.amqprun.interfaces
+        import gocept.amqprun.main
+        config = self.make_config(__name__, 'settings')
+        gocept.amqprun.main.main(config)
+        settings = zope.component.getUtility(
+            gocept.amqprun.interfaces.ISettings)
+        self.assertEquals('qux', settings.get('test.SETTING.__default__'))
+
+    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.worker.Worker')
     def test_main_should_send_processstart_event(self, worker, reader):
         import gocept.amqprun.interfaces
         import gocept.amqprun.main
