@@ -1,6 +1,7 @@
 # Copyright (c) 2010 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+import email.utils
 import gocept.amqprun.interfaces
 import pika.spec
 import time
@@ -27,6 +28,7 @@ class Message(object):
         result = pika.spec.BasicProperties()
         result.timestamp = time.time()
         result.delivery_mode = 2 # persistent
+        result.message_id = email.utils.make_msgid('gocept.amqprun')
         for key in dir(result):
             value = header.pop(key, self)
             if isinstance(value, unicode):
