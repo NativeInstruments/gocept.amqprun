@@ -4,6 +4,7 @@ CHANGES
 0.4 (unreleased)
 ----------------
 
+- The message id of outgoing messages is set.
 - Fixed broken tests.
 - Allow upper case in settings keys
 
