@@ -304,6 +304,8 @@ class AMQPDataManager(object):
         self._channel.basic_ack(self.message.delivery_tag)
         for message in self.session.messages:
             log.debug("Publishing message (%s)", message.routing_key)
+            if not message.header.correlation_id:
+                message.header.correlation_id = self.message.header.message_id
             self._channel.basic_publish(
                 message.exchange, message.routing_key,
                 message.body, message.header)
