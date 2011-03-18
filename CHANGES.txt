@@ -5,6 +5,8 @@ CHANGES
 ----------------
 
 - The message id of outgoing messages is set.
+- The correlation id of outgoing messages is set to the incoming message's
+  message id (if set).
 - Fixed broken tests.
 - Allow upper case in settings keys
 

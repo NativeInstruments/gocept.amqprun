@@ -132,6 +132,7 @@ class MessageReaderTest(
         import transaction
         self.create_reader()
         handler = mock.Mock()
+        handler.message.header.message_id = None
         session = self.reader.create_session(handler)
         session.send(gocept.amqprun.message.Message(
             {}, 'body', routing_key=u'test.routing'))
@@ -144,6 +145,7 @@ class MessageReaderTest(
         import transaction
         self.create_reader()
         handler = mock.Mock()
+        handler.message.header.message_id = None
         session = self.reader.create_session(handler)
         session.send(gocept.amqprun.message.Message(
             {}, u'body', routing_key='test.routing'))
@@ -156,6 +158,7 @@ class MessageReaderTest(
         import transaction
         self.create_reader()
         handler = mock.Mock()
+        handler.message.header.message_id = None
         session = self.reader.create_session(handler)
         session.send(gocept.amqprun.message.Message(
             {u'content_type': u'text/plain'},
@@ -417,6 +420,25 @@ class DataManagerTest(unittest.TestCase):
         self.assertEqual(2, self.channel.basic_publish.call_count)
         self.channel.basic_publish.assert_called_with(
             m2.exchange, m2.routing_key, m2.body, m2.header)
+
+    def test_messages_should_be_sent_with_correlation_id(self):
+        dm = self.get_dm()
+        dm.message.header.message_id = mock.sentinel.messageid
+        msg = mock.Mock()
+        msg.header.correlation_id = None
+        self.session.send(msg)
+        dm.commit(None)
+        self.assertEqual(mock.sentinel.messageid, msg.header.correlation_id)
+
+    def test_existing_correlation_id_should_not_be_overwritten(self):
+        dm = self.get_dm()
+        dm.message.header.message_id = mock.sentinel.messageid
+        msg = mock.Mock()
+        msg.header.correlation_id = mock.sentinel.correlation_id
+        self.session.send(msg)
+        dm.commit(None)
+        self.assertEqual(mock.sentinel.correlation_id,
+                         msg.header.correlation_id)
 
     def test_abort_should_discard_queued_messages(self):
         dm = self.get_dm()
