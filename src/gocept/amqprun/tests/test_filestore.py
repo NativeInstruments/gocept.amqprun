@@ -26,14 +26,14 @@ class ReaderTest(gocept.amqprun.testing.LoopTestCase):
 
     @mock.patch('amqplib.client_0_8.Connection')
     def test_empty_new_directory_nothing_happens(self, connection):
-        reader = FileStoreReader(self.tmpdir, 'localhost', 'route')
+        reader = FileStoreReader(self.tmpdir, 'route', mock.Mock())
         reader.scan()
         self.assertFalse(connection().channel().basic_publish.called)
 
     @mock.patch('amqplib.client_0_8.Connection')
     @mock.patch('amqplib.client_0_8.Message')
     def test_scan_should_move_file_to_cur(self, message, connection):
-        reader = FileStoreReader(self.tmpdir, 'localhost', 'route')
+        reader = FileStoreReader(self.tmpdir, 'route', mock.Mock())
         f = open(os.path.join(self.tmpdir, 'new', 'foo'), 'w')
         f.write('contents')
         f.close()
@@ -49,7 +49,7 @@ class ReaderTest(gocept.amqprun.testing.LoopTestCase):
         self.assertEqual(1, len(os.listdir(os.path.join(self.tmpdir, 'cur'))))
 
     def create_reader(self):
-        reader = FileStoreReader(self.tmpdir, 'localhost', 'route')
+        reader = FileStoreReader(self.tmpdir, 'route', mock.Mock())
         self.start_thread(reader)
 
     @mock.patch('amqplib.client_0_8.Connection')
@@ -72,7 +72,12 @@ class ReaderQueueTest(gocept.amqprun.testing.QueueTestCase):
         queue = self.get_queue_name('test.receive')
         self.channel.queue_declare(queue=queue)
         self.channel.queue_bind(queue, 'amq.topic', routing_key='route')
-        reader = FileStoreReader(self.tmpdir, 'localhost', 'route')
+        server = mock.Mock()
+        server.hostname = 'localhost'
+        server.username = 'guest'
+        server.password = 'guest'
+        server.virtual_host = '/'
+        reader = FileStoreReader(self.tmpdir, 'route', server)
         reader.send('foo')
         time.sleep(0.05)
         message = self.channel.basic_get(queue)
@@ -87,7 +92,8 @@ class MainTest(unittest.TestCase):
         config.write(pkg_resources.resource_string(__name__, 'filestore.conf'))
         config.flush()
         gocept.amqprun.filestore.main(config.name)
-        reader.assert_called_with('/tmp', 'localhost', 'route')
+        self.assertEqual('/tmp', reader.call_args[0][0])
+        self.assertEqual('route', reader.call_args[0][1])
 
 
 class FileWriterTest(unittest.TestCase):

@@ -8,7 +8,9 @@ CHANGES
 - The correlation id of outgoing messages is set to the incoming message's
   message id (if set).
 - Fixed broken tests.
-- Allow upper case in settings keys
+- Allow upper case in settings keys.
+- Extend AMQP server configuration for FileStoreReader to include credentials
+  and virtual host.
 
 
 0.3 (2011-02-05)
