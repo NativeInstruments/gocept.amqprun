@@ -24,8 +24,11 @@ class FileStoreReader(object):
 
     def __init__(self, path, routing_key, server):
         self.running = False
+        hostname = server.hostname
+        if server.port:
+            hostname = '%s:%s' % (hostname, server.port)
         self.connection = amqp.Connection(
-            host=server.hostname,
+            host=hostname,
             userid=server.username,
             password=server.password,
             virtual_host=server.virtual_host)
