@@ -22,9 +22,13 @@ class FileStoreReader(object):
 
     zope.interface.implements(gocept.amqprun.interfaces.ILoop)
 
-    def __init__(self, path, hostname, routing_key):
+    def __init__(self, path, routing_key, server):
         self.running = False
-        self.connection = amqp.Connection(host=hostname)
+        self.connection = amqp.Connection(
+            host=server.hostname,
+            userid=server.username,
+            password=server.password,
+            virtual_host=server.virtual_host)
         self.channel = self.connection.channel()
         self.routing_key = routing_key
         self.filestore = gocept.filestore.FileStore(path)
@@ -60,8 +64,8 @@ def main(config_file):
     conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
     conf.eventlog.startup()
     reader = FileStoreReader(conf.settings.path,
-                             conf.settings.hostname,
-                             conf.settings.routing_key)
+                             conf.settings.routing_key,
+                             conf.amqp_server)
     reader.start()
 
 

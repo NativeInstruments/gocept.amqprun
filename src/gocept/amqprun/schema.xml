@@ -1,15 +1,7 @@
 <schema>
-    <import package='ZConfig.components.logger'/>
-    <import package='ZConfig.components.basic' file='mapping.xml'/>
-
-    <sectiontype name="amqp-server">
-        <key name="hostname" datatype="string" required="yes" />
-        <key name="port" datatype="integer" required="no" />
-        <key name="username" datatype="string" required="no" />
-        <key name="password" datatype="string" required="no" />
-        <key name="virtual_host" datatype="string" required="no" default="/" />
-        <key name="heartbeat_interval" datatype="integer" required="no" default="0" />
-    </sectiontype>
+    <import package="ZConfig.components.logger"/>
+    <import package="ZConfig.components.basic" file="mapping.xml"/>
+    <import package="gocept.amqprun" file="amqp.xml" />
 
     <sectiontype name="worker">
         <key name="amount" datatype="integer" required="yes" />
@@ -20,6 +12,10 @@
         name="settings"
         extends="ZConfig.basic.mapping"
         keytype="string"
+        />
+    <sectiontype
+        name="amqp-server"
+        extends="gocept.amqprun.Server"
         />
 
     <section type="eventlog" name="*" attribute="eventlog" required="yes" />
