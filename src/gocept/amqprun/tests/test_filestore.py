@@ -57,6 +57,14 @@ class ReaderTest(gocept.amqprun.testing.LoopTestCase):
         # this test simply should not hang indefinitely
         self.create_reader()
 
+    @mock.patch('amqplib.client_0_8.Connection')
+    def test_setting_port_appends_to_hostname(self, connection):
+        server = mock.Mock()
+        server.hostname = 'localhost'
+        server.port = '8080'
+        FileStoreReader(self.tmpdir, 'route', server)
+        self.assertEqual('localhost:8080', connection.call_args[1]['host'])
+
 
 class ReaderQueueTest(gocept.amqprun.testing.QueueTestCase):
 
@@ -74,6 +82,7 @@ class ReaderQueueTest(gocept.amqprun.testing.QueueTestCase):
         self.channel.queue_bind(queue, 'amq.topic', routing_key='route')
         server = mock.Mock()
         server.hostname = 'localhost'
+        server.port = None
         server.username = 'guest'
         server.password = 'guest'
         server.virtual_host = '/'
