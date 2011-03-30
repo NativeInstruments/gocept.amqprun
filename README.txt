@@ -35,6 +35,17 @@ Things you don't need to take care of
 
 * Transaction handling
 
+* Message Ids
+
+  * Each outgoing message gets a email-like message id.
+
+  * The corrlation id of outoing message is set to the message id of the
+    incomming message.
+
+  * Each outgoing message gets a custom references header which is set to the
+    incoming message's reference header plus the eincoming message's message
+    id.
+
 
 Getting started
 ===============

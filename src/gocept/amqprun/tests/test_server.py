@@ -133,6 +133,7 @@ class MessageReaderTest(
         self.create_reader()
         handler = mock.Mock()
         handler.message.header.message_id = None
+        handler.message.header.headers = None
         session = self.reader.create_session(handler)
         session.send(gocept.amqprun.message.Message(
             {}, 'body', routing_key=u'test.routing'))
@@ -146,6 +147,7 @@ class MessageReaderTest(
         self.create_reader()
         handler = mock.Mock()
         handler.message.header.message_id = None
+        handler.message.header.headers = None
         session = self.reader.create_session(handler)
         session.send(gocept.amqprun.message.Message(
             {}, u'body', routing_key='test.routing'))
@@ -413,7 +415,9 @@ class DataManagerTest(unittest.TestCase):
     def test_commit_should_send_queued_messages(self):
         dm = self.get_dm()
         m1 = mock.Mock()
+        m1.header.headers = None
         m2 = mock.Mock()
+        m2.header.headers = None
         self.session.send(m1)
         self.session.send(m2)
         dm.commit(None)
@@ -423,22 +427,67 @@ class DataManagerTest(unittest.TestCase):
 
     def test_messages_should_be_sent_with_correlation_id(self):
         dm = self.get_dm()
-        dm.message.header.message_id = mock.sentinel.messageid
+        dm.message.header.message_id = 'message id'
         msg = mock.Mock()
         msg.header.correlation_id = None
+        msg.header.headers = None
         self.session.send(msg)
         dm.commit(None)
-        self.assertEqual(mock.sentinel.messageid, msg.header.correlation_id)
+        self.assertEqual('message id', msg.header.correlation_id)
 
     def test_existing_correlation_id_should_not_be_overwritten(self):
         dm = self.get_dm()
-        dm.message.header.message_id = mock.sentinel.messageid
+        dm.message.header.message_id = 'message id'
         msg = mock.Mock()
         msg.header.correlation_id = mock.sentinel.correlation_id
+        msg.header.headers = None
         self.session.send(msg)
         dm.commit(None)
         self.assertEqual(mock.sentinel.correlation_id,
                          msg.header.correlation_id)
+
+    def test_messages_should_be_sent_with_references_header(self):
+        dm = self.get_dm()
+        dm.message.header.message_id = 'message id'
+        msg = mock.Mock()
+        msg.header.headers = None
+        self.session.send(msg)
+        dm.commit(None)
+        ((_, _, _, header), _) = self.channel.basic_publish.call_args
+        self.assertIn('references', header.headers)
+        self.assertEqual('message id', header.headers['references'])
+
+    def test_references_header_contains_parents_references(self):
+        dm = self.get_dm()
+        dm.message.header.message_id = 'message id'
+        dm.message.header.headers = {'references': 'parent id'}
+        msg = mock.Mock()
+        msg.header.headers = None
+        self.session.send(msg)
+        dm.commit(None)
+        ((_, _, _, header), _) = self.channel.basic_publish.call_args
+        self.assertIn('references', header.headers)
+        self.assertEqual('parent id\nmessage id', header.headers['references'])
+
+    def test_existing_references_header_should_not_be_overwritten(self):
+        dm = self.get_dm()
+        dm.message.header.message_id = 'message id'
+        msg = mock.Mock()
+        msg.header.headers = {'references': 'custom id'}
+        self.session.send(msg)
+        dm.commit(None)
+        ((_, _, _, header), _) = self.channel.basic_publish.call_args
+        self.assertEqual('custom id', header.headers['references'])
+
+    def test_no_references_should_be_created_when_parent_lacks_message_id(self):
+        dm = self.get_dm()
+        dm.message.header.message_id = None
+        msg = mock.Mock()
+        msg.header.headers = {}
+        self.session.send(msg)
+        dm.commit(None)
+        ((_, _, _, header), _) = self.channel.basic_publish.call_args
+        self.assertNotIn('references', header.headers)
 
     def test_abort_should_discard_queued_messages(self):
         dm = self.get_dm()

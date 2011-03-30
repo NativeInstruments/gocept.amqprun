@@ -7,6 +7,8 @@ CHANGES
 - The message id of outgoing messages is set.
 - The correlation id of outgoing messages is set to the incoming message's
   message id (if set).
+- A custom header ``references`` is set to the incoming message's reference
+  header + the incomming message's message id (like `References` in RFC5322).
 - Fixed broken tests.
 - Allow upper case in settings keys.
 - Extend AMQP server configuration for FileStoreReader to include credentials
