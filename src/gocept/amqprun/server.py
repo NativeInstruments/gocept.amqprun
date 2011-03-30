@@ -306,9 +306,26 @@ class AMQPDataManager(object):
             log.debug("Publishing message (%s)", message.routing_key)
             if not message.header.correlation_id:
                 message.header.correlation_id = self.message.header.message_id
+            self._set_references(message)
             self._channel.basic_publish(
                 message.exchange, message.routing_key,
                 message.body, message.header)
+
+    def _set_references(self, message):
+        if not self.message.header.message_id:
+            return
+        if message.header.headers is None:
+            message.header.headers = {}
+        if 'references' not in message.header.headers:
+            if (self.message.header.headers and
+                self.message.header.headers['references']):
+                parent_references = (
+                    self.message.header.headers['references'] + '\n')
+            else:
+                parent_references = ''
+            message.header.headers['references'] = (
+                parent_references +
+                self.message.header.message_id)
 
     def tpc_abort(self, transaction):
         log.debug('tx_rollback')
