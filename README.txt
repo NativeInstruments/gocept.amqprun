@@ -202,3 +202,26 @@ All messages with routing key 'test.data' would then be written to
 'output-directory'. (Note that in the buildout example above, you would need to
 put the writefiles directive into the ``[zcml]`` section, not the ``[config]``
 section.)
+
+You can specify the way files are named with the ``pattern`` parameter, for
+example::
+
+    <amqp:writefiles
+      routing_key="test.data"
+      queue_name="test.queue"
+      directory="/path/to/output-directory"
+      pattern="${routing_key}/${date}/${msgid}-${unique}.xml"
+      />
+
+``pattern`` performs as ``string.Template`` substitution. The following
+variables are available:
+
+  :date: The date the message arrived, formatted ``%Y-%m-%d``
+  :msgid: The value of the message-id header
+  :routing_key: The routing key of the message
+  :unique: A token that guarantees the filename will be unique in its directory
+
+If ``pattern`` contains slashes, intermediate directories will be created below
+``directory``, so in the example, messages would be stored like this::
+
+    /path/to/output-directory/example.route/2011-04-07/asdf998-1234098791.xml
