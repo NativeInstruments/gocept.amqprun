@@ -83,8 +83,14 @@ class FileWriter(object):
         self.pattern = string.Template(pattern)
 
     def __call__(self, message):
-        output = open(os.path.join(
-            self.directory, self.generate_filename(message)), 'w')
+        filename = self.generate_filename(message)
+        parts = filename.split(os.sep)
+        directory = self.directory
+        for d in parts[:-1]:
+            directory = os.path.join(directory, d)
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+        output = open(os.path.join(self.directory, filename), 'w')
         output.write(message.body)
         output.close()
 
