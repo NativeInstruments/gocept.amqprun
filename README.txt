@@ -229,6 +229,8 @@ variables are available:
   :routing_key: The routing key of the message
   :unique: A token that guarantees the filename will be unique in its directory
 
+The default value for ``pattern`` is ``${routing_key}-${unique}``.
+
 If ``pattern`` contains slashes, intermediate directories will be created below
 ``directory``, so in the example, messages would be stored like this::
 
