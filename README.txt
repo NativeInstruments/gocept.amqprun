@@ -203,7 +203,15 @@ All messages with routing key 'test.data' would then be written to
 put the writefiles directive into the ``[zcml]`` section, not the ``[config]``
 section.)
 
-You can specify the way files are named with the ``pattern`` parameter, for
+You can specify multiple routing keys separated by spaces::
+
+    <amqp:writefiles
+      routing_key="test.foo test.bar"
+      queue_name="test.queue"
+      directory="/path/to/output-directory"
+      />
+
+You can configure the way files are named with the ``pattern`` parameter, for
 example::
 
     <amqp:writefiles

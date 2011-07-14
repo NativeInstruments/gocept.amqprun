@@ -74,27 +74,28 @@ def main(config_file):
 
 class FileWriter(object):
 
-    def __init__(self, routing_key, directory):
-        self.routing_key = routing_key
+    def __init__(self, directory):
         self.directory = directory
 
     def __call__(self, message):
         output = open(os.path.join(
-            self.directory, self._unique_filename()), 'w')
+            self.directory, self._unique_filename(message)), 'w')
         output.write(message.body)
         output.close()
 
-    def _unique_filename(self):
+    def _unique_filename(self, message):
         # since CPython doesn't use OS-level threads, there won't be actual
         # concurrency, so we can get away with using the current time to
         # uniquify the filename -- we have to take care about the precision,
         # though: '%s' loses digits, but '%f' doesn't.
-        return '%s_%f' % (self.routing_key, time.time())
+        return '%s_%f' % (message.routing_key, time.time())
 
 
 class IWriteFilesDirective(zope.interface.Interface):
 
-    routing_key = zope.schema.TextLine(title=u"Routing key to listen on")
+    routing_key = zope.configuration.fields.Tokens(
+        title=u"Routing key(s) to listen on",
+        value_type=zope.schema.TextLine())
 
     queue_name = zope.schema.TextLine(title=u"Queue name")
 
@@ -103,10 +104,10 @@ class IWriteFilesDirective(zope.interface.Interface):
 
 
 def writefiles_directive(_context, routing_key, queue_name, directory):
-    writer = FileWriter(routing_key, directory)
+    writer = FileWriter(directory)
     handler = gocept.amqprun.handler.HandlerDeclaration(
         queue_name, routing_key, writer)
     zope.component.zcml.utility(
         _context,
         component=handler,
-        name=unicode('gocept.amqprun.amqpwrite.%s' % routing_key))
+        name=unicode('gocept.amqprun.amqpwrite.%s' % queue_name))
