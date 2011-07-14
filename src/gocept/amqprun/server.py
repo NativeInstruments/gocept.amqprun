@@ -215,17 +215,22 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
         for name, declaration in zope.component.getUtilitiesFor(
             gocept.amqprun.interfaces.IHandlerDeclaration):
             queue_name = unicode(declaration.queue_name).encode('UTF-8')
-            routing_key = unicode(declaration.routing_key).encode('UTF-8')
             log.info(
-                "Channel[%s]: Handling routing key '%s' on queue '%s' via '%s'",
+                "Channel[%s]: Handling routing key(s) '%s' on queue '%s'"
+                " via '%s'",
                 self.channel.handler.channel_number,
-                routing_key, queue_name, name)
+                declaration.routing_key, queue_name, name)
             self.channel.queue_declare(
                 queue=queue_name, durable=True,
                 exclusive=False, auto_delete=False)
-            self.channel.queue_bind(
-                queue=queue_name, exchange='amq.topic',
-                routing_key=routing_key)
+            routing_keys = declaration.routing_key
+            if not isinstance(routing_keys, list):
+                routing_keys = [routing_keys]
+            for routing_key in routing_keys:
+                routing_key = unicode(routing_key).encode('UTF-8')
+                self.channel.queue_bind(
+                    queue=queue_name, exchange='amq.topic',
+                    routing_key=routing_key)
             self.channel.basic_consume(
                 Consumer(declaration, self.tasks),
                 queue=queue_name)

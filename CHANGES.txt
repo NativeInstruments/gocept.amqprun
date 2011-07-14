@@ -13,6 +13,7 @@ CHANGES
 - Allow upper case in settings keys.
 - Extend AMQP server configuration for FileStoreReader to include credentials
   and virtual host.
+- Allow specifying multiple routing keys (#9326).
 
 
 0.3 (2011-02-05)

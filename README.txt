@@ -52,7 +52,8 @@ Getting started
 
 To get started define a function which does the work. In this case, we log the
 message body and send a message. The ``declare`` decorator takes two arguments,
-the queue name and the routing key::
+the queue name and the routing key (you can also pass in a list if you want to
+bind the function to multiple routing keys)::
 
     import logging
     import gocept.amqprun.handler

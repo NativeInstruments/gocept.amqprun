@@ -169,6 +169,20 @@ class MessageReaderTest(
         with mock.patch('pika.channel.Channel.basic_ack'):
             transaction.commit()
 
+    def test_multiple_routing_keys_should_recieve_messages_for_all(self):
+        import gocept.amqprun.handler
+        handle_message = mock.Mock()
+        decl = gocept.amqprun.handler.HandlerDeclaration(
+            self.get_queue_name('test.routing'),
+            ['route.1', 'route.2'], handle_message)
+        zope.component.provideUtility(decl, name='decl')
+        self.create_reader()
+
+        self.assertEqual(0, self.reader.tasks.qsize())
+        self.send_message('foo', routing_key='route.1')
+        self.send_message('bar', routing_key='route.2')
+        self.assertEqual(2, self.reader.tasks.qsize())
+
 
 class TestChannelSwitch(unittest.TestCase):
 
