@@ -2,6 +2,7 @@
 # See also LICENSE.txt
 
 from gocept.amqprun.filestore import FileStoreReader
+import datetime
 import gocept.amqprun.filestore
 import gocept.amqprun.testing
 import mock
@@ -116,22 +117,39 @@ class FileWriterTest(unittest.TestCase):
         shutil.rmtree(self.tmpdir)
         super(FileWriterTest, self).tearDown()
 
-    def test_unique_filename_uses_more_than_millisecond_precision(self):
-        from gocept.amqprun.filestore import FileWriter
-        writer = FileWriter('/dev/null')
+    def assertNothingRaised(self, function, *args, **kw):
+        function(*args, **kw)
+
+    def create_message(self, body=None):
         message = mock.Mock()
         message.routing_key = 'routing'
-        filename = writer._unique_filename(message)
+        message.header.message_id = 'myid'
+        message.header.timestamp = time.mktime(
+            datetime.datetime(2011, 7, 14, 14, 15).timetuple())
+        message.body = body
+        return message
+
+    def test_filename_uses_more_than_millisecond_precision(self):
+        from gocept.amqprun.filestore import FileWriter
+        writer = FileWriter('/dev/null')
+        filename = writer.generate_filename(self.create_message())
         digits = filename.split('.')[-1]
         self.assertGreater(digits, 2)
+
+    def test_filename_substitutes_pattern(self):
+        from gocept.amqprun.filestore import FileWriter
+        writer = FileWriter(
+            '/dev/null', pattern='${routing_key}_${date}_${msgid}_${unique}')
+        filename = writer.generate_filename(self.create_message())
+        parts = filename.split('_')
+        self.assertEqual(['routing', '2011-07-14', 'myid'], parts[:-1])
+        self.assertNothingRaised(lambda: float(parts[3]))
 
     def test_write_message_body(self):
         from gocept.amqprun.filestore import FileWriter
         self.assertEqual(0, len(os.listdir(self.tmpdir)))
         writer = FileWriter(self.tmpdir)
-        message = mock.Mock()
-        message.routing_key = 'routing'
-        message.body = 'This is only a test.'
+        message = self.create_message(body='This is only a test.')
         writer(message)
         self.assertEqual(1, len(os.listdir(self.tmpdir)))
         filename = os.listdir(self.tmpdir)[0]
