@@ -3,12 +3,14 @@
 
 import ZConfig
 import amqplib.client_0_8 as amqp
+import datetime
 import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import gocept.filestore
 import logging
 import os.path
 import pkg_resources
+import string
 import time
 import zope.configuration.fields
 import zope.interface
@@ -74,21 +76,31 @@ def main(config_file):
 
 class FileWriter(object):
 
-    def __init__(self, directory):
+    def __init__(self, directory, pattern=None):
         self.directory = directory
+        if pattern is None:
+            pattern = '${routing_key}-${unique}'
+        self.pattern = string.Template(pattern)
 
     def __call__(self, message):
         output = open(os.path.join(
-            self.directory, self._unique_filename(message)), 'w')
+            self.directory, self.generate_filename(message)), 'w')
         output.write(message.body)
         output.close()
 
-    def _unique_filename(self, message):
-        # since CPython doesn't use OS-level threads, there won't be actual
-        # concurrency, so we can get away with using the current time to
-        # uniquify the filename -- we have to take care about the precision,
-        # though: '%s' loses digits, but '%f' doesn't.
-        return '%s_%f' % (message.routing_key, time.time())
+    def generate_filename(self, message):
+        variables = dict(
+            date=datetime.datetime.fromtimestamp(
+                message.header.timestamp).strftime('%Y-%m-%d'),
+            msgid=message.header.message_id,
+            routing_key=message.routing_key,
+            # since CPython doesn't use OS-level threads, there won't be actual
+            # concurrency, so we can get away with using the current time to
+            # uniquify the filename -- we have to take care about the
+            # precision, though: '%s' loses digits, but '%f' doesn't.
+            unique='%f' % time.time(),
+        )
+        return self.pattern.substitute(variables)
 
 
 class IWriteFilesDirective(zope.interface.Interface):

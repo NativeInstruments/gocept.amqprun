@@ -3,6 +3,8 @@
 
 import amqplib.client_0_8 as amqp
 import asyncore
+import datetime
+import email.utils
 import mock
 import pkg_resources
 import signal
@@ -73,8 +75,10 @@ class QueueTestCase(unittest.TestCase):
         return queue_name
 
     def send_message(self, body, routing_key=''):
-        self.channel.basic_publish(amqp.Message(body), 'amq.topic',
-                                   routing_key=routing_key)
+        self.channel.basic_publish(
+            amqp.Message(body, timestamp=datetime.datetime.now(),
+                         msgid=email.utils.make_msgid('gocept.amqprun.test')),
+            'amq.topic', routing_key=routing_key)
         time.sleep(0.1)
 
 
