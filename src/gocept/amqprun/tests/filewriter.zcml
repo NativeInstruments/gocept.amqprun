@@ -4,7 +4,7 @@
   <include package="gocept.amqprun" />
 
   <amqp:writefiles
-    routing_key="test.data"
+    routing_key="${routing_key}"
     queue_name="${queue_name}"
     directory="${tmpdir}"
     />

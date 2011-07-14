@@ -8,6 +8,7 @@ import mock
 import os
 import pkg_resources
 import shutil
+import string
 import tempfile
 import time
 import unittest
@@ -117,16 +118,19 @@ class FileWriterTest(unittest.TestCase):
 
     def test_unique_filename_uses_more_than_millisecond_precision(self):
         from gocept.amqprun.filestore import FileWriter
-        writer = FileWriter('routing', '/dev/null')
-        filename = writer._unique_filename()
+        writer = FileWriter('/dev/null')
+        message = mock.Mock()
+        message.routing_key = 'routing'
+        filename = writer._unique_filename(message)
         digits = filename.split('.')[-1]
         self.assertGreater(digits, 2)
 
     def test_write_message_body(self):
         from gocept.amqprun.filestore import FileWriter
         self.assertEqual(0, len(os.listdir(self.tmpdir)))
-        writer = FileWriter('routing', self.tmpdir)
+        writer = FileWriter(self.tmpdir)
         message = mock.Mock()
+        message.routing_key = 'routing'
         message.body = 'This is only a test.'
         writer(message)
         self.assertEqual(1, len(os.listdir(self.tmpdir)))
@@ -146,13 +150,18 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
 
     def test_directive_registers_handler_as_utility(self):
         import gocept.amqprun.interfaces
-        zope.configuration.xmlconfig.file(
-            pkg_resources.resource_filename(__name__, 'filewriter.zcml'),
-            package=gocept.amqprun)
+        config = string.Template(unicode(
+            pkg_resources.resource_string(__name__, 'filewriter.zcml'),
+            'utf8'))
+        config = config.substitute(dict(
+                routing_key='test.foo test.bar',
+                queue_name='test.queue',
+                tmpdir='/dev/null'))
+        zope.configuration.xmlconfig.string(config)
         handler = zope.component.getUtility(
             gocept.amqprun.interfaces.IHandlerDeclaration,
-            name='gocept.amqprun.amqpwrite.test.data')
-        self.assertEqual('test.data', handler.routing_key)
+            name='gocept.amqprun.amqpwrite.test.queue')
+        self.assertEqual(['test.foo', 'test.bar'], handler.routing_key)
 
 
 class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
@@ -169,7 +178,9 @@ class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
         self.assertEqual(0, len(os.listdir(self.tmpdir)))
         self.make_config(
             __name__, 'filewriter', dict(
-                tmpdir=self.tmpdir, queue_name=self.get_queue_name('test')))
+                routing_key='test.data',
+                tmpdir=self.tmpdir,
+                queue_name=self.get_queue_name('test')))
         self.create_reader()
         body = 'This is only a test.'
         self.send_message(body, routing_key='test.data')
