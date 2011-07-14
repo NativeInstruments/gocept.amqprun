@@ -157,6 +157,18 @@ class FileWriterTest(unittest.TestCase):
         contents = open(os.path.join(self.tmpdir, filename)).read()
         self.assertEqual(message.body, contents)
 
+    def test_creates_intermediate_directories(self):
+        from gocept.amqprun.filestore import FileWriter
+        self.assertEqual(0, len(os.listdir(self.tmpdir)))
+        writer = FileWriter(self.tmpdir, pattern='foo/bar/baz')
+        message = self.create_message(body='This is only a test.')
+        writer(message)
+        filename = os.path.join(
+            self.tmpdir, 'foo', 'bar', 'baz')
+        self.assertTrue(os.path.exists(filename))
+        contents = open(os.path.join(filename)).read()
+        self.assertEqual(message.body, contents)
+
 
 class AMQPWriteDirectiveTest(unittest.TestCase):
 
