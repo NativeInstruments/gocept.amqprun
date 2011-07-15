@@ -13,6 +13,7 @@ import pkg_resources
 import string
 import time
 import zope.configuration.fields
+import zope.event
 import zope.interface
 import zope.schema
 
@@ -94,6 +95,9 @@ class FileWriter(object):
                    directory, filename)
         self.write(zope.xmlpickle.dumps(message.header),
                    directory, '%s.header%s' % (basename, extension))
+
+        zope.event.notify(gocept.amqprun.interfaces.MessageStored(
+                message, os.path.join(directory, filename)))
 
     def write(self, content, *path):
         output = open(os.path.join(*path), 'w')
