@@ -83,16 +83,31 @@ class FileWriter(object):
         self.pattern = string.Template(pattern)
 
     def __call__(self, message):
-        filename = self.generate_filename(message)
-        parts = filename.split(os.sep)
+        path = self.generate_filename(message)
+        directory = os.path.join(self.directory, os.path.dirname(path))
+        filename = os.path.basename(path)
+        basename, extension = os.path.splitext(filename)
+
+        self.ensure_directory(directory)
+
+        self.write(message.body,
+                   directory, filename)
+        self.write(zope.xmlpickle.dumps(message.header),
+                   directory, '%s.header%s' % (basename, extension))
+
+    def write(self, content, *path):
+        output = open(os.path.join(*path), 'w')
+        output.write(content)
+        output.close()
+
+    def ensure_directory(self, path):
+        path = path.replace(self.directory, '')
+        parts = path.split(os.sep)
         directory = self.directory
-        for d in parts[:-1]:
+        for d in parts:
             directory = os.path.join(directory, d)
             if not os.path.exists(directory):
                 os.mkdir(directory)
-        output = open(os.path.join(self.directory, filename), 'w')
-        output.write(message.body)
-        output.close()
 
     def generate_filename(self, message):
         variables = dict(

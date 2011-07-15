@@ -45,6 +45,7 @@ adapters, utilities and all the buzz.
         'zope.configuration',
         'zope.event',
         'zope.interface',
+        'zope.xmlpickle',
     ],
     extras_require=dict(test=[
         'mock<0.7dev',

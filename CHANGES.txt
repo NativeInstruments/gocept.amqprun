@@ -14,6 +14,8 @@ CHANGES
 - Extend AMQP server configuration for FileStoreReader to include credentials
   and virtual host.
 - Allow specifying multiple routing keys (#9326).
+- Allow specifying a filename/path pattern (#9327).
+- The FileWriter stores the headers in addition to the body (#9328).
 
 
 0.3 (2011-02-05)
