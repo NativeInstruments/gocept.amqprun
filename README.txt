@@ -236,3 +236,10 @@ If ``pattern`` contains slashes, intermediate directories will be created below
 ``directory``, so in the example, messages would be stored like this::
 
     /path/to/output-directory/example.route/2011-04-07/asdf998-1234098791.xml
+
+
+Reporting bugs
+==============
+
+Please report any bugs you find at
+https://intra.gocept.com/projects/projects/gocept-amqprun
