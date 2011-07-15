@@ -199,9 +199,10 @@ messages as individual files to a given directory, using the
     </configure>
 
 All messages with routing key 'test.data' would then be written to
-'output-directory'. (Note that in the buildout example above, you would need to
-put the writefiles directive into the ``[zcml]`` section, not the ``[config]``
-section.)
+'output-directory', two files per message, one containing the body and the
+other containing the headers (in ``zope.xmlpickle`` format).
+(Note that in the buildout example above, you would need to put the writefiles
+directive into the ``[zcml]`` section, not the ``[config]`` section.)
 
 You can specify multiple routing keys separated by spaces::
 

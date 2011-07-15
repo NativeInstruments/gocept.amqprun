@@ -14,6 +14,7 @@ import tempfile
 import time
 import unittest
 import zope.component
+import zope.xmlpickle
 
 
 class ReaderTest(gocept.amqprun.testing.LoopTestCase):
@@ -121,12 +122,11 @@ class FileWriterTest(unittest.TestCase):
         function(*args, **kw)
 
     def create_message(self, body=None):
-        message = mock.Mock()
-        message.routing_key = 'routing'
+        from gocept.amqprun.message import Message
+        message = Message({}, body, routing_key='routing')
         message.header.message_id = 'myid'
         message.header.timestamp = time.mktime(
             datetime.datetime(2011, 7, 14, 14, 15).timetuple())
-        message.body = body
         return message
 
     def test_filename_uses_more_than_millisecond_precision(self):
@@ -148,13 +148,10 @@ class FileWriterTest(unittest.TestCase):
     def test_write_message_body(self):
         from gocept.amqprun.filestore import FileWriter
         self.assertEqual(0, len(os.listdir(self.tmpdir)))
-        writer = FileWriter(self.tmpdir)
+        writer = FileWriter(self.tmpdir, pattern='foo')
         message = self.create_message(body='This is only a test.')
         writer(message)
-        self.assertEqual(1, len(os.listdir(self.tmpdir)))
-        filename = os.listdir(self.tmpdir)[0]
-        self.assertRegexpMatches(filename, '^routing')
-        contents = open(os.path.join(self.tmpdir, filename)).read()
+        contents = open(os.path.join(self.tmpdir, 'foo')).read()
         self.assertEqual(message.body, contents)
 
     def test_creates_intermediate_directories(self):
@@ -168,6 +165,18 @@ class FileWriterTest(unittest.TestCase):
         self.assertTrue(os.path.exists(filename))
         contents = open(os.path.join(filename)).read()
         self.assertEqual(message.body, contents)
+
+    def test_writes_message_headers(self):
+        from gocept.amqprun.filestore import FileWriter
+        self.assertEqual(0, len(os.listdir(self.tmpdir)))
+        writer = FileWriter(self.tmpdir, pattern='foo.xml')
+        message = self.create_message(body='This is only a test.')
+        writer(message)
+        self.assertEqual(2, len(os.listdir(self.tmpdir)))
+        self.assertTrue(os.path.exists(os.path.join(self.tmpdir, 'foo.xml')))
+        contents = open(os.path.join(self.tmpdir, 'foo.header.xml')).read()
+        header = zope.xmlpickle.loads(contents)
+        self.assertEqual(message.header.message_id, header.message_id)
 
 
 class AMQPWriteDirectiveTest(unittest.TestCase):
@@ -220,4 +229,4 @@ class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
             time.sleep(0.05)
         else:
             self.fail('Message was not processed.')
-        self.assertEqual(1, len(os.listdir(self.tmpdir)))
+        self.assertEqual(2, len(os.listdir(self.tmpdir)))
