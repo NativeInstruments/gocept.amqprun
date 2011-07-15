@@ -113,15 +113,17 @@ class FileWriterTest(unittest.TestCase):
     def setUp(self):
         super(FileWriterTest, self).setUp()
         self.tmpdir = tempfile.mkdtemp()
+        zope.component.testing.setUp()
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
+        zope.component.testing.tearDown()
         super(FileWriterTest, self).tearDown()
 
     def assertNothingRaised(self, function, *args, **kw):
         function(*args, **kw)
 
-    def create_message(self, body=None):
+    def create_message(self, body='testbody'):
         from gocept.amqprun.message import Message
         message = Message({}, body, routing_key='routing')
         message.header.message_id = 'myid'
@@ -149,7 +151,7 @@ class FileWriterTest(unittest.TestCase):
         from gocept.amqprun.filestore import FileWriter
         self.assertEqual(0, len(os.listdir(self.tmpdir)))
         writer = FileWriter(self.tmpdir, pattern='foo')
-        message = self.create_message(body='This is only a test.')
+        message = self.create_message()
         writer(message)
         contents = open(os.path.join(self.tmpdir, 'foo')).read()
         self.assertEqual(message.body, contents)
@@ -158,7 +160,7 @@ class FileWriterTest(unittest.TestCase):
         from gocept.amqprun.filestore import FileWriter
         self.assertEqual(0, len(os.listdir(self.tmpdir)))
         writer = FileWriter(self.tmpdir, pattern='foo/bar/baz')
-        message = self.create_message(body='This is only a test.')
+        message = self.create_message()
         writer(message)
         filename = os.path.join(
             self.tmpdir, 'foo', 'bar', 'baz')
@@ -170,13 +172,25 @@ class FileWriterTest(unittest.TestCase):
         from gocept.amqprun.filestore import FileWriter
         self.assertEqual(0, len(os.listdir(self.tmpdir)))
         writer = FileWriter(self.tmpdir, pattern='foo.xml')
-        message = self.create_message(body='This is only a test.')
+        message = self.create_message()
         writer(message)
         self.assertEqual(2, len(os.listdir(self.tmpdir)))
         self.assertTrue(os.path.exists(os.path.join(self.tmpdir, 'foo.xml')))
         contents = open(os.path.join(self.tmpdir, 'foo.header.xml')).read()
         header = zope.xmlpickle.loads(contents)
         self.assertEqual(message.header.message_id, header.message_id)
+
+    def test_sends_event(self):
+        from gocept.amqprun.filestore import FileWriter
+
+        def handler(event):
+            self.event = event
+
+        zope.component.getSiteManager().registerHandler(
+            handler, (gocept.amqprun.interfaces.IMessageStored,))
+        writer = FileWriter(self.tmpdir, pattern='foo')
+        writer(self.create_message())
+        self.assertEqual(self.event.path, os.path.join(self.tmpdir, 'foo'))
 
 
 class AMQPWriteDirectiveTest(unittest.TestCase):

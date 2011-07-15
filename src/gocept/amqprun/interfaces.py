@@ -99,3 +99,23 @@ class ProcessStarting(object):
     """Event to indicate the process is being started."""
 
     zope.interface.implements(IProcessStarting)
+
+
+class IMessageStored(zope.interface.Interface):
+    """Event the FileWriter sends after it has written a message to the
+    filesystem."""
+
+    path = zope.interface.Attribute(
+        'The absolute path of the file the message was written to')
+
+    message = zope.interface.Attribute(
+        'The gocept.amqprun.message.Message object')
+
+
+class MessageStored(object):
+
+    zope.interface.implements(IMessageStored)
+
+    def __init__(self, message, path):
+        self.path = path
+        self.message = message
