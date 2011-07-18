@@ -16,6 +16,7 @@ import zope.configuration.fields
 import zope.event
 import zope.interface
 import zope.schema
+import zope.xmlpickle
 
 
 log = logging.getLogger(__name__)
