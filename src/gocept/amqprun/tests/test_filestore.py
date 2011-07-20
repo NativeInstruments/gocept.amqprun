@@ -188,9 +188,9 @@ class FileWriterTest(unittest.TestCase):
 
         zope.component.getSiteManager().registerHandler(
             handler, (gocept.amqprun.interfaces.IMessageStored,))
-        writer = FileWriter(self.tmpdir, pattern='foo')
+        writer = FileWriter(self.tmpdir, pattern='foo/bar/baz')
         writer(self.create_message())
-        self.assertEqual(self.event.path, os.path.join(self.tmpdir, 'foo'))
+        self.assertEqual('foo/bar/baz', self.event.path)
 
 
 class AMQPWriteDirectiveTest(unittest.TestCase):
