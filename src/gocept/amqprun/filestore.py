@@ -98,7 +98,7 @@ class FileWriter(object):
                    directory, '%s.header%s' % (basename, extension))
 
         zope.event.notify(gocept.amqprun.interfaces.MessageStored(
-                message, os.path.join(directory, filename)))
+                message, path))
 
     def write(self, content, *path):
         output = open(os.path.join(*path), 'w')
