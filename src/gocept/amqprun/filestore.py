@@ -140,9 +140,12 @@ class IWriteFilesDirective(zope.interface.Interface):
     directory = zope.configuration.fields.Path(
         title=u"Path to the directory in which to write the files")
 
+    pattern = zope.schema.TextLine(title=u"File name pattern")
 
-def writefiles_directive(_context, routing_key, queue_name, directory):
-    writer = FileWriter(directory)
+
+def writefiles_directive(
+        _context, routing_key, queue_name, directory, pattern):
+    writer = FileWriter(directory, pattern)
     handler = gocept.amqprun.handler.HandlerDeclaration(
         queue_name, routing_key, writer)
     zope.component.zcml.utility(
