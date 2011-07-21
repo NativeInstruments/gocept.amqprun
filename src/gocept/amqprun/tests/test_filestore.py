@@ -139,6 +139,15 @@ class FileWriterTest(unittest.TestCase):
         digits = filename.split('.')[-1]
         self.assertGreater(digits, 2)
 
+    def test_no_timestamp_uses_now_as_date_placeholder(self):
+        from gocept.amqprun.filestore import FileWriter
+        writer = FileWriter('/dev/null', '${date}')
+        message = self.create_message()
+        message.header.timestamp = None
+        filename = writer.generate_filename(message)
+        self.assertEqual(
+            datetime.datetime.now().strftime('%Y-%m-%d'), filename)
+
     def test_filename_substitutes_pattern(self):
         from gocept.amqprun.filestore import FileWriter
         writer = FileWriter(
