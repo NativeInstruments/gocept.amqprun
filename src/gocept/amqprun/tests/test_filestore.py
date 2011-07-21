@@ -231,9 +231,9 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
                 routing_key='test.foo test.bar',
                 queue_name='test.queue',
                 directory='/dev/null',
-                pattern='${foo}/{bar}')
+                pattern='{foo}/${bar}/{qux}')
         self.assertEqual(
-            '${foo}/${bar}', handler.handler_function.pattern.template)
+            '${foo}/${bar}/${qux}', handler.handler_function.pattern.template)
 
 
 class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
