@@ -232,6 +232,10 @@ variables are available:
 
 The default value for ``pattern`` is ``${routing_key}-${unique}``.
 
+To support zc.buildout, ``{variable}`` is accepted as an alternative syntax to
+``${variable}``. (zc.buildout uses ``${}`` for its own substitutions, but
+unfortunately does not support escaping them.)
+
 If ``pattern`` contains slashes, intermediate directories will be created below
 ``directory``, so in the example, messages would be stored like this::
 
