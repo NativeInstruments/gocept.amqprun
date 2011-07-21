@@ -116,9 +116,13 @@ class FileWriter(object):
                 os.mkdir(directory)
 
     def generate_filename(self, message):
+        if message.header.timestamp is not None:
+            timestamp = datetime.datetime.fromtimestamp(
+                message.header.timestamp)
+        else:
+            timestamp = datetime.datetime.now()
         variables = dict(
-            date=datetime.datetime.fromtimestamp(
-                message.header.timestamp).strftime('%Y-%m-%d'),
+            date=timestamp.strftime('%Y-%m-%d'),
             msgid=message.header.message_id,
             routing_key=message.routing_key,
             # since CPython doesn't use OS-level threads, there won't be actual
