@@ -133,7 +133,8 @@ class FileWriterTest(unittest.TestCase):
 
     def test_filename_uses_more_than_millisecond_precision(self):
         from gocept.amqprun.filestore import FileWriter
-        writer = FileWriter('/dev/null')
+        ANY = None
+        writer = FileWriter('/dev/null', ANY)
         filename = writer.generate_filename(self.create_message())
         digits = filename.split('.')[-1]
         self.assertGreater(digits, 2)
@@ -201,20 +202,38 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
     def tearDown(self):
         zope.component.testing.tearDown()
 
-    def test_directive_registers_handler_as_utility(self):
+    def run_directive(
+        self, routing_key=None, queue_name=None, tmpdir=None, pattern=None):
         import gocept.amqprun.interfaces
         config = string.Template(unicode(
             pkg_resources.resource_string(__name__, 'filewriter.zcml'),
             'utf8'))
         config = config.substitute(dict(
+                routing_key=routing_key,
+                queue_name=queue_name,
+                tmpdir=tmpdir,
+                pattern=pattern,
+                ))
+        zope.configuration.xmlconfig.string(config)
+        return zope.component.getUtility(
+            gocept.amqprun.interfaces.IHandlerDeclaration,
+            name='gocept.amqprun.amqpwrite.' + queue_name)
+
+    def test_directive_registers_handler_as_utility(self):
+        handler = self.run_directive(
                 routing_key='test.foo test.bar',
                 queue_name='test.queue',
-                tmpdir='/dev/null'))
-        zope.configuration.xmlconfig.string(config)
-        handler = zope.component.getUtility(
-            gocept.amqprun.interfaces.IHandlerDeclaration,
-            name='gocept.amqprun.amqpwrite.test.queue')
+                tmpdir='/dev/null')
         self.assertEqual(['test.foo', 'test.bar'], handler.routing_key)
+
+    def test_pattern_supports_escape_with_and_without_dollar(self):
+        handler = self.run_directive(
+                routing_key='test.foo test.bar',
+                queue_name='test.queue',
+                tmpdir='/dev/null',
+                pattern='${foo}/{bar}')
+        self.assertEqual(
+            '${foo}/${bar}', handler.handler_function.pattern.template)
 
 
 class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
@@ -233,7 +252,8 @@ class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
             __name__, 'filewriter', dict(
                 routing_key='test.data',
                 tmpdir=self.tmpdir,
-                queue_name=self.get_queue_name('test')))
+                queue_name=self.get_queue_name('test'),
+                pattern=''))
         self.create_reader()
         body = 'This is only a test.'
         self.send_message(body, routing_key='test.data')

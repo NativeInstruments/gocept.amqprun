@@ -7,6 +7,7 @@
     routing_key="${routing_key}"
     queue_name="${queue_name}"
     directory="${tmpdir}"
+    pattern="${pattern}"
     />
 
 </configure>
