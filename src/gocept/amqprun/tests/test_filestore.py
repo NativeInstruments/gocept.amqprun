@@ -203,7 +203,7 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
         zope.component.testing.tearDown()
 
     def run_directive(
-        self, routing_key=None, queue_name=None, tmpdir=None, pattern=None):
+        self, routing_key=None, queue_name=None, directory=None, pattern=None):
         import gocept.amqprun.interfaces
         config = string.Template(unicode(
             pkg_resources.resource_string(__name__, 'filewriter.zcml'),
@@ -211,7 +211,7 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
         config = config.substitute(dict(
                 routing_key=routing_key,
                 queue_name=queue_name,
-                tmpdir=tmpdir,
+                directory=directory,
                 pattern=pattern,
                 ))
         zope.configuration.xmlconfig.string(config)
@@ -223,14 +223,14 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
         handler = self.run_directive(
                 routing_key='test.foo test.bar',
                 queue_name='test.queue',
-                tmpdir='/dev/null')
+                directory='/dev/null')
         self.assertEqual(['test.foo', 'test.bar'], handler.routing_key)
 
     def test_pattern_supports_escape_with_and_without_dollar(self):
         handler = self.run_directive(
                 routing_key='test.foo test.bar',
                 queue_name='test.queue',
-                tmpdir='/dev/null',
+                directory='/dev/null',
                 pattern='${foo}/{bar}')
         self.assertEqual(
             '${foo}/${bar}', handler.handler_function.pattern.template)
@@ -251,7 +251,7 @@ class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
         self.make_config(
             __name__, 'filewriter', dict(
                 routing_key='test.data',
-                tmpdir=self.tmpdir,
+                directory=self.tmpdir,
                 queue_name=self.get_queue_name('test'),
                 pattern=''))
         self.create_reader()
