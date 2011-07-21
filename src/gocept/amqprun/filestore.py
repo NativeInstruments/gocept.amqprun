@@ -148,7 +148,7 @@ def writefiles_directive(
         _context, routing_key, queue_name, directory, pattern):
     # buildout doesn't support escaping '${}' and thus thinks it should resolve
     # those substitions itself. So we support '{}' in addition to '${}'
-    pattern = re.sub(r'([^$]){', r'\1${', pattern)
+    pattern = re.sub(r'(^|[^$]){', r'\1${', pattern)
     writer = FileWriter(directory, pattern)
     handler = gocept.amqprun.handler.HandlerDeclaration(
         queue_name, routing_key, writer)
