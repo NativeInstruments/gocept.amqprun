@@ -48,8 +48,9 @@ class Worker(threading.Thread):
                 pass
             else:
                 try:
-                    self.log.info('Processing message %s (%s)',
+                    self.log.info('Processing message %s %s (%s)',
                                   handler.message.delivery_tag,
+                                  handler.message.header.message_id,
                                   handler.message.routing_key)
                     self.log.debug(str(handler.message.body))
                     transaction.begin()
