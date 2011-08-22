@@ -4,7 +4,7 @@ CHANGES
 0.4.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Add helper methods for dealing with header files to FileWriter (for #9443).
 
 
 0.4.1 (2011-08-22)
