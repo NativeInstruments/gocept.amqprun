@@ -89,14 +89,13 @@ class FileWriter(object):
         path = self.generate_filename(message)
         directory = os.path.join(self.directory, os.path.dirname(path))
         filename = os.path.basename(path)
-        basename, extension = os.path.splitext(filename)
 
         self.ensure_directory(directory)
 
         self.write(message.body,
                    directory, filename)
         self.write(zope.xmlpickle.dumps(message.header),
-                   directory, '%s.header%s' % (basename, extension))
+                   directory, self.header_filename(filename))
 
         zope.event.notify(gocept.amqprun.interfaces.MessageStored(
                 message, path))
@@ -132,6 +131,16 @@ class FileWriter(object):
             unique='%f' % time.time(),
         )
         return self.pattern.substitute(variables)
+
+    @staticmethod
+    def header_filename(filename):
+        basename, extension = os.path.splitext(filename)
+        return '%s.header%s' % (basename, extension)
+
+    @staticmethod
+    def is_header_file(filename):
+        basename, extension = os.path.splitext(filename)
+        return basename.endswith('.header')
 
 
 class IWriteFilesDirective(zope.interface.Interface):
