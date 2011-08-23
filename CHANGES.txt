@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.4.2 (unreleased)
+0.4.2 (2011-08-23)
 ------------------
 
 - Add helper methods for dealing with header files to FileWriter (for #9443).
