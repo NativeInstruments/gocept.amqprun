@@ -1,10 +1,12 @@
 CHANGES
 =======
 
-0.4.3 (unreleased)
-------------------
+0.5 (unreleased)
+----------------
 
-- Nothing changed yet.
+- Internal API change in ``server.AMQPDataManager.__init__``: `message`
+  parameter is now optional, so it was moved to the end of the list of
+  arguments.
 
 
 0.4.2 (2011-08-23)

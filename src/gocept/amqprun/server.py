@@ -161,7 +161,7 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
 
     def create_session(self, handler):
         session = Session()
-        dm = AMQPDataManager(self, handler.message, session)
+        dm = AMQPDataManager(self, session, handler.message)
         transaction.get().join(dm)
         return session
 
@@ -278,7 +278,7 @@ class AMQPDataManager(object):
 
     transaction_manager = None
 
-    def __init__(self, reader, message, session):
+    def __init__(self, reader, session, message=None):
         self.connection_lock = reader.connection.lock
         self._channel = reader.channel
         self.message = message
@@ -289,10 +289,9 @@ class AMQPDataManager(object):
     def abort(self, transaction):
         # Called on transaction.abort() *and* on errors in tpc_vote/tpc_finish
         # of any datamanger *if* self has *not* voted, yet.
-        #
         if self._tpc_begin:
             # If a TPC has begun already, do nothing. tpc_abort handles
-            # everythin we do as well.
+            # everything we do as well.
             return
         with self.connection_lock:
             self.session.clear()
@@ -305,20 +304,25 @@ class AMQPDataManager(object):
         self._channel.tx_select()
 
     def commit(self, transaction):
-        log.debug("Ack'ing message %s", self.message.delivery_tag)
-        self._channel.basic_ack(self.message.delivery_tag)
+        if self.message is not None:
+            log.debug("Ack'ing message %s.", self.message.delivery_tag)
+            self._channel.basic_ack(self.message.delivery_tag)
         for message in self.session.messages:
-            log.debug("Publishing message (%s)", message.routing_key)
-            if not message.header.correlation_id:
-                message.header.correlation_id = self.message.header.message_id
+            log.debug("Publishing message (%s).", message.routing_key)
             self._set_references(message)
             self._channel.basic_publish(
                 message.exchange, message.routing_key,
                 message.body, message.header)
+        self.session.clear()
 
     def _set_references(self, message):
+        if self.message is None:
+            # no reply
+            return
         if not self.message.header.message_id:
             return
+        if not message.header.correlation_id:
+            message.header.correlation_id = self.message.header.message_id
         if message.header.headers is None:
             message.header.headers = {}
         if 'references' not in message.header.headers:
