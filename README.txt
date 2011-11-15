@@ -43,7 +43,7 @@ Things you don't need to take care of
     incomming message.
 
   * Each outgoing message gets a custom references header which is set to the
-    incoming message's reference header plus the eincoming message's message
+    incoming message's reference header plus the incoming message's message
     id.
 
 
