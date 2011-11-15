@@ -38,7 +38,7 @@ adapters, utilities and all the buzz.
         'ZConfig',
         'amqplib',
         'gocept.filestore',
-        'pika',
+        'pika < 0.9',
         'setuptools',
         'transaction',
         'zope.component[zcml]',
