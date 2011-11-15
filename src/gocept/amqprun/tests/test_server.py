@@ -354,9 +354,8 @@ class DataManagerTest(unittest.TestCase):
     def get_dm(self):
         import gocept.amqprun.server
         self.session = gocept.amqprun.server.Session()
-        return gocept.amqprun.server.AMQPDataManager(self.reader,
-                                                     self.get_message(),
-                                                     self.session)
+        return gocept.amqprun.server.AMQPDataManager(
+            self.reader, self.session, self.get_message())
 
     def test_interface(self):
         import transaction.interfaces
