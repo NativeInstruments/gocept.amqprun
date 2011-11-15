@@ -88,7 +88,7 @@ class IChannelManager(zope.interface.Interface):
         """Return how often the channel is currenlty being used."""
 
     def close_if_possible():
-        """Close the channle if it is no longer used by anyone."""
+        """Close the channel if it is no longer used by anyone."""
 
 
 class IProcessStarting(zope.interface.Interface):
