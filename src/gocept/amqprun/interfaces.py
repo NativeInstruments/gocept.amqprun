@@ -38,7 +38,7 @@ class IMessage(zope.interface.Interface):
     body = zope.interface.Attribute('Message body')
     delivery_tag = zope.interface.Attribute('Message delivery tag (if any)')
     routing_key = zope.interface.Attribute('Routing key (if any)')
-    exchange = zope.interface.Attribute('Exchange (default: amqp.topic)')
+    exchange = zope.interface.Attribute('Exchange (default: amq.topic)')
 
 
 class ISession(zope.interface.Interface):
