@@ -96,17 +96,6 @@ class MessageReaderTest(
         self.assertFalse(handle_message_2.called)
         self.assertTrue(handle_message_1.called)
 
-    @mock.patch('transaction.get')
-    def test_create_session_returns_session_and_joins_transaction(
-        self, transaction_get):
-        self.create_reader()
-        handler = mock.Mock()
-        session = self.reader.create_session(handler)
-        self.assertTrue(transaction_get().join.called)
-        dm = transaction_get().join.call_args[0][0]
-        self.assertEqual(session, dm.session)
-        self.assertEqual(self.reader.connection.lock, dm.connection_lock)
-
     def test_unicode_queue_names_should_work(self):
         import gocept.amqprun.interfaces
         class Decl(object):
@@ -353,7 +342,8 @@ class DataManagerTest(unittest.TestCase):
 
     def get_dm(self):
         import gocept.amqprun.server
-        self.session = gocept.amqprun.server.Session()
+        self.session = gocept.amqprun.server.Session(
+            self.reader, self.get_message())
         return gocept.amqprun.server.AMQPDataManager(
             self.reader, self.session, self.get_message())
 
@@ -548,10 +538,21 @@ class DataManagerTest(unittest.TestCase):
 
 class SessionTest(unittest.TestCase):
 
+    def setUp(self):
+        self.patcher = mock.patch('gocept.amqprun.server.AMQPDataManager')
+        self.patcher.__enter__()
+
+    def tearDown(self):
+        self.patcher.__exit__()
+
+    def create_session(self):
+        from gocept.amqprun.server import Session
+        return Session(mock.Mock())
+
     def test_send_should_queue_messages(self):
         from gocept.amqprun.server import Session
         message = mock.sentinel.message
-        session = Session()
+        session = self.create_session()
         session.send(message)
         self.assertEqual([message], session.messages)
 
@@ -559,8 +560,20 @@ class SessionTest(unittest.TestCase):
         from gocept.amqprun.server import Session
         import gocept.amqprun.interfaces
         zope.interface.verify.verifyObject(
-            gocept.amqprun.interfaces.ISession, Session())
+            gocept.amqprun.interfaces.ISession, self.create_session())
 
+    @mock.patch('transaction.get')
+    def test_joins_transaction_on_first_send(self, transaction_get):
+        session = self.create_session()
+        session.send('asdf')
+        self.assertTrue(transaction_get().join.called)
+
+    @mock.patch('transaction.get')
+    def test_joins_only_once_on_send(self, transaction_get):
+        session = self.create_session()
+        session.send('asdf')
+        session.send('bsdf')
+        self.assertEqual(1, transaction_get().join.call_count)
 
 class ConnectionTest(unittest.TestCase):
 
