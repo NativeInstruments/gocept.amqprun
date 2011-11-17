@@ -160,10 +160,7 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
         self.connection.close()
 
     def create_session(self, handler):
-        session = Session()
-        dm = AMQPDataManager(self, session, handler.message)
-        transaction.get().join(dm)
-        return session
+        return Session(self, handler.message)
 
     def open_channel(self):
         assert self.channel is None
@@ -262,14 +259,26 @@ class Session(object):
 
     zope.interface.implements(gocept.amqprun.interfaces.ISession)
 
-    def __init__(self):
+    def __init__(self, context, message=None):
         self.messages = []
+        self.context = context
+        self.message = message
+        self._needs_to_join = True
 
     def send(self, message):
+        self._join_transaction()
         self.messages.append(message)
 
-    def clear(self):
+    def reset(self):
         self.messages[:] = []
+        self._needs_to_join = True
+
+    def _join_transaction(self):
+        if not self._needs_to_join:
+            return
+        dm = AMQPDataManager(self.context, self, self.message)
+        transaction.get().join(dm)
+        self._needs_to_join = False
 
 
 class AMQPDataManager(object):
@@ -294,7 +303,7 @@ class AMQPDataManager(object):
             # everything we do as well.
             return
         with self.connection_lock:
-            self.session.clear()
+            self.session.reset()
             gocept.amqprun.interfaces.IChannelManager(self._channel).release()
 
     def tpc_begin(self, transaction):
@@ -313,7 +322,7 @@ class AMQPDataManager(object):
             self._channel.basic_publish(
                 message.exchange, message.routing_key,
                 message.body, message.header)
-        self.session.clear()
+        self.session.reset()
 
     def _set_references(self, message):
         if self.message is None:
@@ -344,7 +353,7 @@ class AMQPDataManager(object):
         # implementation (2.1.1). We let the message dangle until the channel
         # is closed. At this point the message is re-queued and re-submitted to
         # us.
-        self.session.clear()
+        self.session.reset()
         gocept.amqprun.interfaces.IChannelManager(self._channel).release()
         self.connection_lock.release()
 

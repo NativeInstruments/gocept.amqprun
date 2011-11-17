@@ -49,7 +49,7 @@ class ISession(zope.interface.Interface):
     def send(message):
         """Queues up message for sending upon transaction commit."""
 
-    def clear():
+    def reset():
         """Discards all queued messages."""
 
 
