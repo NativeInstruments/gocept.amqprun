@@ -56,6 +56,10 @@ class QueueTestCase(unittest.TestCase):
         self.connection = self.layer.connection
         self.channel = self.layer.channel
 
+        self.receive_queue = self.get_queue_name('receive')
+        self.channel.queue_declare(queue=self.receive_queue)
+        self._queues.append(self.receive_queue)
+
     def tearDown(self):
         for queue_name in self._queues:
             try:
@@ -80,6 +84,25 @@ class QueueTestCase(unittest.TestCase):
                          msgid=email.utils.make_msgid('gocept.amqprun.test')),
             'amq.topic', routing_key=routing_key)
         time.sleep(0.1)
+
+    def expect_response_on(self, routing_key):
+        self.channel.queue_bind(
+            self.receive_queue, 'amq.topic', routing_key=routing_key)
+
+    def wait_for_response(self, timeout=100):
+        """Wait for a response on `self.receive_queue`.
+
+        timeout ... wait for n seconds.
+
+        """
+        for i in range(timeout):
+            message = self.channel.basic_get(self.receive_queue, no_ack=True)
+            if message:
+                break
+            time.sleep(1)
+        else:
+            self.fail('No message received')
+        return message
 
 
 class LoopTestCase(unittest.TestCase):
@@ -116,14 +139,6 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         gocept.amqprun.worker.Worker.timeout = 0.05
         self.orig_signal = signal.signal
         signal.signal = mock.Mock()
-
-        self.receive_queue = self.get_queue_name('receive')
-        self.channel.queue_declare(queue=self.receive_queue)
-        self._queues.append(self.receive_queue)
-
-    def expect_response_on(self, routing_key):
-        self.channel.queue_bind(
-            self.receive_queue, 'amq.topic', routing_key=routing_key)
 
     def tearDown(self):
         import gocept.amqprun.worker
@@ -175,13 +190,4 @@ class MainTestCase(LoopTestCase, QueueTestCase):
             time.sleep(0.05)
         else:
             self.fail('Message was not processed.')
-
-        # message was taken from queue, wait for response messages to arrive
-        for i in range(timeout):
-            message = self.channel.basic_get(self.receive_queue, no_ack=True)
-            if message:
-                break
-            time.sleep(1)
-        else:
-            self.fail('No success message received')
-        return message
+        return super(MainTestCase, self).wait_for_response(timeout)
