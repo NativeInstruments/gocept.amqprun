@@ -21,7 +21,7 @@ import zope.configuration.xmlconfig
 
 
 ZCML_LAYER = plone.testing.zca.ZCMLSandbox(
-    filename='configure.zcml', package=gocept.amqprun)
+    filename='configure.zcml', package=gocept.amqprun, module=__name__)
 
 
 class QueueLayer(plone.testing.Layer):
