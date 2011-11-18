@@ -5,9 +5,11 @@ import amqplib.client_0_8 as amqp
 import asyncore
 import datetime
 import email.utils
+import gocept.amqprun
 import mock
 import pkg_resources
 import plone.testing
+import plone.testing.zca
 import signal
 import string
 import tempfile
@@ -18,7 +20,13 @@ import zope.component.testing
 import zope.configuration.xmlconfig
 
 
+ZCML_LAYER = plone.testing.zca.ZCMLSandbox(
+    filename='configure.zcml', package=gocept.amqprun)
+
+
 class QueueLayer(plone.testing.Layer):
+
+    defaultBases = [ZCML_LAYER]
 
     def setUp(self):
         self['amqp-hostname'] = hostname = 'localhost'
@@ -37,14 +45,9 @@ class QueueTestCase(unittest.TestCase):
     layer = QUEUE_LAYER
 
     def setUp(self):
-        import gocept.amqprun
         super(QueueTestCase, self).setUp()
         self._queue_prefix = 'test.%f.' % time.time()
         self._queues = []
-        zope.component.testing.setUp()
-        zope.configuration.xmlconfig.file(
-            pkg_resources.resource_filename(__name__, 'configure.zcml'),
-            package=gocept.amqprun)
         self.connection = self.layer['amqp-connection']
         self.channel = self.layer['amqp-channel']
 
@@ -62,7 +65,6 @@ class QueueTestCase(unittest.TestCase):
                     channel.queue_delete(queue_name)
             except amqp.AMQPChannelException:
                 pass
-        zope.component.testing.tearDown()
         super(QueueTestCase, self).tearDown()
 
     def get_queue_name(self, suffix):
@@ -131,6 +133,7 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         gocept.amqprun.worker.Worker.timeout = 0.05
         self.orig_signal = signal.signal
         signal.signal = mock.Mock()
+        plone.testing.zca.pushGlobalRegistry()
 
     def tearDown(self):
         import gocept.amqprun.worker
@@ -138,6 +141,7 @@ class MainTestCase(LoopTestCase, QueueTestCase):
             if isinstance(t, gocept.amqprun.worker.Worker):
                 t.stop()
         signal.signal = self.orig_signal
+        plone.testing.zca.popGlobalRegistry()
         super(MainTestCase, self).tearDown()
         gocept.amqprun.worker.Worker.timeout = self._timeout
 
