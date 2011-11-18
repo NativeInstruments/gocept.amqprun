@@ -7,6 +7,7 @@ import datetime
 import email.utils
 import mock
 import pkg_resources
+import plone.testing
 import signal
 import string
 import tempfile
@@ -17,32 +18,23 @@ import zope.component.testing
 import zope.configuration.xmlconfig
 
 
-class QueueLayer(object):
+class QueueLayer(plone.testing.Layer):
 
-    hostname = 'localhost'
+    def setUp(self):
+        self['amqp-hostname'] = hostname = 'localhost'
+        self['amqp-connection'] = amqp.Connection(host=hostname)
+        self['amqp-channel'] = self['amqp-connection'].channel()
 
-    @classmethod
-    def setUp(cls):
-        cls.connection = amqp.Connection(host=cls.hostname)
-        cls.channel = cls.connection.channel()
+    def tearDown(self):
+        self['amqp-channel'].close()
+        self['amqp-connection'].close()
 
-    @classmethod
-    def tearDown(cls):
-        cls.channel.close()
-        cls.connection.close()
-
-    @classmethod
-    def testSetUp(cls):
-        pass
-
-    @classmethod
-    def testTearDown(cls):
-        pass
+QUEUE_LAYER = QueueLayer()
 
 
 class QueueTestCase(unittest.TestCase):
 
-    layer = QueueLayer
+    layer = QUEUE_LAYER
 
     def setUp(self):
         import gocept.amqprun
@@ -53,8 +45,8 @@ class QueueTestCase(unittest.TestCase):
         zope.configuration.xmlconfig.file(
             pkg_resources.resource_filename(__name__, 'configure.zcml'),
             package=gocept.amqprun)
-        self.connection = self.layer.connection
-        self.channel = self.layer.channel
+        self.connection = self.layer['amqp-connection']
+        self.channel = self.layer['amqp-channel']
 
         self.receive_queue = self.get_queue_name('receive')
         self.channel.queue_declare(queue=self.receive_queue)
@@ -193,18 +185,30 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         return super(MainTestCase, self).wait_for_response(timeout)
 
 
-class SenderHelper(object):
+class Config(object):
 
-    def create_sender(self):
+    heartbeat_interval = 0
+    hostname = NotImplemented
+    password = None
+    port = None
+    username = None
+    virtual_host = "/"
+
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+
+
+class ConnectorHelper(object):
+
+    def create_sender(self, **kw):
         import gocept.amqprun.sender
+        return self._create_connector(gocept.amqprun.sender.MessageSender, **kw)
 
-        class Parameters(object):
-            hostname = self.layer.hostname
-            port = None
-            virtual_host = '/'
-            username = None
-            password = None
-            heartbeat_interval = 0
+    def create_reader(self, **kw):
+        import gocept.amqprun.server
+        return self._create_connector(gocept.amqprun.server.MessageReader, **kw)
 
-        sender = gocept.amqprun.sender.MessageSender(Parameters)
-        return sender
+    def _create_connector(self, class_, **kw):
+        params = dict(hostname=self.layer['amqp-hostname'])
+        params.update(kw)
+        return class_(Config(**params))

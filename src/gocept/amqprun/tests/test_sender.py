@@ -8,7 +8,7 @@ import transaction
 class MessageSenderTest(
         gocept.amqprun.testing.LoopTestCase,
         gocept.amqprun.testing.QueueTestCase,
-        gocept.amqprun.testing.SenderHelper):
+        gocept.amqprun.testing.ConnectorHelper):
 
     def setUp(self):
         super(MessageSenderTest, self).setUp()
