@@ -51,6 +51,7 @@ adapters, utilities and all the buzz.
         'mock<0.7dev',
         'tcpwatch',
         'zope.testing',
+        'plone.testing',
     ]),
     entry_points=dict(console_scripts=[
         'server = gocept.amqprun.main:main',

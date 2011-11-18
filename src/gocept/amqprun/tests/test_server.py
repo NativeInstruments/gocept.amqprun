@@ -21,19 +21,11 @@ import zope.interface.verify
 
 class MessageReaderTest(
     gocept.amqprun.testing.LoopTestCase,
-    gocept.amqprun.testing.QueueTestCase):
+    gocept.amqprun.testing.QueueTestCase,
+    gocept.amqprun.testing.ConnectorHelper):
 
     def create_reader(self):
-        import gocept.amqprun.server
-
-        class Parameters(object):
-            hostname = self.layer.hostname
-            port = None
-            virtual_host = '/'
-            username = None
-            password = None
-            heartbeat_interval = 0
-        self.reader = gocept.amqprun.server.MessageReader(Parameters)
+        self.reader = super(MessageReaderTest, self).create_reader()
         self.start_thread(self.reader)
 
     def test_loop_can_be_stopped_from_outside(self):
@@ -607,7 +599,8 @@ class ConnectionTest(unittest.TestCase):
 
 class DyingRabbitTest(
     gocept.amqprun.testing.LoopTestCase,
-    gocept.amqprun.testing.QueueTestCase):
+    gocept.amqprun.testing.QueueTestCase,
+    gocept.amqprun.testing.ConnectorHelper):
 
     pid = None
 
@@ -617,16 +610,7 @@ class DyingRabbitTest(
             os.kill(self.pid, signal.SIGINT)
 
     def create_reader(self, _port=None):
-        import gocept.amqprun.server
-
-        class Parameters(object):
-            hostname = self.layer.hostname
-            port = _port
-            virtual_host = '/'
-            username = None
-            password = None
-            heartbeat_interval = 0
-        self.reader = gocept.amqprun.server.MessageReader(Parameters)
+        self.reader = super(DyingRabbitTest, self).create_reader(port=_port)
         self.start_thread(self.reader)
 
     def test_socket_close_should_not_stop_main_loop_and_open_connection(self):
