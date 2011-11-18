@@ -191,3 +191,20 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         else:
             self.fail('Message was not processed.')
         return super(MainTestCase, self).wait_for_response(timeout)
+
+
+class SenderHelper(object):
+
+    def create_sender(self):
+        import gocept.amqprun.sender
+
+        class Parameters(object):
+            hostname = self.layer.hostname
+            port = None
+            virtual_host = '/'
+            username = None
+            password = None
+            heartbeat_interval = 0
+
+        sender = gocept.amqprun.sender.MessageSender(Parameters)
+        return sender
