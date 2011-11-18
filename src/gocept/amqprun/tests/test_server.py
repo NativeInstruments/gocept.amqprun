@@ -609,8 +609,8 @@ class DyingRabbitTest(
         if self.pid:
             os.kill(self.pid, signal.SIGINT)
 
-    def create_reader(self, _port=None):
-        self.reader = super(DyingRabbitTest, self).create_reader(port=_port)
+    def create_reader(self, port=None):
+        self.reader = super(DyingRabbitTest, self).create_reader(port=port)
         self.start_thread(self.reader)
 
     def test_socket_close_should_not_stop_main_loop_and_open_connection(self):
