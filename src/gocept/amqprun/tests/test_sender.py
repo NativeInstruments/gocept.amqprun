@@ -6,29 +6,16 @@ import transaction
 
 
 class MessageSenderTest(
-    gocept.amqprun.testing.LoopTestCase,
-    gocept.amqprun.testing.QueueTestCase):
+        gocept.amqprun.testing.LoopTestCase,
+        gocept.amqprun.testing.QueueTestCase,
+        gocept.amqprun.testing.SenderHelper):
 
     def setUp(self):
         super(MessageSenderTest, self).setUp()
         transaction.abort()
         self.expect_response_on('test.key')
         self.sender = self.create_sender()
-
-    def create_sender(self):
-        import gocept.amqprun.sender
-
-        class Parameters(object):
-            hostname = self.layer.hostname
-            port = None
-            virtual_host = '/'
-            username = None
-            password = None
-            heartbeat_interval = 0
-
-        sender = gocept.amqprun.sender.MessageSender(Parameters)
-        self.start_thread(sender)
-        return sender
+        self.start_thread(self.sender)
 
     def send(self, body='message 1'):
         from gocept.amqprun.message import Message
