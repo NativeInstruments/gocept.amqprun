@@ -5,6 +5,7 @@ from gocept.amqprun.server import Connection, AMQPDataManager, Session
 import gocept.amqprun.interfaces
 import logging
 import pika.connection
+import select
 import threading
 import transaction
 import zope.interface
