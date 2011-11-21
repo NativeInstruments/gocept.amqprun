@@ -8,12 +8,10 @@ messages_received = None
 
 
 def handle_message(message):
-    print message
     messages_received.append(message)
 
 
 def handle_message_and_error(message):
-    print message
     messages_received.append(message)
     raise RuntimeError('Error')
 
