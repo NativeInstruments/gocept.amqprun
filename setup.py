@@ -36,7 +36,6 @@ adapters, utilities and all the buzz.
     namespace_packages=['gocept'],
     install_requires=[
         'ZConfig',
-        'amqplib',
         'gocept.filestore',
         'pika < 0.9',
         'setuptools',
@@ -45,14 +44,19 @@ adapters, utilities and all the buzz.
         'zope.configuration',
         'zope.event',
         'zope.interface',
-        'zope.xmlpickle',
     ],
-    extras_require=dict(test=[
-        'mock<0.7dev',
-        'tcpwatch',
-        'zope.testing',
-        'plone.testing',
-    ]),
+    extras_require=dict(
+        test=[
+            'amqplib',
+            'mock<0.7dev',
+            'plone.testing',
+            'tcpwatch',
+            'zope.testing',
+            ],
+        writefiles=[
+            'amqplib',
+            'zope.xmlpickle',
+            ]),
     entry_points=dict(console_scripts=[
         'server = gocept.amqprun.main:main',
         'filestore-reader = gocept.amqprun.filestore:main',
