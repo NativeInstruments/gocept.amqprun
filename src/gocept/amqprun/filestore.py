@@ -3,21 +3,12 @@
 
 import ZConfig
 import amqplib.client_0_8 as amqp
-import datetime
-import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import gocept.filestore
 import logging
-import os.path
 import pkg_resources
-import re
-import string
 import time
-import zope.configuration.fields
-import zope.event
 import zope.interface
-import zope.schema
-import zope.xmlpickle
 
 
 log = logging.getLogger(__name__)

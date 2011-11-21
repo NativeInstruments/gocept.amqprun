@@ -16,8 +16,6 @@ import tempfile
 import threading
 import time
 import unittest
-import zope.component.testing
-import zope.configuration.xmlconfig
 
 
 ZCML_LAYER = plone.testing.zca.ZCMLSandbox(

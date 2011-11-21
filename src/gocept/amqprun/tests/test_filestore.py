@@ -2,19 +2,15 @@
 # See also LICENSE.txt
 
 from gocept.amqprun.filestore import FileStoreReader
-import datetime
 import gocept.amqprun.filestore
 import gocept.amqprun.testing
 import mock
 import os
 import pkg_resources
 import shutil
-import string
 import tempfile
 import time
 import unittest
-import zope.component
-import zope.xmlpickle
 
 
 class ReaderTest(gocept.amqprun.testing.LoopTestCase):

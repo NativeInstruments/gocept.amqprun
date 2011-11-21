@@ -2,9 +2,7 @@
 # See also LICENSE.txt
 
 import datetime
-import gocept.amqprun.filestore
 import gocept.amqprun.testing
-import mock
 import os
 import pkg_resources
 import shutil
