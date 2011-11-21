@@ -1,4 +1,4 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
+# Copyright (c) 2010-2011 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import amqplib.client_0_8 as amqp
@@ -97,6 +97,13 @@ class QueueTestCase(unittest.TestCase):
             self.fail('No message received')
         return message
 
+    def create_server(self, **kw):
+        import gocept.amqprun.server
+        params = dict(hostname=self.layer['amqp-hostname'])
+        params.update(kw)
+        return gocept.amqprun.server.Server(
+            gocept.amqprun.connection.Parameters(**params))
+
 
 class LoopTestCase(unittest.TestCase):
 
@@ -186,19 +193,3 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         else:
             self.fail('Message was not processed.')
         return super(MainTestCase, self).wait_for_response(timeout)
-
-
-class ConnectorHelper(object):
-
-    def create_sender(self, **kw):
-        import gocept.amqprun.sender
-        return self._create_connector(gocept.amqprun.sender.MessageSender, **kw)
-
-    def create_reader(self, **kw):
-        import gocept.amqprun.server
-        return self._create_connector(gocept.amqprun.server.MessageReader, **kw)
-
-    def _create_connector(self, class_, **kw):
-        params = dict(hostname=self.layer['amqp-hostname'])
-        params.update(kw)
-        return class_(gocept.amqprun.connection.Parameters(**params))

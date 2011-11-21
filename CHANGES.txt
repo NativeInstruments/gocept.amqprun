@@ -4,9 +4,8 @@ CHANGES
 0.5 (unreleased)
 ----------------
 
-- Internal API change in ``server.AMQPDataManager.__init__``: `message`
-  parameter is now optional, so it was moved to the end of the list of
-  arguments.
+General
+~~~~~~~
 
 - Added `writefiles` extra to make ZCML ``amqp:writefiles`` optional.
 
@@ -14,6 +13,21 @@ CHANGES
   `meta.zcml`.
 
 - Added `filestore` extra make ``gocept.amqprun.filestore`` optional.
+
+Features
+~~~~~~~~
+
+- Renamed ``gocept.amqprun.server.MessageReader`` into
+  ``gocept.amqprun.server.Server`` and added a ``send`` method so it can
+  initiate sending of messages.
+
+
+Internal
+~~~~~~~~
+
+- Internal API change in ``server.AMQPDataManager.__init__``: `message`
+  parameter is now optional, so it was moved to the end of the list of
+  arguments.
 
 
 0.4.2 (2011-08-23)
