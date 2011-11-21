@@ -12,6 +12,20 @@ import time
 log = logging.getLogger(__name__)
 
 
+class Parameters(object):
+    """Connection parameters with sensible defaults."""
+
+    heartbeat_interval = 0
+    hostname = NotImplemented
+    password = None
+    port = None
+    username = None
+    virtual_host = "/"
+
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+
+
 class WriteDispatcher(asyncore.file_dispatcher):
 
     def handle_read(self):
