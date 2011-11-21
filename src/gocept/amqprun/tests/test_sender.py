@@ -7,14 +7,13 @@ import transaction
 
 class MessageSenderTest(
         gocept.amqprun.testing.LoopTestCase,
-        gocept.amqprun.testing.QueueTestCase,
-        gocept.amqprun.testing.ConnectorHelper):
+        gocept.amqprun.testing.QueueTestCase):
 
     def setUp(self):
         super(MessageSenderTest, self).setUp()
         transaction.abort()
         self.expect_response_on('test.key')
-        self.sender = self.create_sender()
+        self.sender = self.create_server()
         self.start_thread(self.sender)
 
     def send(self, body='message 1'):

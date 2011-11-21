@@ -102,7 +102,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         else:
             self.fail('Message was not received again')
 
-    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.server.Server')
     @mock.patch('gocept.amqprun.worker.Worker')
     def test_basic_configuration_should_load_zcml(self, worker, reader):
         import gocept.amqprun.interfaces
@@ -116,7 +116,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.assertEquals(1, len(utilities))
         self.assertEquals('basic', utilities[0][0])
 
-    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.server.Server')
     @mock.patch('gocept.amqprun.worker.Worker')
     def test_configuration_should_load_logging(self, worker, reader):
         import gocept.amqprun.interfaces
@@ -129,7 +129,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.assertEqual(logging.INFO, logging.getLogger('foo').level)
         self.assertEqual(logging.DEBUG, logging.getLogger('foo.bar').level)
 
-    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.server.Server')
     @mock.patch('gocept.amqprun.worker.Worker')
     def test_settings_should_be_available_through_utility(self, _1, _2):
         import gocept.amqprun.interfaces
@@ -141,7 +141,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.assertEquals('foo', settings.get('test.setting.1'))
         self.assertEquals('bar', settings.get('test.setting.2'))
 
-    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.server.Server')
     @mock.patch('gocept.amqprun.worker.Worker')
     def test_settings_should_be_unicode(self, _1, _2):
         import gocept.amqprun.interfaces
@@ -153,7 +153,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.assertIsInstance(settings.get('test.setting.1'), unicode)
         self.assertEquals(u'Ümläuten', settings.get('test.setting.unicode'))
 
-    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.server.Server')
     @mock.patch('gocept.amqprun.worker.Worker')
     def test_settings_should_allow_upper_case(self, _1, _2):
         import gocept.amqprun.interfaces
@@ -164,7 +164,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
             gocept.amqprun.interfaces.ISettings)
         self.assertEquals('qux', settings.get('test.SETTING.__default__'))
 
-    @mock.patch('gocept.amqprun.server.MessageReader')
+    @mock.patch('gocept.amqprun.server.Server')
     @mock.patch('gocept.amqprun.worker.Worker')
     def test_main_should_send_processstart_event(self, worker, reader):
         import gocept.amqprun.interfaces

@@ -44,7 +44,7 @@ def main(config_file):
 
     zope.configuration.xmlconfig.file(conf.worker.component_configuration)
 
-    reader = gocept.amqprun.server.MessageReader(conf.amqp_server)
+    reader = gocept.amqprun.server.Server(conf.amqp_server)
     main_reader = reader
 
     def stop_reader(signum, frame):
@@ -61,7 +61,7 @@ def main(config_file):
     workers = []
     for i in range(conf.worker.amount):
         worker = gocept.amqprun.worker.Worker(
-            reader.tasks, reader.create_session)
+            reader.tasks, reader.get_session)
         workers.append(worker)
         worker.start()
 

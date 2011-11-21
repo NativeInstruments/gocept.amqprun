@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2011 gocept gmbh & co. kg
+## Copyright (c) 2010-2011 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import Queue
@@ -9,6 +9,7 @@ import gocept.amqprun.session
 import logging
 import pika
 import select
+import threading
 import time
 import zope.component
 import zope.interface
@@ -31,7 +32,7 @@ class Consumer(object):
         self.tasks.put(self.handler(message))
 
 
-class MessageReader(object, pika.connection.NullReconnectionStrategy):
+class Server(object, pika.connection.NullReconnectionStrategy):
 
     zope.interface.implements(gocept.amqprun.interfaces.ILoop)
 
@@ -48,6 +49,7 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
 
     def start(self):
         log.info('Starting message reader.')
+        self.local = threading.local()
         self.connection = gocept.amqprun.connection.Connection(
             self.connection_parameters, self)
         self.connection.finish_init()
@@ -77,8 +79,14 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
         self.running = False
         self.connection.close()
 
-    def create_session(self, handler):
-        return gocept.amqprun.session.Session(self, handler.message)
+    def send(self, message):
+        session = self.get_session()
+        session.send(message)
+
+    def get_session(self, message=None):
+        if not hasattr(self.local, 'session'):
+            self.local.session = gocept.amqprun.session.Session(self, message)
+        return self.local.session
 
     def open_channel(self):
         assert self.channel is None
@@ -88,6 +96,9 @@ class MessageReader(object, pika.connection.NullReconnectionStrategy):
         self._channel_opened = time.time()
 
     def switch_channel(self):
+        if not zope.component.getUtilitiesFor(
+            gocept.amqprun.interfaces.IHandlerDeclaration):
+            return False
         if self._switching_channels:
             return False
         log.info('Switching to a new channel')

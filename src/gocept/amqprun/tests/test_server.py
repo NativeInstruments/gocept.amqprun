@@ -20,19 +20,18 @@ import zope.component.testing
 
 class MessageReaderTest(
     gocept.amqprun.testing.LoopTestCase,
-    gocept.amqprun.testing.QueueTestCase,
-    gocept.amqprun.testing.ConnectorHelper):
+    gocept.amqprun.testing.QueueTestCase):
 
-    def create_reader(self):
-        self.reader = super(MessageReaderTest, self).create_reader()
+    def create_server(self):
+        self.reader = super(MessageReaderTest, self).create_server()
         self.start_thread(self.reader)
 
     def test_loop_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
-        self.create_reader()
+        self.create_server()
 
     def test_messages_wo_handler_declaration_should_not_arrive_in_tasks(self):
-        self.create_reader()
+        self.create_server()
         self.send_message('foo')
         self.assertEqual(0, self.reader.tasks.qsize())
 
@@ -46,7 +45,7 @@ class MessageReaderTest(
         zope.component.provideUtility(decl, name='queue')
 
         # Start up the reader
-        self.create_reader()
+        self.create_server()
 
         # Without routing key, the message is not delivered
         self.assertEqual(0, self.reader.tasks.qsize())
@@ -76,7 +75,7 @@ class MessageReaderTest(
         zope.component.provideUtility(decl_2, name='2')
 
         # Start up the reader
-        self.create_reader()
+        self.create_server()
 
         self.assertEqual(0, self.reader.tasks.qsize())
         # With routing key, the message is delivered to the correct handler
@@ -95,7 +94,7 @@ class MessageReaderTest(
             queue_name = self.get_queue_name(u'test.case.2')
             routing_key = 'test.messageformat.2'
         zope.component.provideUtility(Decl, name='decl')
-        self.create_reader()
+        self.create_server()
 
     def test_unicode_routing_keys_should_work_for_handler(self):
         import gocept.amqprun.interfaces
@@ -105,16 +104,16 @@ class MessageReaderTest(
             queue_name = self.get_queue_name('test.case.2')
             routing_key = u'test.messageformat.2'
         zope.component.provideUtility(Decl, name='decl')
-        self.create_reader()
+        self.create_server()
 
     def test_unicode_routing_keys_should_work_for_message(self):
         import gocept.amqprun.message
         import transaction
-        self.create_reader()
+        self.create_server()
         handler = mock.Mock()
         handler.message.header.message_id = None
         handler.message.header.headers = None
-        session = self.reader.create_session(handler)
+        session = self.reader.get_session(handler.message)
         session.send(gocept.amqprun.message.Message(
             {}, 'body', routing_key=u'test.routing'))
         # Patch out basic_ack because we haven't actually received a message
@@ -124,11 +123,11 @@ class MessageReaderTest(
     def test_unicode_body_should_work_for_message(self):
         import gocept.amqprun.message
         import transaction
-        self.create_reader()
+        self.create_server()
         handler = mock.Mock()
         handler.message.header.message_id = None
         handler.message.header.headers = None
-        session = self.reader.create_session(handler)
+        session = self.reader.get_session(handler.message)
         session.send(gocept.amqprun.message.Message(
             {}, u'body', routing_key='test.routing'))
         # Patch out basic_ack because we haven't actually received a message
@@ -138,10 +137,10 @@ class MessageReaderTest(
     def test_unicode_header_should_work_for_message(self):
         import gocept.amqprun.message
         import transaction
-        self.create_reader()
+        self.create_server()
         handler = mock.Mock()
         handler.message.header.message_id = None
-        session = self.reader.create_session(handler)
+        session = self.reader.get_session(handler.message)
         session.send(gocept.amqprun.message.Message(
             {u'content_type': u'text/plain'},
             'body', routing_key='test.routing'))
@@ -156,7 +155,7 @@ class MessageReaderTest(
             self.get_queue_name('test.routing'),
             ['route.1', 'route.2'], handle_message)
         zope.component.provideUtility(decl, name='decl')
-        self.create_reader()
+        self.create_server()
 
         self.assertEqual(0, self.reader.tasks.qsize())
         self.send_message('foo', routing_key='route.1')
@@ -178,9 +177,9 @@ class TestChannelSwitch(unittest.TestCase):
         zope.component.testing.tearDown()
 
     def get_reader(self):
-        from gocept.amqprun.server import MessageReader
+        from gocept.amqprun.server import Server
         import pika.channel
-        reader = MessageReader(mock.sentinel.hostname)
+        reader = Server(mock.sentinel.hostname)
         reader.connection = mock.Mock()
         reader.connection.lock = threading.Lock()
         reader.channel = mock.Mock(pika.channel.Channel)
@@ -310,8 +309,7 @@ class TestChannelSwitch(unittest.TestCase):
 
 class DyingRabbitTest(
     gocept.amqprun.testing.LoopTestCase,
-    gocept.amqprun.testing.QueueTestCase,
-    gocept.amqprun.testing.ConnectorHelper):
+    gocept.amqprun.testing.QueueTestCase):
 
     pid = None
 
@@ -320,13 +318,13 @@ class DyingRabbitTest(
         if self.pid:
             os.kill(self.pid, signal.SIGINT)
 
-    def create_reader(self, port=None):
-        self.reader = super(DyingRabbitTest, self).create_reader(port=port)
+    def create_server(self, port=None):
+        self.reader = super(DyingRabbitTest, self).create_server(port=port)
         self.start_thread(self.reader)
 
     def test_socket_close_should_not_stop_main_loop_and_open_connection(self):
         # This hopefully simulates local errors
-        self.create_reader()
+        self.create_server()
         self.assertTrue(self.reader.connection.is_alive())
         time.sleep(0.5)
         self.reader.connection.dispatcher.socket.close()
@@ -343,7 +341,7 @@ class DyingRabbitTest(
     def test_remote_close_should_reopen_connection(self):
         port = random.randint(30000, 40000)
         pid = self.tcpwatch(port)
-        self.create_reader(port)
+        self.create_server(port)
         old_channel = self.reader.channel
         self.assertTrue(self.reader.connection.is_alive())
 
