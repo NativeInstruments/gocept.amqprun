@@ -59,7 +59,6 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.create_reader()
 
         for i in range(20):
-            print len(self.messages_received)
             if len(self.messages_received) >= message_count:
                 break
             time.sleep(0.25)
