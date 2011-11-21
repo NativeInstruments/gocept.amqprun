@@ -184,7 +184,8 @@ Interfacing with the filesystem
 
 gocept.amqprun provides a quick way to set up a handler that writes incoming
 messages as individual files to a given directory, using the
-``<amqp:writefiles>`` ZCML directive::
+``<amqp:writefiles>`` ZCML directive. You need the `writefiles` extra to
+enable this directive::
 
     <configure xmlns="http://namespaces.zope.org/zope"
                xmlns:amqp="http://namespaces.gocept.com/amqp">
