@@ -8,6 +8,8 @@ CHANGES
   parameter is now optional, so it was moved to the end of the list of
   arguments.
 
+- Added `writefiles` extra to make ZCML ``amqp:writefiles`` optional.
+
 
 0.4.2 (2011-08-23)
 ------------------
