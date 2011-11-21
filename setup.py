@@ -36,7 +36,6 @@ adapters, utilities and all the buzz.
     namespace_packages=['gocept'],
     install_requires=[
         'ZConfig',
-        'gocept.filestore',
         'pika < 0.9',
         'setuptools',
         'transaction',
@@ -56,6 +55,9 @@ adapters, utilities and all the buzz.
         writefiles=[
             'amqplib',
             'zope.xmlpickle',
+            ],
+        filestore=[
+            'gocept.filestore',
             ]),
     entry_points=dict(console_scripts=[
         'server = gocept.amqprun.main:main',
