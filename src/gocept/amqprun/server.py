@@ -5,12 +5,9 @@ import Queue
 import asyncore
 import gocept.amqprun.interfaces
 import gocept.amqprun.message
-import gocept.amqprun.worker
 import logging
 import os
 import pika
-import pika.asyncore_adapter
-import pika.spec
 import select
 import threading
 import time

@@ -1,15 +1,10 @@
 # Copyright (c) 2010-2011 gocept gmbh & co. kg
 # See also LICENSE.txt
 
-import ZConfig
-import amqplib.client_0_8 as amqp
 import datetime
 import gocept.amqprun.handler
 import gocept.amqprun.interfaces
-import gocept.filestore
-import logging
 import os.path
-import pkg_resources
 import re
 import string
 import time
