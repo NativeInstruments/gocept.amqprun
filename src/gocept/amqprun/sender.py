@@ -1,8 +1,9 @@
 # Copyright (c) 2011 gocept gmbh & co. kg
 # See also LICENSE.txt
 
-from gocept.amqprun.server import Connection, Session
+import gocept.amqprun.connection
 import gocept.amqprun.interfaces
+import gocept.amqprun.session
 import logging
 import pika.connection
 import select
@@ -27,7 +28,8 @@ class MessageSender(object, pika.connection.NullReconnectionStrategy):
 
     def start(self):
         log.info('Starting message sender.')
-        self.connection = Connection(self.connection_parameters, self)
+        self.connection = gocept.amqprun.connection.Connection(
+            self.connection_parameters, self)
         self.connection.finish_init()
         self.running = True
         while self.running:
@@ -58,7 +60,7 @@ class MessageSender(object, pika.connection.NullReconnectionStrategy):
     def _get_session(self):
         if self.local.session is not None:
             return self.local.session
-        self.local.session = Session(self)
+        self.local.session = gocept.amqprun.session.Session(self)
         return self.local.session
 
     def open_channel(self):

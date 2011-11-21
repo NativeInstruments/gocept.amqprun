@@ -54,7 +54,6 @@ class TestChannel(unittest.TestCase):
         zope.interface.verify.verifyObject(IChannelManager, manager)
 
     def test_channel_should_be_adaptable_to_manager(self):
-        from gocept.amqprun.channel import Manager
         from gocept.amqprun.interfaces import IChannelManager
         import gocept.amqprun
         import pika.channel
