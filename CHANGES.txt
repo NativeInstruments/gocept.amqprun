@@ -10,6 +10,8 @@ CHANGES
 
 - Added `writefiles` extra to make ZCML ``amqp:writefiles`` optional.
 
+- Added `filestore` extra make ``gocept.amqprun.filestore`` optional.
+
 
 0.4.2 (2011-08-23)
 ------------------
