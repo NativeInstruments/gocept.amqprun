@@ -6,6 +6,7 @@ import asyncore
 import datetime
 import email.utils
 import gocept.amqprun
+import gocept.amqprun.connection
 import mock
 import pkg_resources
 import plone.testing
@@ -187,19 +188,6 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         return super(MainTestCase, self).wait_for_response(timeout)
 
 
-class Config(object):
-
-    heartbeat_interval = 0
-    hostname = NotImplemented
-    password = None
-    port = None
-    username = None
-    virtual_host = "/"
-
-    def __init__(self, **kw):
-        self.__dict__.update(kw)
-
-
 class ConnectorHelper(object):
 
     def create_sender(self, **kw):
@@ -213,4 +201,4 @@ class ConnectorHelper(object):
     def _create_connector(self, class_, **kw):
         params = dict(hostname=self.layer['amqp-hostname'])
         params.update(kw)
-        return class_(Config(**params))
+        return class_(gocept.amqprun.connection.Parameters(**params))
