@@ -1,18 +1,8 @@
-<configure xmlns="http://namespaces.zope.org/zope"
-           xmlns:meta="http://namespaces.zope.org/meta">
+<configure xmlns="http://namespaces.zope.org/zope">
 
   <include package="zope.component" file="meta.zcml" />
   <include package="zope.component" />
 
   <adapter factory=".channel.Manager" />
 
-  <meta:directives namespace="http://namespaces.gocept.com/amqp">
-
-    <meta:directive
-      name="writefiles"
-      schema=".filestore.IWriteFilesDirective"
-      handler=".filestore.writefiles_directive"
-      />
-
-  </meta:directives>
 </configure>

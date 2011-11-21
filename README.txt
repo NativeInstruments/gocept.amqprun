@@ -190,7 +190,7 @@ enable this directive::
     <configure xmlns="http://namespaces.zope.org/zope"
                xmlns:amqp="http://namespaces.gocept.com/amqp">
 
-      <include package="gocept.amqprun" />
+      <include package="gocept.amqprun" file="meta.zcml" />
 
       <amqp:writefiles
         routing_key="test.data"
