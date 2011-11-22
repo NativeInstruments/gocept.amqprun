@@ -208,7 +208,7 @@ class DataManagerTest(unittest.TestCase):
         self.assertFalse(self.channel.basic_reject.called)
 
     def test_init_should_acquire_channel(self):
-        dm = self.get_dm()
+        self.get_dm()
         self.assertTrue(self.channel_manager.acquire.called)
 
     def test_tpc_finish_should_release_channel(self):
