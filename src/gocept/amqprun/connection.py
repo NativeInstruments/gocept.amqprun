@@ -102,4 +102,3 @@ class Connection(pika.AsyncoreConnection):
         else:
             self._close_now = True
             self.notify()
-

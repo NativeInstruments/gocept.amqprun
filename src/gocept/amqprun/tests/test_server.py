@@ -215,7 +215,6 @@ class TestChannelSwitch(unittest.TestCase):
 
     def test_switch_channel_should_open_new_channel(self):
         reader = self.get_reader()
-        old_channel = reader.channel
         reader.switch_channel()
         self.assertTrue(reader.connection.channel.called)
         new_channel = reader.connection.channel()
