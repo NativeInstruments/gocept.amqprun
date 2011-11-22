@@ -47,7 +47,7 @@ adapters, utilities and all the buzz.
     extras_require=dict(
         test=[
             'amqplib',
-            'mock<0.7dev',
+            'mock',
             'plone.testing',
             'tcpwatch',
             'zope.testing',
