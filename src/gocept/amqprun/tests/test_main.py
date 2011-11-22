@@ -22,6 +22,10 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.messages_received = []
         gocept.amqprun.tests.integration.messages_received = (
             self.messages_received)
+        self.make_config(__name__, 'integration')
+        self._queues.append('test.queue')
+        self._queues.append('test.queue.error')
+        self.create_reader()
 
     def tearDown(self):
         import gocept.amqprun.tests.integration
@@ -29,11 +33,6 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         super(TestMainWithQueue, self).tearDown()
 
     def test_message_should_be_processed(self):
-        self.make_config(__name__, 'integration')
-        self._queues.append('test.queue')
-        self._queues.append('test.queue.error')
-        self.create_reader()
-
         self.assertEquals([], self.messages_received)
         self.send_message('blarf', routing_key='test.routing')
         for i in range(100):
@@ -44,11 +43,6 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.assertEquals(1, len(self.messages_received))
 
     def test_existing_messages_in_queue_should_not_crash_startup(self):
-        self.make_config(__name__, 'integration')
-        self._queues.append('test.queue')
-        self._queues.append('test.queue.error')
-        # Start the reader so it creates and binds queues
-        self.create_reader()
         # Stop the reader so it doesn't consume messages
         self.loop.stop()
         self.thread.join()
@@ -66,14 +60,6 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
             self.fail('Message was not received')
 
     def test_technical_errors_should_not_crash(self):
-        import gocept.amqprun.main
-        self.make_config(__name__, 'integration')
-        self._queues.append('test.queue')
-        self._queues.append('test.queue.error')
-        self.create_reader()
-
-        self.reader = gocept.amqprun.main.main_reader
-
         self.assertEquals([], self.messages_received)
         self.send_message('blarf', routing_key='test.error')
         for i in range(100):
@@ -84,54 +70,59 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.assertEquals(1, len(self.messages_received))
 
     def test_rejected_messages_should_be_received_again_later(self):
-        import gocept.amqprun.main
-        self.make_config(__name__, 'integration')
-        self._queues.append('test.queue')
-        self._queues.append('test.queue.error')
-        self.create_reader()
-        self.reader = gocept.amqprun.main.main_reader
-        self.reader.CHANNEL_LIFE_TIME = 1
-
+        self.loop.CHANNEL_LIFE_TIME = 1
         self.assertEqual([], self.messages_received)
         self.send_message('blarf', routing_key='test.error')
         for i in range(200):
             time.sleep(0.025)
-            os.write(self.reader.connection.notifier_w, 'W')
+            os.write(self.loop.connection.notifier_w, 'W')
             if len(self.messages_received) >= 2:
                 break
         else:
             self.fail('Message was not received again')
 
-    @mock.patch('gocept.amqprun.server.Server')
-    @mock.patch('gocept.amqprun.worker.Worker')
-    def test_basic_configuration_should_load_zcml(self, worker, reader):
+
+class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
+
+    def setUp(self):
+        super(ConfigLoadingTest, self).setUp()
+        self.patchers = []
+        patcher = mock.patch('gocept.amqprun.server.Server')
+        self.server = patcher.start()
+        self.patchers.append(patcher)
+        patcher = mock.patch('gocept.amqprun.worker.Worker')
+        self.worker = patcher.start()
+        self.patchers.append(patcher)
+
+    def tearDown(self):
+        for patcher in self.patchers:
+            patcher.stop()
+        super(ConfigLoadingTest, self).tearDown()
+
+    def test_basic_configuration_should_load_zcml(self):
         import gocept.amqprun.interfaces
         import gocept.amqprun.main
         config = self.make_config(__name__, 'basic')
         gocept.amqprun.main.main(config)
-        self.assertEquals(1, reader.call_count)
-        self.assertEquals(2, worker.call_count)
+        self.assertEquals(1, self.server.call_count)
+        self.assertEquals(2, self.worker.call_count)
         utilities = list(zope.component.getUtilitiesFor(
             gocept.amqprun.interfaces.IHandlerDeclaration))
         self.assertEquals(1, len(utilities))
         self.assertEquals('basic', utilities[0][0])
 
-    @mock.patch('gocept.amqprun.server.Server')
-    @mock.patch('gocept.amqprun.worker.Worker')
-    def test_configuration_should_load_logging(self, worker, reader):
+    def test_configuration_should_load_logging(self):
         import gocept.amqprun.interfaces
         import gocept.amqprun.main
         config = self.make_config(__name__, 'logging')
         gocept.amqprun.main.main(config)
-        self.assertEquals(1, reader.call_count)
-        self.assertEquals(2, worker.call_count)
+        self.assertEquals(1, self.server.call_count)
+        self.assertEquals(2, self.worker.call_count)
         self.assertEqual(logging.CRITICAL, logging.getLogger().level)
         self.assertEqual(logging.INFO, logging.getLogger('foo').level)
         self.assertEqual(logging.DEBUG, logging.getLogger('foo.bar').level)
 
-    @mock.patch('gocept.amqprun.server.Server')
-    @mock.patch('gocept.amqprun.worker.Worker')
-    def test_settings_should_be_available_through_utility(self, _1, _2):
+    def test_settings_should_be_available_through_utility(self):
         import gocept.amqprun.interfaces
         import gocept.amqprun.main
         config = self.make_config(__name__, 'settings')
@@ -141,9 +132,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.assertEquals('foo', settings.get('test.setting.1'))
         self.assertEquals('bar', settings.get('test.setting.2'))
 
-    @mock.patch('gocept.amqprun.server.Server')
-    @mock.patch('gocept.amqprun.worker.Worker')
-    def test_settings_should_be_unicode(self, _1, _2):
+    def test_settings_should_be_unicode(self):
         import gocept.amqprun.interfaces
         import gocept.amqprun.main
         config = self.make_config(__name__, 'settings')
@@ -153,9 +142,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.assertIsInstance(settings.get('test.setting.1'), unicode)
         self.assertEquals(u'Ümläuten', settings.get('test.setting.unicode'))
 
-    @mock.patch('gocept.amqprun.server.Server')
-    @mock.patch('gocept.amqprun.worker.Worker')
-    def test_settings_should_allow_upper_case(self, _1, _2):
+    def test_settings_should_allow_upper_case(self):
         import gocept.amqprun.interfaces
         import gocept.amqprun.main
         config = self.make_config(__name__, 'settings')
@@ -164,9 +151,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
             gocept.amqprun.interfaces.ISettings)
         self.assertEquals('qux', settings.get('test.SETTING.__default__'))
 
-    @mock.patch('gocept.amqprun.server.Server')
-    @mock.patch('gocept.amqprun.worker.Worker')
-    def test_main_should_send_processstart_event(self, worker, reader):
+    def test_main_should_send_processstart_event(self):
         import gocept.amqprun.interfaces
         import gocept.amqprun.main
         import zope.component
