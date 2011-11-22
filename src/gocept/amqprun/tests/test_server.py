@@ -182,7 +182,14 @@ class TestChannelSwitch(unittest.TestCase):
         reader = Server(mock.sentinel.hostname)
         reader.connection = mock.Mock()
         reader.connection.lock = threading.Lock()
-        reader.channel = mock.Mock(pika.channel.Channel)
+        # XXX somehow the ZCA in test_channel_should_be_adaptable_to_manager
+        # manages to corrupt the Channel class with __providedBy__ and stuff
+        # which we can't get rid off otherwise, but which in turn leads
+        # the ZCA here to assume that the channel-mock already provides
+        # IChannelManager. (That's actually two bugs in ZCA in one go...)
+        channel_spec = [x for x in dir(pika.channel.Channel)
+                        if not x.startswith('__')]
+        reader.channel = mock.Mock(channel_spec)
         reader.channel.callbacks = collections.OrderedDict()
         new_channel = mock.Mock(pika.channel.Channel)
         new_channel.callbacks = {}

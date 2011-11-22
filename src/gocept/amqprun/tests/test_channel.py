@@ -64,3 +64,4 @@ class TestChannel(unittest.TestCase):
         handler.async_map = {}
         channel = pika.channel.Channel(handler)
         manager = IChannelManager(channel)
+        self.assertIsInstance(manager, gocept.amqprun.channel.Manager)
