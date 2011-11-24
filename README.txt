@@ -2,9 +2,9 @@
 gocept.amqprun
 ==============
 
-gocept.amqprun helps you writing and running AMQP consumers. It currently only
-supports AMQP 0-8 and integrates with the Zope Tool Kit (ZTK) so you can use
-adapters, utilities and all the buzz.
+gocept.amqprun helps you writing and running AMQP consumers, and sending AMQP
+messages. It currently only supports AMQP 0-8 and integrates with the Zope Tool
+Kit (ZTK) so you can use adapters, utilities and all the buzz.
 
 
 Basic concepts and terms
@@ -47,8 +47,8 @@ Things you don't need to take care of
     id.
 
 
-Getting started
-===============
+Getting started: receiving messages
+===================================
 
 To get started define a function which does the work. In this case, we log the
 message body and send a message. The ``declare`` decorator takes two arguments,
@@ -159,6 +159,30 @@ configuration, and uses ZDaemon to daemonize the process::
     deployment = deployment
     program = ${buildout:bin-directory}/app
 
+
+Sending messages
+================
+
+If all you want to do is send messages, you don't have to register any
+handlers, but can use ``gocept.amqprun.server.Server.send()`` directly. While
+the handlers usually run in their own process, started by the ``server``
+entrypoint (as described above), if you're just sending messages, you can also
+skip the extra process and run the ``gocept.amqprun.server.Server`` in your
+original process, in its own thread. Here is some example code to do that::
+
+    def start_server(**kw):
+        parameters = gocept.amqprun.connection.Parameters(**kw)
+        server = gocept.amqprun.server.Server(parameters)
+        server_thread = threading.Thread(target=server.start)
+        server_thread.daemon = True
+        server_thread.start()
+        import time
+        time.sleep(0.1)
+        return server
+
+(When you're using the ZCA, you'll probably want to register the ``Server`` as
+a utility at that point, too, so clients can get to it and send messages
+easily).
 
 
 Settings
