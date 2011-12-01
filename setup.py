@@ -7,9 +7,9 @@ from setuptools import setup, find_packages
 setup(
     name='gocept.amqprun',
     version='0.5dev',
-    author='gocept',
-    author_email='mail@gocept.com',
-    url='https://intra.gocept.com/projects/projects/gocept-amqprun',
+    author='gocept <cz at gocept dot com>',
+    author_email='cz@gocept.com',
+    url='https://code.gocept.com/hg/public/gocept.amqprun',
     description="""\
 gocept.amqprun helps you writing and running AMQP consumers, and sending AMQP
 messages. It currently only supports AMQP 0-8 and integrates with the Zope Tool

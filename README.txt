@@ -6,6 +6,8 @@ gocept.amqprun helps you writing and running AMQP consumers, and sending AMQP
 messages. It currently only supports AMQP 0-8 and integrates with the Zope Tool
 Kit (ZTK) so you can use adapters, utilities and all the buzz.
 
+.. contents:: :depth: 1
+
 
 Basic concepts and terms
 ========================
@@ -267,8 +269,11 @@ If ``pattern`` contains slashes, intermediate directories will be created below
     /path/to/output-directory/example.route/2011-04-07/asdf998-1234098791.xml
 
 
-Reporting bugs
-==============
+Development
+===========
+
+The source code is available in the mercurial repository at
+https://code.gocept.com/hg/public/gocept.amqprun
 
 Please report any bugs you find at
-https://intra.gocept.com/projects/projects/gocept-amqprun
+https://projects.gocept.com/projects/projects/gocept-amqprun/issues
