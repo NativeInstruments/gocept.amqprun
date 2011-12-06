@@ -43,6 +43,7 @@ Kit (ZTK) so you can use adapters, utilities and all the buzz.
         'zope.configuration',
         'zope.event',
         'zope.interface',
+        'zope.schema',
     ],
     extras_require=dict(
         test=[
