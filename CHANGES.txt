@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.4.3 (unreleased)
+------------------
+
+- Add support for arguments for queue_declare e.g to support x-ha-policy
+  headers for RabbitMQ mirrored queue deployments
+
+
 0.4.2 (2011-08-23)
 ------------------
 

@@ -1,0 +1,16 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:amqp="http://namespaces.gocept.com/amqp">
+
+  <include package="gocept.amqprun" />
+
+  <amqp:writefiles
+    routing_key="${routing_key}"
+    queue_name="${queue_name}"
+    directory="${directory}"
+    pattern="${pattern}"
+       arguments="
+       x-ha-policy = all
+       "
+    />
+
+</configure>
