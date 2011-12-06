@@ -67,3 +67,16 @@ class TestDeclaration(unittest.TestCase):
         self.assertEqual(
             gocept.amqprun.handler.declare,
             gocept.amqprun.handler.handle)
+
+    def test_decorator_supports_arguments(self):
+        import gocept.amqprun.handler
+        import gocept.amqprun.interfaces
+
+        @gocept.amqprun.handler.declare('queue.name', 'routing.key', arguments={'x-ha-policy': 'all'})
+        def decl(message):
+            return None
+        self.assertTrue(zope.interface.verify.verifyObject(
+            gocept.amqprun.interfaces.IHandlerDeclaration, decl))
+        self.assertEquals('queue.name', decl.queue_name)
+        self.assertEquals('routing.key', decl.routing_key)
+        self.assertEquals({'x-ha-policy': 'all'}, decl.arguments)
