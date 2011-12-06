@@ -148,7 +148,8 @@ class Server(object, pika.connection.NullReconnectionStrategy):
                 declaration.routing_key, queue_name, name)
             self.channel.queue_declare(
                 queue=queue_name, durable=True,
-                exclusive=False, auto_delete=False)
+                exclusive=False, auto_delete=False,
+                arguments=declaration.arguments)
             routing_keys = declaration.routing_key
             if not isinstance(routing_keys, list):
                 routing_keys = [routing_keys]

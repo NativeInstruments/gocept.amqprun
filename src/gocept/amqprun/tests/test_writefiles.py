@@ -150,6 +150,15 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
         self.assertEqual(
             '${foo}/${bar}/${qux}', handler.handler_function.pattern.template)
 
+    def directive_supports_arguments(self):
+        config = unicode(pkg_resources.resource_string(__name__,
+            'filewriter_ha.zcml'), 'utf8')
+        zope.configuration.xmlconfig.string(config)
+        handler = zope.component.getUtility(
+            gocept.amqprun.interfaces.IHandlerDeclaration,
+            name='gocept.amqprun.amqpwrite.' + queue_name)
+        self.assertEqual({'x-ha-policy': 'all'}, handler.arguments)
+
 
 class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
 

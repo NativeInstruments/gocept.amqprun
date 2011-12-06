@@ -15,6 +15,30 @@ import zope.schema
 import zope.xmlpickle
 
 
+key_value_regex = re.compile(r'^(?P<key>[^:=\s[][^:=]*)'
+                             r'(?P<sep>[:=]\s*)'
+                             r'(?P<value>.*)$')
+
+
+@zope.interface.implementer(zope.schema.interfaces.IDict)
+class RepresentableDict(zope.schema.Dict):
+    """A field representing a Dict, but representable in ZCML."""
+
+    def fromUnicode(self, raw_value):
+        retval = {}
+        for line in raw_value.strip().splitlines():
+            m = key_value_regex.match(line.strip())
+            if m is None:
+                continue
+
+            key = m.group('key').rstrip().encode('ascii')
+            value = m.group('value')
+            retval[key] = value
+
+        self.validate(retval)
+        return retval
+
+
 class FileWriter(object):
 
     def __init__(self, directory, pattern):
@@ -94,15 +118,20 @@ class IWriteFilesDirective(zope.interface.Interface):
 
     pattern = zope.schema.TextLine(title=u"File name pattern")
 
+    arguments = RepresentableDict(key_type=zope.schema.TextLine(),
+        value_type=zope.schema.TextLine(),
+        required=False)
+
+
 
 def writefiles_directive(
-        _context, routing_key, queue_name, directory, pattern):
+        _context, routing_key, queue_name, directory, pattern, arguments=None):
     # buildout doesn't support escaping '${}' and thus thinks it should resolve
     # those substitions itself. So we support '{}' in addition to '${}'
     pattern = re.sub(r'(^|[^$]){', r'\1${', pattern)
     writer = FileWriter(directory, pattern)
     handler = gocept.amqprun.handler.HandlerDeclaration(
-        queue_name, routing_key, writer)
+        queue_name, routing_key, writer, arguments)
     zope.component.zcml.utility(
         _context,
         component=handler,
