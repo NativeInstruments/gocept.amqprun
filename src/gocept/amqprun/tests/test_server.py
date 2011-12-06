@@ -114,6 +114,7 @@ class MessageReaderTest(
                 gocept.amqprun.interfaces.IHandlerDeclaration)
             queue_name = self.get_queue_name(u'test.case.2')
             routing_key = 'test.messageformat.2'
+            arguments = {}
         zope.component.provideUtility(Decl, name='decl')
         self.create_reader()
 
@@ -124,6 +125,7 @@ class MessageReaderTest(
                 gocept.amqprun.interfaces.IHandlerDeclaration)
             queue_name = self.get_queue_name('test.case.2')
             routing_key = u'test.messageformat.2'
+            arguments = {}
         zope.component.provideUtility(Decl, name='decl')
         self.create_reader()
 

@@ -12,6 +12,9 @@ CHANGES
 
 - Log Message-ID.
 
+- Add support for arguments for queue_declare e.g to support x-ha-policy
+  headers for RabbitMQ mirrored queue deployments
+
 
 0.4 (2011-07-25)
 ----------------
