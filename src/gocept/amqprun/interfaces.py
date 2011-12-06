@@ -14,6 +14,9 @@ class IHandlerDeclaration(zope.interface.Interface):
         'Routing key of messages this handler is interested in. '
         'May be a list of several routing keys.')
 
+    arguments = zope.interface.Attribute(
+        'Arguments that are forwarded to the queue declare process')
+
     def __call__(message):
         """Return IHandler for given message."""
 
