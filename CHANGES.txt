@@ -32,6 +32,8 @@ Internal
   parameter is now optional, so it was moved to the end of the list of
   arguments.
 
+- Use plone.testing for layer infrastructure.
+
 
 0.4.2 (2011-08-23)
 ------------------
