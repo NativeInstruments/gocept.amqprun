@@ -7,12 +7,13 @@ CHANGES
 General
 ~~~~~~~
 
-- Added `writefiles` extra to make ZCML ``amqp:writefiles`` optional.
+- Added `writefiles` extra to make ZCML directive ``amqp:writefiles`` optional.
 
-- Moved declaration of ``amqp:writefiles`` from `configure.zcml` to
-  `meta.zcml`.
+- Added `filestore` extra to make ``gocept.amqprun.filestore`` optional.
 
-- Added `filestore` extra make ``gocept.amqprun.filestore`` optional.
+- Moved declaration of ``amqp:writefiles`` from ``configure.zcml`` to
+  ``meta.zcml``.
+
 
 Features
 ~~~~~~~~
@@ -28,7 +29,7 @@ Features
 Internal
 ~~~~~~~~
 
-- Internal API change in ``server.AMQPDataManager.__init__``: `message`
+- Internal API change in ``server.AMQPDataManager.__init__``: the `message`
   parameter is now optional, so it was moved to the end of the list of
   arguments.
 
