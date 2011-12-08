@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.4.3 (unreleased)
+0.4.3 (2011-12-08)
 ------------------
 
 - Add support for arguments for queue_declare e.g to support x-ha-policy
