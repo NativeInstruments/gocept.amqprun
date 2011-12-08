@@ -55,9 +55,9 @@ Getting started: receiving messages
 To get started define a function which does the work. In this case, we log the
 message body and send a message. The ``declare`` decorator takes two arguments,
 the queue name and the routing key (you can also pass in a list if you want to
-bind the function to multiple routing keys).  The ``declare`` decorator also
-supports an optional ``arguments` argument as a dictionary that is passed to the AMQP
-queue_declare call e.g to support mirrored queues on RabbitMQ.
+bind the function to multiple routing keys). The ``declare`` decorator also
+supports an optional ``arguments`` argument as a dictionary that is passed to
+the AMQP queue_declare call e.g to support mirrored queues on RabbitMQ::
 
     import logging
     import gocept.amqprun.handler
