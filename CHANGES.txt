@@ -22,7 +22,7 @@ Features
   initiate sending of messages.
 
 - Add support for arguments for queue_declare e.g to support x-ha-policy
-  headers for RabbitMQ mirrored queue deployments
+  headers for RabbitMQ mirrored queue deployments (#10036).
 
 
 Internal
