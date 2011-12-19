@@ -141,6 +141,11 @@ class Server(object, pika.connection.NullReconnectionStrategy):
         for name, declaration in zope.component.getUtilitiesFor(
             gocept.amqprun.interfaces.IHandlerDeclaration):
             queue_name = unicode(declaration.queue_name).encode('UTF-8')
+            decl_args = declaration.arguments or {}
+            arguments = dict(
+                (unicode(key).encode('UTF-8'),
+                 unicode(value).encode('UTF-8')) for key, value
+                                                 in decl_args.iteritems())
             log.info(
                 "Channel[%s]: Handling routing key(s) '%s' on queue '%s'"
                 " via '%s'",
@@ -149,7 +154,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
             self.channel.queue_declare(
                 queue=queue_name, durable=True,
                 exclusive=False, auto_delete=False,
-                arguments=declaration.arguments)
+                arguments=arguments)
             routing_keys = declaration.routing_key
             if not isinstance(routing_keys, list):
                 routing_keys = [routing_keys]
