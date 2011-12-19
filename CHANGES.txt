@@ -4,8 +4,8 @@ CHANGES
 0.4.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
-
+- Bugfix to support unicode arguments for queue declaration as pika
+  only supports bytestrings here.
 
 0.4.3 (2011-12-08)
 ------------------
