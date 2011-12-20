@@ -13,6 +13,7 @@ import pkg_resources
 import re
 import string
 import time
+import zope.component.zcml
 import zope.configuration.fields
 import zope.event
 import zope.interface
@@ -38,7 +39,7 @@ class RepresentableDict(zope.schema.Dict):
             if m is None:
                 continue
 
-            key = m.group('key').rstrip().encode('ascii')
+            key = m.group('key').rstrip()
             value = m.group('value')
             retval[key] = value
 
@@ -178,11 +179,10 @@ class IWriteFilesDirective(zope.interface.Interface):
         title=u"Path to the directory in which to write the files")
 
     pattern = zope.schema.TextLine(title=u"File name pattern")
- 
+
     arguments = RepresentableDict(key_type=zope.schema.TextLine(),
         value_type=zope.schema.TextLine(),
         required=False)
-
 
 
 def writefiles_directive(

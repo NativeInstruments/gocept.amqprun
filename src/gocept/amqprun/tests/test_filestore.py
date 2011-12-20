@@ -212,7 +212,9 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
         zope.component.testing.tearDown()
 
     def run_directive(
-        self, routing_key=None, queue_name=None, directory=None, pattern=None):
+        self, routing_key=None, queue_name=None,
+        directory=None, pattern=None,
+        arguments=None):
         import gocept.amqprun.interfaces
         config = string.Template(unicode(
             pkg_resources.resource_string(__name__, 'filewriter.zcml'),
@@ -222,8 +224,9 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
                 queue_name=queue_name,
                 directory=directory,
                 pattern=pattern,
+                arguments=arguments,
                 ))
-        zope.configuration.xmlconfig.string(config)
+        zope.configuration.xmlconfig.string(config.encode('utf-8'))
         return zope.component.getUtility(
             gocept.amqprun.interfaces.IHandlerDeclaration,
             name='gocept.amqprun.amqpwrite.' + queue_name)
@@ -244,13 +247,12 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
         self.assertEqual(
             '${foo}/${bar}/${qux}', handler.handler_function.pattern.template)
 
-    def directive_supports_arguments(self):
-        config = unicode(pkg_resources.resource_string(__name__,
-            'filewriter_ha.zcml'), 'utf8')
-        zope.configuration.xmlconfig.string(config)
-        handler = zope.component.getUtility(
-            gocept.amqprun.interfaces.IHandlerDeclaration,
-            name='gocept.amqprun.amqpwrite.' + queue_name)
+    def test_directive_supports_arguments(self):
+        handler = self.run_directive(
+                routing_key='test.foo test.bar',
+                queue_name='test.queue',
+                directory='/dev/null',
+                arguments='x-ha-policy = all')
         self.assertEqual({'x-ha-policy': 'all'}, handler.arguments)
 
 
@@ -271,7 +273,7 @@ class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
                 routing_key='test.data',
                 directory=self.tmpdir,
                 queue_name=self.get_queue_name('test'),
-                pattern=''))
+                pattern='', arguments=''))
         self.create_reader()
         body = 'This is only a test.'
         self.send_message(body, routing_key='test.data')

@@ -4,7 +4,7 @@ gocept.amqprun
 
 gocept.amqprun helps you writing and running AMQP consumers. It currently only
 supports AMQP 0-8 and integrates with the Zope Tool Kit (ZTK) so you can use
-adapters, utilities and all the buzz.
+adapters, utilities and all the buzz. It requires Python 2.7.
 
 
 Basic concepts and terms
