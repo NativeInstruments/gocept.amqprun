@@ -6,6 +6,8 @@ CHANGES
 
 - Bugfix to support unicode arguments for queue declaration as pika
   only supports bytestrings here.
+- Bugfix to make ``arguments`` parameter of ``amqp:writefiles`` work (#10115).
+
 
 0.5 (2011-12-08)
 ----------------

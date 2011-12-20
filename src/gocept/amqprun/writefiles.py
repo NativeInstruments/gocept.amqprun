@@ -8,6 +8,7 @@ import os.path
 import re
 import string
 import time
+import zope.component.zcml
 import zope.configuration.fields
 import zope.event
 import zope.interface
@@ -31,7 +32,7 @@ class RepresentableDict(zope.schema.Dict):
             if m is None:
                 continue
 
-            key = m.group('key').rstrip().encode('ascii')
+            key = m.group('key').rstrip()
             value = m.group('value')
             retval[key] = value
 
