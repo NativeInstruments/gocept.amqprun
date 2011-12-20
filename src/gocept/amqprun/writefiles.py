@@ -123,7 +123,6 @@ class IWriteFilesDirective(zope.interface.Interface):
         required=False)
 
 
-
 def writefiles_directive(
         _context, routing_key, queue_name, directory, pattern, arguments=None):
     # buildout doesn't support escaping '${}' and thus thinks it should resolve
