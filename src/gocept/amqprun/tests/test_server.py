@@ -138,7 +138,7 @@ class MessageReaderTest(
             routing_key = 'test.messageformat.2'
             arguments = {u'x-ha-policy': u'all'}
         zope.component.provideUtility(Decl, name='decl')
-        self.create_server()
+        self.create_reader()
 
     def test_unicode_routing_keys_should_work_for_message(self):
         import gocept.amqprun.message
