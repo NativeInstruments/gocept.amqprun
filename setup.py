@@ -48,7 +48,7 @@ Kit (ZTK) so you can use adapters, utilities and all the buzz.
     extras_require=dict(
         test=[
             'amqplib',
-            'mock',
+            'mock>=0.7.0',
             'plone.testing',
             'tcpwatch',
             'zope.testing',
