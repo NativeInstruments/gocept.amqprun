@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.4.4 (unreleased)
+0.4.4 (2012-01-09)
 ------------------
 
 - Bugfix to support unicode arguments for queue declaration as pika
