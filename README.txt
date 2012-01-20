@@ -37,11 +37,11 @@ Things you don't need to take care of
 
 * Transaction handling
 
-* Message Ids
+* Message ids
 
   * Each outgoing message gets a email-like message id.
 
-  * The corrlation id of outoing message is set to the message id of the
+  * The correlation id of outgoing message is set to the message id of the
     incomming message.
 
   * Each outgoing message gets a custom references header which is set to the
@@ -76,17 +76,12 @@ the AMQP queue_declare call e.g to support mirrored queues on RabbitMQ::
 
 
 The handler function needs to be registered as a named utility. With ZCML this
-looks like this[1]_::
+looks like this [#grok]_::
 
     <configure xmlns="http://namespaces.zope.org/zope">
       <include package="gocept.amqprun" />
       <utility component="path.to.package.log_message_body" name="basic" />
     </configure>
-
-
-.. [1]: It's likely that there will be a special ZCML statement and/or grok
-        support to make registering of handlers easier.
-
 
 To set up a server, it's recommended to create a buildout. The following
 buildout creates a config for gocept.amqprun, a ZCML file for the component
@@ -162,6 +157,10 @@ configuration, and uses ZDaemon to daemonize the process::
     recipe = zc.zdaemonrecipe
     deployment = deployment
     program = ${buildout:bin-directory}/app
+
+
+.. [#grok] It's likely that there will be a special ZCML statement and/or grok
+   support to make registering of handlers easier.
 
 
 Sending messages
@@ -292,3 +291,5 @@ https://code.gocept.com/hg/public/gocept.amqprun
 
 Please report any bugs you find at
 https://projects.gocept.com/projects/projects/gocept-amqprun/issues
+
+.. vim: set ft=rst:
