@@ -53,3 +53,32 @@ class ReaderTest(gocept.amqprun.testing.LoopTestCase):
     def test_loop_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
         self.create_reader()
+
+
+class ReaderIntegrationTest(gocept.amqprun.testing.MainTestCase):
+
+    def setUp(self):
+        super(ReaderIntegrationTest, self).setUp()
+        self.tmpdir = tempfile.mkdtemp()
+        os.mkdir(os.path.join(self.tmpdir, 'new'))
+        os.mkdir(os.path.join(self.tmpdir, 'cur'))
+
+    def tearDown(self):
+        super(ReaderIntegrationTest, self).tearDown()
+        shutil.rmtree(self.tmpdir)
+
+    def test_should_send_message_and_move_file(self):
+        self.make_config(
+            __name__, 'readfiles', dict(
+                routing_key='test.data',
+                directory=self.tmpdir))
+
+        self.expect_response_on('test.data')
+        self.start_server()
+        f = open(os.path.join(self.tmpdir, 'new', 'foo'), 'w')
+        f.write('contents')
+        f.close()
+        message = self.wait_for_response()
+        self.assertEqual('contents', message.body)
+        self.assertEqual(0, len(os.listdir(os.path.join(self.tmpdir, 'new'))))
+        self.assertEqual(1, len(os.listdir(os.path.join(self.tmpdir, 'cur'))))
