@@ -19,7 +19,15 @@ import time
 import unittest
 
 
-ZCML_LAYER = plone.testing.zca.ZCMLSandbox(
+class ZCMLSandbox(plone.testing.zca.ZCMLSandbox):
+
+    def testSetUp(self):
+        plone.testing.zca.pushGlobalRegistry()
+
+    def testTearDown(self):
+        plone.testing.zca.popGlobalRegistry()
+
+ZCML_LAYER = ZCMLSandbox(
     filename='configure.zcml', package=gocept.amqprun, module=__name__)
 
 
