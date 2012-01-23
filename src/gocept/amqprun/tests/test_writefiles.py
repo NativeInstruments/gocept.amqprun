@@ -180,7 +180,7 @@ class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
                 directory=self.tmpdir,
                 queue_name=self.get_queue_name('test'),
                 pattern='', arguments=''))
-        self.create_reader()
+        self.start_server()
         body = 'This is only a test.'
         self.send_message(body, routing_key='test.data')
         for i in range(100):

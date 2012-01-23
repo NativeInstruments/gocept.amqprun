@@ -151,19 +151,19 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         super(MainTestCase, self).tearDown()
         gocept.amqprun.worker.Worker.timeout = self._timeout
 
-    def create_reader(self):
+    def start_server(self):
         import gocept.amqprun.main
         self.thread = threading.Thread(
             target=gocept.amqprun.main.main, args=(self.config.name,))
         self.thread.start()
         for i in range(100):
-            if (gocept.amqprun.main.main_reader is not None and
-                gocept.amqprun.main.main_reader.running):
+            if (gocept.amqprun.main.main_server is not None and
+                gocept.amqprun.main.main_server.running):
                 break
             time.sleep(0.025)
         else:
-            self.fail('Reader did not start up.')
-        self.loop = gocept.amqprun.main.main_reader
+            self.fail('Server did not start up.')
+        self.loop = gocept.amqprun.main.main_server
 
     def make_config(self, package, name, mapping=None):
         zcml_base = string.Template(

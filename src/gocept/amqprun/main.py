@@ -17,13 +17,13 @@ import zope.event
 log = logging.getLogger(__name__)
 
 
-# Holds a reference to the reader started by main(). This is to make testing
+# Holds a reference to the server started by main(). This is to make testing
 # easier where main() is started in a thread.
-main_reader = None
+main_server = None
 
 
 def main(config_file):
-    global main_reader
+    global main_server
 
     schema = ZConfig.loadSchemaFile(pkg_resources.resource_stream(
         __name__, 'schema.xml'))
@@ -44,38 +44,38 @@ def main(config_file):
 
     zope.configuration.xmlconfig.file(conf.worker.component_configuration)
 
-    reader = gocept.amqprun.server.Server(conf.amqp_server)
-    main_reader = reader
+    server = gocept.amqprun.server.Server(conf.amqp_server)
+    main_server = server
 
-    def stop_reader(signum, frame):
+    def stop_server(signum, frame):
         log.info("Received signal %s, terminating." % signum)
         for worker in workers:
             worker.stop()
-        reader.stop()
+        server.stop()
 
-    signal.signal(signal.SIGINT, stop_reader)
-    signal.signal(signal.SIGTERM, stop_reader)
+    signal.signal(signal.SIGINT, stop_server)
+    signal.signal(signal.SIGTERM, stop_server)
 
     zope.event.notify(gocept.amqprun.interfaces.ProcessStarting())
 
     workers = []
     for i in range(conf.worker.amount):
         worker = gocept.amqprun.worker.Worker(
-            reader.tasks, reader.get_session)
+            server.tasks, server.get_session)
         workers.append(worker)
         worker.start()
 
-    # Start the reader in a separate thread. When we receive a signal
-    # (INT/TERM) the main thread is busy handling the signal (stop_reader()
-    # above). If the reader was running in the main thread it could not longer
+    # Start the server in a separate thread. When we receive a signal
+    # (INT/TERM) the main thread is busy handling the signal (stop_server()
+    # above). If the server was running in the main thread it could not longer
     # do the communication with the amqp server. This leads to frozen workers
     # because they wait for a commit or abort which requires communication.
-    # Using a separate thread for the reader allows the reader to run until it
+    # Using a separate thread for the server allows the server to run until it
     # is explicitly stopped by the signal handler.
-    reader_thread = threading.Thread(target=reader.start)
-    reader_thread.start()
-    while reader_thread.is_alive():
+    server_thread = threading.Thread(target=server.start)
+    server_thread.start()
+    while server_thread.is_alive():
         time.sleep(1)
-    reader_thread.join()
+    server_thread.join()
     log.info('Exiting')
-    main_reader = None
+    main_server = None
