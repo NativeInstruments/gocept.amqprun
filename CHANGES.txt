@@ -4,7 +4,10 @@ CHANGES
 0.5.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Changed FileStoreReader from its own process to a thread that uses
+  gocep.amqprun for sending (previously it used amqplib) (#10177).
+
+- Changed `filestore` extra to `readfiles` extra.
 
 
 0.5.1 (2012-01-09)
