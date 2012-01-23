@@ -29,22 +29,28 @@ class ReaderTest(gocept.amqprun.testing.LoopTestCase):
         reader.scan()
         self.assertFalse(self.sender.send.called)
 
-    def test_scan_should_move_file_to_cur(self):
+    def test_should_move_file_to_cur_on_commit(self):
         reader = FileStoreReader(self.tmpdir, 'route')
         f = open(os.path.join(self.tmpdir, 'new', 'foo'), 'w')
         f.write('contents')
         f.close()
-        self.assertEqual(1, len(os.listdir(os.path.join(self.tmpdir, 'new'))))
 
-        with mock.patch('gocept.amqprun.message.Message') as Message:
-            reader.scan()
+        reader.send = mock.Mock()
+        reader.session = mock.Mock()
+        reader.scan()
+        self.assertTrue(reader.session.mark_done.called)
 
-        Message.assert_called_with(
-            dict(content_type='text/xml'), 'contents', routing_key='route')
-        self.sender.send.assert_called_with(Message())
+    def test_exception_in_send_should_not_move_file(self):
+        reader = FileStoreReader(self.tmpdir, 'route')
+        f = open(os.path.join(self.tmpdir, 'new', 'foo'), 'w')
+        f.write('contents')
+        f.close()
 
-        self.assertEqual(0, len(os.listdir(os.path.join(self.tmpdir, 'new'))))
-        self.assertEqual(1, len(os.listdir(os.path.join(self.tmpdir, 'cur'))))
+        reader.send = mock.Mock()
+        reader.send.side_effect = RuntimeError('provoked')
+        reader.session = mock.Mock()
+        reader.scan()
+        self.assertFalse(reader.session.mark_done.called)
 
     def create_reader(self):
         reader = FileStoreReader(self.tmpdir, 'route')

@@ -23,6 +23,7 @@ class FileStoreReader(threading.Thread):
         self.routing_key = routing_key
         self.filestore = gocept.filestore.FileStore(path)
         self.filestore.prepare()
+        self.session = Session(self)
         super(FileStoreReader, self).__init__()
         self.daemon = True
 
@@ -40,10 +41,16 @@ class FileStoreReader(threading.Thread):
 
     def scan(self):
         for filename in self.filestore.list('new'):
+            transaction.begin()
             log.debug('sending %r to %r' % (filename, self.routing_key))
-            self.send(open(filename).read())
-            self.filestore.move(filename, 'new', 'cur')
-            transaction.commit()
+            try:
+                self.send(open(filename).read())
+                self.session.mark_done(filename)
+            except:
+                log.error('Sending message failed', exc_info=True)
+                transaction.abort()
+            else:
+                transaction.commit()
 
     def send(self, body):
         # XXX make content-type configurable?
@@ -51,6 +58,66 @@ class FileStoreReader(threading.Thread):
             {'content_type': 'text/xml'}, body, routing_key=self.routing_key)
         sender = zope.component.getUtility(gocept.amqprun.interfaces.ISender)
         sender.send(message)
+
+
+class Session(object):
+
+    def __init__(self, context):
+        self.files = []
+        self.context = context
+        self._needs_to_join = True
+
+    def mark_done(self, filename):
+        self._join_transaction()
+        self.files.append(filename)
+
+    def commit(self):
+        for f in self.files:
+            self.context.filestore.move(f, 'new', 'cur')
+
+    def reset(self):
+        self.files[:] = []
+        self._needs_to_join = True
+
+    def _join_transaction(self):
+        # XXX copy&paste from gocept.amqprun.session. #9988
+        if not self._needs_to_join:
+            return
+        dm = FileStoreDataManager(self)
+        transaction.get().join(dm)
+        self._needs_to_join = False
+
+
+class FileStoreDataManager(object):
+
+    zope.interface.implements(transaction.interfaces.IDataManager)
+
+    def __init__(self, session):
+        self.session = session
+        self._tpc_begin = False
+
+    def abort(self, transaction):
+        self.tpc_abort()
+
+    def tpc_begin(self, transaction):
+        pass
+
+    def commit(self, transaction):
+        pass
+
+    def tpc_vote(self, transaction):
+        self.session.commit()
+        self.session.reset()
+
+    def tpc_finish(self, transaction):
+        pass
+
+    def tpc_abort(self, transaction):
+        self.session.reset()
+
+    def sortKey(self):
+        # sort after gocept.amqprun.session
+        return "~gocept.amqprun.readfiles:%f" % time.time()
 
 
 class IReadFilesDirective(zope.interface.Interface):
