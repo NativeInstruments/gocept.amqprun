@@ -25,7 +25,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.make_config(__name__, 'integration')
         self._queues.append('test.queue')
         self._queues.append('test.queue.error')
-        self.create_reader()
+        self.start_server()
 
     def tearDown(self):
         import gocept.amqprun.tests.integration
@@ -50,7 +50,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         message_count = 50
         for i in range(message_count):
             self.send_message('blarf', routing_key='test.routing')
-        self.create_reader()
+        self.start_server()
 
         for i in range(20):
             if len(self.messages_received) >= message_count:
@@ -165,7 +165,7 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
 
 class TestMainProcess(gocept.amqprun.testing.MainTestCase):
 
-    def create_reader(self):
+    def start_server(self):
         self.make_config(__name__, 'process')
         script = tempfile.NamedTemporaryFile(suffix='.py')
         script.write("""
@@ -183,7 +183,7 @@ gocept.amqprun.main.main('%(config)s')
         self.pid = process.pid
 
     def assert_shutdown(self, signal_):
-        self.create_reader()
+        self.start_server()
         self._queues.append('test.queue')
         for i in range(50):
             self.send_message('honk', 'test.routing')
