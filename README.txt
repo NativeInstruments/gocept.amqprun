@@ -209,6 +209,9 @@ Limitations
 Interfacing with the filesystem
 ===============================
 
+Writing
+-------
+
 gocept.amqprun provides a quick way to set up a handler that writes incoming
 messages as individual files to a given directory, using the
 ``<amqp:writefiles>`` ZCML directive. You need the `writefiles` extra to
@@ -281,6 +284,29 @@ to the AMQP queue_declare call e.g to support RabbitMQ mirrored queues::
       x-ha-policy = all
       "
       />
+
+Reading
+-------
+
+You can also set up a thread to read files from a directory and publish them
+onto the queue, using the ``<amqp:readfiles>`` ZCML directive. You need the
+`readfiles` extra to enable this directive::
+
+    <configure xmlns="http://namespaces.zope.org/zope"
+               xmlns:amqp="http://namespaces.gocept.com/amqp">
+
+      <include package="gocept.amqprun" file="meta.zcml" />
+
+      <amqp:readfiles
+        directory="/path/to/input-directory"
+        routing_key="test.data"
+        />
+    </configure>
+
+The input-directory is expected to be a Maildir, i.e. files to be read should
+appear in ``input-directory/new`, which will be polled every second; after the
+files have been published to the given routing key, they will be moved to
+``input-directory/cur``.
 
 
 Development
