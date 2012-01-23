@@ -34,7 +34,9 @@ class Consumer(object):
 
 class Server(object, pika.connection.NullReconnectionStrategy):
 
-    zope.interface.implements(gocept.amqprun.interfaces.ILoop)
+    zope.interface.implements(
+        gocept.amqprun.interfaces.ILoop,
+        gocept.amqprun.interfaces.ISender)
 
     CHANNEL_LIFE_TIME = 360
 

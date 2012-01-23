@@ -78,6 +78,13 @@ class ILoop(zope.interface.Interface):
         pass
 
 
+class ISender(zope.interface.Interface):
+    """Sender for AMQP messages."""
+
+    def send(message):
+        """Send a message using AMQP."""
+
+
 class IChannelManager(zope.interface.Interface):
     """Manage channel livecycle."""
 
