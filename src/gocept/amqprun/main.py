@@ -50,6 +50,7 @@ def main(config_file):
 
     def stop_server(signum, frame):
         log.info("Received signal %s, terminating." % signum)
+        zope.event.notify(gocept.amqprun.interfaces.ProcessStopping())
         for worker in workers:
             worker.stop()
         server.stop()
