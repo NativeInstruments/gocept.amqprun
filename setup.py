@@ -54,14 +54,12 @@ Kit (ZTK) so you can use adapters, utilities and all the buzz.
             'zope.testing',
             ],
         writefiles=[
-            'amqplib',
             'zope.xmlpickle',
             ],
-        filestore=[
+        readfiles=[
             'gocept.filestore',
             ]),
     entry_points=dict(console_scripts=[
         'server = gocept.amqprun.main:main',
-        'filestore-reader = gocept.amqprun.filestore:main',
     ]),
 )

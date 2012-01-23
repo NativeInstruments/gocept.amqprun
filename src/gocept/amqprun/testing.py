@@ -17,6 +17,7 @@ import tempfile
 import threading
 import time
 import unittest
+import zope.event
 
 
 class ZCMLSandbox(plone.testing.zca.ZCMLSandbox):
@@ -150,7 +151,9 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         plone.testing.zca.pushGlobalRegistry()
 
     def tearDown(self):
+        import gocept.amqprun.interfaces
         import gocept.amqprun.worker
+        zope.event.notify(gocept.amqprun.interfaces.ProcessStopping())
         for t in list(threading.enumerate()):
             if isinstance(t, gocept.amqprun.worker.Worker):
                 t.stop()

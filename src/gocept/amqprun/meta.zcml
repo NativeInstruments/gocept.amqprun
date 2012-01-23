@@ -9,5 +9,11 @@
       handler=".writefiles.writefiles_directive"
       />
 
+    <meta:directive
+      name="readfiles"
+      schema=".readfiles.IReadFilesDirective"
+      handler=".readfiles.readfiles_directive"
+      />
+
   </meta:directives>
 </configure>
