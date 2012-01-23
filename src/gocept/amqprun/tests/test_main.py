@@ -162,6 +162,16 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         gocept.amqprun.main.main(config)
         self.assertTrue(handler.called)
 
+    def test_main_should_register_ISender(self):
+        import gocept.amqprun.interfaces
+        import gocept.amqprun.main
+        import zope.component
+        config = self.make_config(__name__, 'basic')
+        gocept.amqprun.main.main(config)
+        self.assertEqual(
+            self.server(), zope.component.getUtility(
+                gocept.amqprun.interfaces.ISender))
+
 
 class TestMainProcess(gocept.amqprun.testing.MainTestCase):
 

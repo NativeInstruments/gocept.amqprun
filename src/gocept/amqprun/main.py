@@ -45,6 +45,7 @@ def main(config_file):
     zope.configuration.xmlconfig.file(conf.worker.component_configuration)
 
     server = gocept.amqprun.server.Server(conf.amqp_server)
+    zope.component.provideUtility(server, gocept.amqprun.interfaces.ISender)
     main_server = server
 
     def stop_server(signum, frame):
