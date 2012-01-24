@@ -85,9 +85,9 @@ class Server(object, pika.connection.NullReconnectionStrategy):
         session = self.get_session()
         session.send(message)
 
-    def get_session(self, message=None):
+    def get_session(self):
         if not hasattr(self.local, 'session'):
-            self.local.session = gocept.amqprun.session.Session(self, message)
+            self.local.session = gocept.amqprun.session.Session(self)
         return self.local.session
 
     def open_channel(self):

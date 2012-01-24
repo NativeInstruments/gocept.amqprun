@@ -52,7 +52,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
             self.send_message('blarf', routing_key='test.routing')
         self.start_server()
 
-        for i in range(20):
+        for i in range(50):
             if len(self.messages_received) >= message_count:
                 break
             time.sleep(0.25)

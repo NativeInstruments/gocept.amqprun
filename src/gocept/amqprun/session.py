@@ -15,11 +15,19 @@ class Session(object):
 
     zope.interface.implements(gocept.amqprun.interfaces.ISession)
 
-    def __init__(self, context, message=None):
+    def __init__(self, context):
         self.messages = []
         self.context = context
-        self.message = message
+        self.message_to_ack = None
         self._needs_to_join = True
+
+    def ack(self, message):
+        if self.message_to_ack is not None:
+            raise ValueError(
+                'Message to ACK already set to %s' %
+                self.message_to_ack.delivery_tag)
+        self.message_to_ack = message
+        self._join_transaction()
 
     def send(self, message):
         self._join_transaction()
@@ -27,12 +35,13 @@ class Session(object):
 
     def reset(self):
         self.messages[:] = []
+        self.message_to_ack = None
         self._needs_to_join = True
 
     def _join_transaction(self):
         if not self._needs_to_join:
             return
-        dm = AMQPDataManager(self.context, self, self.message)
+        dm = AMQPDataManager(self.context, self)
         transaction.get().join(dm)
         self._needs_to_join = False
 
@@ -43,13 +52,17 @@ class AMQPDataManager(object):
 
     transaction_manager = None
 
-    def __init__(self, reader, session, message=None):
+    def __init__(self, reader, session):
         self.connection_lock = reader.connection.lock
         self._channel = reader.channel
-        self.message = message
         self.session = session
         self._tpc_begin = False
         gocept.amqprun.interfaces.IChannelManager(self._channel).acquire()
+
+    # XXX refactor structure of Session and AMQPDataManager, see #9988
+    @property
+    def message(self):
+        return self.session.message_to_ack
 
     def abort(self, transaction):
         # Called on transaction.abort() *and* on errors in tpc_vote/tpc_finish

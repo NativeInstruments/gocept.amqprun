@@ -35,10 +35,10 @@ class DataManagerTest(unittest.TestCase):
 
     def get_dm(self):
         import gocept.amqprun.session
-        self.session = gocept.amqprun.session.Session(
-            self.reader, self.get_message())
+        self.session = gocept.amqprun.session.Session(self.reader)
+        self.session.ack(self.get_message())
         return gocept.amqprun.session.AMQPDataManager(
-            self.reader, self.session, self.get_message())
+            self.reader, self.session)
 
     def test_interface(self):
         import transaction.interfaces
@@ -265,3 +265,14 @@ class SessionTest(unittest.TestCase):
         session.send('asdf')
         session.send('bsdf')
         self.assertEqual(1, transaction_get().join.call_count)
+
+    @mock.patch('transaction.get')
+    def test_joins_transaction_on_ack(self, transaction_get):
+        session = self.create_session()
+        session.ack(mock.Mock())
+        self.assertTrue(transaction_get().join.called)
+
+    def test_only_one_ack_is_allowed(self):
+        session = self.create_session()
+        session.ack(mock.Mock())
+        self.assertRaises(ValueError, lambda: session.ack(mock.Mock()))
