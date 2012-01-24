@@ -54,8 +54,9 @@ class Worker(threading.Thread):
                                   handler.message.routing_key)
                     self.log.debug(str(handler.message.body))
                     transaction.begin()
-                    session = self.session_factory(handler.message)
+                    session = self.session_factory()
                     try:
+                        session.ack(handler.message)
                         response = handler()
                         for msg in response:
                             self.log.info(

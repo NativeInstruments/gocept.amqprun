@@ -126,7 +126,7 @@ class MessageReaderTest(
         handler = mock.Mock()
         handler.message.header.message_id = None
         handler.message.header.headers = None
-        session = self.reader.get_session(handler.message)
+        session = self.reader.get_session()
         session.send(gocept.amqprun.message.Message(
             {}, 'body', routing_key=u'test.routing'))
         # Patch out basic_ack because we haven't actually received a message
@@ -140,7 +140,7 @@ class MessageReaderTest(
         handler = mock.Mock()
         handler.message.header.message_id = None
         handler.message.header.headers = None
-        session = self.reader.get_session(handler.message)
+        session = self.reader.get_session()
         session.send(gocept.amqprun.message.Message(
             {}, u'body', routing_key='test.routing'))
         # Patch out basic_ack because we haven't actually received a message
@@ -153,7 +153,7 @@ class MessageReaderTest(
         self.create_server()
         handler = mock.Mock()
         handler.message.header.message_id = None
-        session = self.reader.get_session(handler.message)
+        session = self.reader.get_session()
         session.send(gocept.amqprun.message.Message(
             {u'content_type': u'text/plain'},
             'body', routing_key='test.routing'))

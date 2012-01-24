@@ -9,6 +9,8 @@ CHANGES
 
 - Changed `filestore` extra to `readfiles` extra.
 
+- Fixed bug with acknowledging messages that was introduced in 0.5 (#10030).
+
 
 0.5.1 (2012-01-09)
 ------------------
