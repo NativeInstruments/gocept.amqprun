@@ -52,9 +52,9 @@ class AMQPDataManager(object):
 
     transaction_manager = None
 
-    def __init__(self, reader, session):
-        self.connection_lock = reader.connection.lock
-        self._channel = reader.channel
+    def __init__(self, server, session):
+        self.connection_lock = server.connection.lock
+        self._channel = server.channel
         self.session = session
         self._tpc_begin = False
         gocept.amqprun.interfaces.IChannelManager(self._channel).acquire()

@@ -21,10 +21,10 @@ class DataManagerTest(unittest.TestCase):
             mock.Mock(return_value=self.channel_manager),
             adapts=(mock.Mock,),
             provides=gocept.amqprun.interfaces.IChannelManager)
-        self.reader = mock.Mock()
-        self.reader.connection = self.connection = mock.Mock()
+        self.server = mock.Mock()
+        self.server.connection = self.connection = mock.Mock()
         self.connection.lock = threading.Lock()
-        self.reader.channel = self.channel = mock.Mock()
+        self.server.channel = self.channel = mock.Mock()
 
     def tearDown(self):
         zope.component.testing.tearDown()
@@ -35,10 +35,10 @@ class DataManagerTest(unittest.TestCase):
 
     def get_dm(self):
         import gocept.amqprun.session
-        self.session = gocept.amqprun.session.Session(self.reader)
+        self.session = gocept.amqprun.session.Session(self.server)
         self.session.ack(self.get_message())
         return gocept.amqprun.session.AMQPDataManager(
-            self.reader, self.session)
+            self.server, self.session)
 
     def test_interface(self):
         import transaction.interfaces
