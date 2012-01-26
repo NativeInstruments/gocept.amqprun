@@ -26,9 +26,6 @@ class FileWriterTest(unittest.TestCase):
         zope.component.testing.tearDown()
         super(FileWriterTest, self).tearDown()
 
-    def assertNothingRaised(self, function, *args, **kw):
-        function(*args, **kw)
-
     def create_message(self, body='testbody'):
         from gocept.amqprun.message import Message
         message = Message({}, body, routing_key='routing')
@@ -36,32 +33,6 @@ class FileWriterTest(unittest.TestCase):
         message.header.timestamp = time.mktime(
             datetime.datetime(2011, 7, 14, 14, 15).timetuple())
         return message
-
-    def test_filename_uses_more_than_millisecond_precision(self):
-        from gocept.amqprun.writefiles import FileWriter
-        ANY = None
-        writer = FileWriter('/dev/null', ANY)
-        filename = writer.generate_filename(self.create_message())
-        digits = filename.split('.')[-1]
-        self.assertGreater(digits, 2)
-
-    def test_no_timestamp_uses_now_as_date_placeholder(self):
-        from gocept.amqprun.writefiles import FileWriter
-        writer = FileWriter('/dev/null', '${date}')
-        message = self.create_message()
-        message.header.timestamp = None
-        filename = writer.generate_filename(message)
-        self.assertEqual(
-            datetime.datetime.now().strftime('%Y-%m-%d'), filename)
-
-    def test_filename_substitutes_pattern(self):
-        from gocept.amqprun.writefiles import FileWriter
-        writer = FileWriter(
-            '/dev/null', pattern='${routing_key}_${date}_${msgid}_${unique}')
-        filename = writer.generate_filename(self.create_message())
-        parts = filename.split('_')
-        self.assertEqual(['routing', '2011-07-14', 'myid'], parts[:-1])
-        self.assertNothingRaised(lambda: float(parts[3]))
 
     def test_write_message_body(self):
         from gocept.amqprun.writefiles import FileWriter
@@ -151,7 +122,7 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
                 directory='/dev/null',
                 pattern='{foo}/${bar}/{qux}')
         self.assertEqual(
-            '${foo}/${bar}/${qux}', handler.handler_function.pattern.template)
+            '${foo}/${bar}/${qux}', handler.handler_function.pattern)
 
     def test_directive_supports_arguments(self):
         handler = self.run_directive(
