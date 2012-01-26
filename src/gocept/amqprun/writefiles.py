@@ -16,30 +16,6 @@ import zope.schema
 import zope.xmlpickle
 
 
-key_value_regex = re.compile(r'^(?P<key>[^:=\s[][^:=]*)'
-                             r'(?P<sep>[:=]\s*)'
-                             r'(?P<value>.*)$')
-
-
-@zope.interface.implementer(zope.schema.interfaces.IDict)
-class RepresentableDict(zope.schema.Dict):
-    """A field representing a Dict, but representable in ZCML."""
-
-    def fromUnicode(self, raw_value):
-        retval = {}
-        for line in raw_value.strip().splitlines():
-            m = key_value_regex.match(line.strip())
-            if m is None:
-                continue
-
-            key = m.group('key').rstrip()
-            value = m.group('value')
-            retval[key] = value
-
-        self.validate(retval)
-        return retval
-
-
 class FileWriter(object):
 
     def __init__(self, directory, pattern):
@@ -119,7 +95,8 @@ class IWriteFilesDirective(zope.interface.Interface):
 
     pattern = zope.schema.TextLine(title=u"File name pattern")
 
-    arguments = RepresentableDict(key_type=zope.schema.TextLine(),
+    arguments = gocept.amqprun.interfaces.RepresentableDict(
+        key_type=zope.schema.TextLine(),
         value_type=zope.schema.TextLine(),
         required=False)
 
