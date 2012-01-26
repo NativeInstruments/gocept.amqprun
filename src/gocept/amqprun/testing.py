@@ -201,11 +201,14 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         self.config.flush()
         return self.config.name
 
-    def wait_for_response(self, timeout=100):
-        for i in range(100):
+    def wait_for_processing(self, timeout=100):
+        for i in range(timeout):
             if not self.loop.tasks.qsize():
                 break
             time.sleep(0.05)
         else:
             self.fail('Message was not processed.')
+
+    def wait_for_response(self, timeout=100):
+        self.wait_for_processing(timeout)
         return super(MainTestCase, self).wait_for_response(timeout)
