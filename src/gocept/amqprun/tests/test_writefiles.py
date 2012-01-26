@@ -183,10 +183,5 @@ class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
         self.start_server()
         body = 'This is only a test.'
         self.send_message(body, routing_key='test.data')
-        for i in range(100):
-            if not self.loop.tasks.qsize():
-                break
-            time.sleep(0.05)
-        else:
-            self.fail('Message was not processed.')
+        self.wait_for_processing()
         self.assertEqual(2, len(os.listdir(self.tmpdir)))
