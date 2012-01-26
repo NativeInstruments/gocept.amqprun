@@ -289,8 +289,9 @@ Reading
 -------
 
 You can also set up a thread to read files from a directory and publish them
-onto the queue, using the ``<amqp:readfiles>`` ZCML directive. You need the
-`readfiles` extra to enable this directive::
+onto the queue, using the ``<amqp:readfiles>`` ZCML directive (the filename
+will be transmitted in the ``X-Filename`` header). You need the `readfiles`
+extra to enable this directive::
 
     <configure xmlns="http://namespaces.zope.org/zope"
                xmlns:amqp="http://namespaces.gocept.com/amqp">
