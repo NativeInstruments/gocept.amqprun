@@ -4,6 +4,7 @@
 import gocept.amqprun.interfaces
 import gocept.filestore
 import logging
+import os.path
 import threading
 import time
 import transaction
@@ -44,7 +45,7 @@ class FileStoreReader(threading.Thread):
             transaction.begin()
             log.debug('sending %r to %r' % (filename, self.routing_key))
             try:
-                self.send(open(filename).read())
+                self.send(filename)
                 self.session.mark_done(filename)
             except:
                 log.error('Sending message failed', exc_info=True)
@@ -52,10 +53,13 @@ class FileStoreReader(threading.Thread):
             else:
                 transaction.commit()
 
-    def send(self, body):
+    def send(self, filename):
+        body = open(filename).read()
         # XXX make content-type configurable?
         message = gocept.amqprun.message.Message(
-            {'content_type': 'text/xml'}, body, routing_key=self.routing_key)
+            {'content_type': 'text/xml',
+             'X-Filename': os.path.basename(filename).encode('utf-8')},
+            body, routing_key=self.routing_key)
         sender = zope.component.getUtility(gocept.amqprun.interfaces.ISender)
         sender.send(message)
 

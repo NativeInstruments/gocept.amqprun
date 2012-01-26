@@ -8,9 +8,12 @@ Features
 ~~~~~~~~
 
 - Changed FileStoreReader from its own process to a thread that uses
-  gocep.amqprun for sending (previously it used amqplib) (#10177).
+  gocep.amqprun for sending (previously it used amqplib). Introduced
+  ``amqp:readfiles`` ZCML directive. (#10177)
 
 - Changed `filestore` extra to `readfiles` extra.
+
+- Transmit filename as ``X-Filename`` header from ``amqp:readfiles``.
 
 - Introduced ``ISender`` utility.
 
