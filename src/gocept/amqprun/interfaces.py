@@ -1,8 +1,11 @@
 # Copyright (c) 2010 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+import re
 import zope.interface
 import zope.interface.common.mapping
+import zope.schema
+import zope.schema.interfaces
 
 
 class IHandlerDeclaration(zope.interface.Interface):
@@ -144,3 +147,26 @@ class MessageStored(object):
     def __init__(self, message, path):
         self.path = path
         self.message = message
+
+
+@zope.interface.implementer(zope.schema.interfaces.IDict)
+class RepresentableDict(zope.schema.Dict):
+    """A field representing a Dict, but representable in ZCML."""
+
+    key_value_regex = re.compile(r'^(?P<key>[^:=\s[][^:=]*)'
+                                 r'(?P<sep>[:=]\s*)'
+                                 r'(?P<value>.*)$')
+
+    def fromUnicode(self, raw_value):
+        retval = {}
+        for line in raw_value.strip().splitlines():
+            m = self.key_value_regex.match(line.strip())
+            if m is None:
+                continue
+
+            key = m.group('key').rstrip()
+            value = m.group('value')
+            retval[key] = value
+
+        self.validate(retval)
+        return retval
