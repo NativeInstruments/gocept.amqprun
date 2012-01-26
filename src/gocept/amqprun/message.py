@@ -1,9 +1,11 @@
 # Copyright (c) 2010 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+from datetime import datetime
 import email.utils
 import gocept.amqprun.interfaces
 import pika.spec
+import string
 import time
 import zope.interface
 
@@ -37,3 +39,21 @@ class Message(object):
                 setattr(result, key, value)
         result.headers = header
         return result
+
+    def generate_filename(self, pattern):
+        pattern = string.Template(pattern)
+        if self.header.timestamp is not None:
+            timestamp = datetime.fromtimestamp(self.header.timestamp)
+        else:
+            timestamp = datetime.now()
+        variables = dict(
+            date=timestamp.strftime('%Y-%m-%d'),
+            msgid=self.header.message_id,
+            routing_key=self.routing_key,
+            # since CPython doesn't use OS-level threads, there won't be actual
+            # concurrency, so we can get away with using the current time to
+            # uniquify the filename -- we have to take care about the
+            # precision, though: '%s' loses digits, but '%f' doesn't.
+            unique='%f' % time.time(),
+        )
+        return pattern.substitute(variables)

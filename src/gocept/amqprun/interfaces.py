@@ -46,6 +46,17 @@ class IMessage(zope.interface.Interface):
     routing_key = zope.interface.Attribute('Routing key (if any)')
     exchange = zope.interface.Attribute('Exchange (default: amq.topic)')
 
+    def generate_filename(pattern):
+        """``pattern`` performs as ``string.Template`` substitution.
+        The following variables are available:
+
+          :date: The date the message arrived, formatted ``%Y-%m-%d``
+          :msgid: The value of the message-id header
+          :routing_key: The routing key of the message
+          :unique: A token that guarantees the filename will be unique
+          in its directory (using the current timestamp)
+        """
+
 
 class ISession(zope.interface.Interface):
     """AMQP session."""

@@ -1,13 +1,10 @@
 # Copyright (c) 2010-2011 gocept gmbh & co. kg
 # See also LICENSE.txt
 
-import datetime
 import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import os.path
 import re
-import string
-import time
 import zope.component.zcml
 import zope.configuration.fields
 import zope.event
@@ -22,10 +19,10 @@ class FileWriter(object):
         self.directory = directory
         if not pattern:
             pattern = '${routing_key}-${unique}'
-        self.pattern = string.Template(pattern)
+        self.pattern = pattern
 
     def __call__(self, message):
-        path = self.generate_filename(message)
+        path = message.generate_filename(self.pattern)
         directory = os.path.join(self.directory, os.path.dirname(path))
         filename = os.path.basename(path)
 
@@ -52,24 +49,6 @@ class FileWriter(object):
             directory = os.path.join(directory, d)
             if not os.path.exists(directory):
                 os.mkdir(directory)
-
-    def generate_filename(self, message):
-        if message.header.timestamp is not None:
-            timestamp = datetime.datetime.fromtimestamp(
-                message.header.timestamp)
-        else:
-            timestamp = datetime.datetime.now()
-        variables = dict(
-            date=timestamp.strftime('%Y-%m-%d'),
-            msgid=message.header.message_id,
-            routing_key=message.routing_key,
-            # since CPython doesn't use OS-level threads, there won't be actual
-            # concurrency, so we can get away with using the current time to
-            # uniquify the filename -- we have to take care about the
-            # precision, though: '%s' loses digits, but '%f' doesn't.
-            unique='%f' % time.time(),
-        )
-        return self.pattern.substitute(variables)
 
     @staticmethod
     def header_filename(filename):

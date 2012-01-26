@@ -1,6 +1,11 @@
+# Copyright (c) 2012 gocept gmbh & co. kg
+# See also LICENSE.txt
+
+from datetime import datetime
+import gocept.testing.assertion
+import time
 import unittest
 import zope.interface.verify
-import time
 
 
 class TestMessage(unittest.TestCase):
@@ -41,3 +46,32 @@ class TestMessage(unittest.TestCase):
         from gocept.amqprun.message import Message
         message = Message(dict(message_id='myid'), '')
         self.assertEqual('myid', message.header.message_id)
+
+
+class GenerateFilename(unittest.TestCase,
+                       gocept.testing.assertion.Exceptions):
+
+    def create_message(self, body='testbody'):
+        from gocept.amqprun.message import Message
+        message = Message({}, body, routing_key='routing')
+        message.header.message_id = 'myid'
+        message.header.timestamp = time.mktime(
+            datetime(2011, 7, 14, 14, 15).timetuple())
+        return message
+
+    def test_filename_uses_more_than_millisecond_precision(self):
+        filename = self.create_message().generate_filename('${unique}')
+        digits = filename.split('.')[-1]
+        self.assertGreater(digits, 2)
+
+    def test_no_timestamp_uses_now_as_date_placeholder(self):
+        self.assertEqual(
+            datetime(2011, 7, 14, 14, 15).strftime('%Y-%m-%d'),
+            self.create_message().generate_filename('${date}'))
+
+    def test_filename_substitutes_pattern(self):
+        filename = self.create_message().generate_filename(
+            '${routing_key}_${date}_${msgid}_${unique}')
+        parts = filename.split('_')
+        self.assertEqual(['routing', '2011-07-14', 'myid'], parts[:-1])
+        self.assertNothingRaised(lambda: float(parts[3]))
