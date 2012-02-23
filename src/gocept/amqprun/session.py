@@ -105,7 +105,7 @@ class AMQPDataManager(object):
             message.header.headers = {}
         if 'references' not in message.header.headers:
             if (self.message.header.headers and
-                self.message.header.headers['references']):
+                self.message.header.headers.get('references')):
                 parent_references = (
                     self.message.header.headers['references'] + '\n')
             else:

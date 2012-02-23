@@ -165,6 +165,18 @@ class DataManagerTest(unittest.TestCase):
         self.assertIn('references', header.headers)
         self.assertEqual('parent id\nmessage id', header.headers['references'])
 
+    def test_no_references_when_parent_has_no_reference_header(self):
+        dm = self.get_dm()
+        dm.message.header.message_id = 'message id'
+        dm.message.header.headers = {'X-Foo': 'bar'}
+        msg = mock.Mock()
+        msg.header.headers = None
+        self.session.send(msg)
+        dm.commit(None)
+        ((_, _, _, header), _) = self.channel.basic_publish.call_args
+        self.assertIn('references', header.headers)
+        self.assertEqual('message id', header.headers['references'])
+
     def test_existing_references_header_should_not_be_overwritten(self):
         dm = self.get_dm()
         dm.message.header.message_id = 'message id'
