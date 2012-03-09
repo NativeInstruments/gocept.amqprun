@@ -54,10 +54,11 @@ class AMQPDataManager(object):
 
     def __init__(self, server, session):
         self.connection_lock = server.connection.lock
-        self._channel = server.channel
+        with self.connection_lock:
+            self._channel = server.channel
+            gocept.amqprun.interfaces.IChannelManager(self._channel).acquire()
         self.session = session
         self._tpc_begin = False
-        gocept.amqprun.interfaces.IChannelManager(self._channel).acquire()
 
     # XXX refactor structure of Session and AMQPDataManager, see #9988
     @property
