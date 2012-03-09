@@ -4,7 +4,8 @@ CHANGES
 0.7 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Fix race condition between getting the current channel in the DataManager and
+  switching the current channel in the Server (#10521).
 
 
 0.6.1 (2012-02-23)
