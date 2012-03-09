@@ -9,6 +9,7 @@ import gocept.amqprun
 import gocept.amqprun.connection
 import logging
 import mock
+import os
 import pkg_resources
 import plone.testing
 import plone.testing.zca
@@ -38,8 +39,15 @@ class QueueLayer(plone.testing.Layer):
     defaultBases = [ZCML_LAYER]
 
     def setUp(self):
-        self['amqp-hostname'] = hostname = 'localhost'
-        self['amqp-connection'] = amqp.Connection(host=hostname)
+        self['amqp-hostname'] = os.environ.get('AMQP_HOSTNAME', 'localhost')
+        self['amqp-username'] = os.environ.get('AMQP_USERNAME', 'guest')
+        self['amqp-password'] = os.environ.get('AMQP_PASSWORD', 'guest')
+        self['amqp-virtualhost'] = os.environ.get('AMQP_VIRTUALHOST', '/')
+        self['amqp-connection'] = amqp.Connection(
+            host=self['amqp-hostname'],
+            userid=self['amqp-username'],
+            password=self['amqp-password'],
+            virtual_host=self['amqp-virtualhost'])
         self['amqp-channel'] = self['amqp-connection'].channel()
 
     def tearDown(self):
@@ -109,7 +117,10 @@ class QueueTestCase(unittest.TestCase):
 
     def create_server(self, **kw):
         import gocept.amqprun.server
-        params = dict(hostname=self.layer['amqp-hostname'])
+        params = dict(hostname=self.layer['amqp-hostname'],
+                      username=self.layer['amqp-username'],
+                      password=self.layer['amqp-password'],
+                      virtualhost=self.layer['amqp-virtualhost'])
         params.update(kw)
         return gocept.amqprun.server.Server(
             gocept.amqprun.connection.Parameters(**params))
@@ -189,7 +200,13 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         self.zcml.write(zcml_base.substitute(mapping).encode('utf8'))
         self.zcml.flush()
 
-        sub = dict(site_zcml=self.zcml.name)
+        sub = dict(
+            site_zcml=self.zcml.name,
+            amqp_hostname=self.layer['amqp-hostname'],
+            amqp_username=self.layer['amqp-username'],
+            amqp_password=self.layer['amqp-password'],
+            amqp_virtualhost=self.layer['amqp-virtualhost'],
+        )
         if mapping:
             sub.update(mapping)
 

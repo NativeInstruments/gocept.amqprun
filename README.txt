@@ -313,6 +313,21 @@ files have been published to the given routing key, they will be moved to
 Development
 ===========
 
+You can set the AMQP server parameters for running the tests via environment
+variables:
+
+:AMQP_HOSTNAME:
+    default: localhost
+
+:AMQP_USERNAME:
+    default: guest
+
+:AMQP_PASSWORD:
+    default: guest
+
+:AMQP_VIRTUALHOST:
+    default: /
+
 The source code is available in the mercurial repository at
 https://code.gocept.com/hg/public/gocept.amqprun
 
