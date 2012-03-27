@@ -43,6 +43,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
     def __init__(self, connection_parameters):
         self.connection_parameters = connection_parameters
         self.tasks = Queue.Queue()
+        self.local = threading.local()
         self.running = False
         self.connection = None
         self.channel = None
@@ -51,7 +52,6 @@ class Server(object, pika.connection.NullReconnectionStrategy):
 
     def start(self):
         log.info('Starting message reader.')
-        self.local = threading.local()
         self.connection = gocept.amqprun.connection.Connection(
             self.connection_parameters, self)
         self.connection.finish_init()

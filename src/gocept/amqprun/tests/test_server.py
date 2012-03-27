@@ -23,7 +23,7 @@ class MessageReaderTest(
     gocept.amqprun.testing.QueueTestCase):
 
     def start_server(self):
-        self.server = super(MessageReaderTest, self).create_server()
+        self.server = self.create_server()
         self.start_thread(self.server)
 
     def test_loop_can_be_stopped_from_outside(self):
@@ -170,6 +170,12 @@ class MessageReaderTest(
         self.send_message('foo', routing_key='route.1')
         self.send_message('bar', routing_key='route.2')
         self.assertEqual(2, self.server.tasks.qsize())
+
+    def test_send_works_when_not_started_yet(self):
+        server = self.create_server()
+        with mock.patch('gocept.amqprun.session.Session.send') as send:
+            server.send(mock.sentinel.message)
+            send.assert_called_with(mock.sentinel.message)
 
 
 class TestChannelSwitch(unittest.TestCase):
