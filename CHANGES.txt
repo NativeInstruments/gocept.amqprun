@@ -12,6 +12,7 @@ CHANGES
 
 - Fix race condition between getting the current channel in the DataManager and
   switching the current channel in the Server (#10521).
+- Make AMQP server configurable for tests (#9232).
 
 
 0.6.1 (2012-02-23)
