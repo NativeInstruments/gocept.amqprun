@@ -36,6 +36,7 @@ class DataManagerTest(unittest.TestCase):
     def get_dm(self):
         import gocept.amqprun.session
         self.session = gocept.amqprun.session.Session(self.server)
+        self.session.channel = self.server.channel  # XXX
         self.session.ack(self.get_message())
         return gocept.amqprun.session.AMQPDataManager(
             self.server, self.session)

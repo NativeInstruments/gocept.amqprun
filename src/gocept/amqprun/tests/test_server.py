@@ -55,7 +55,7 @@ class MessageReaderTest(
         # With routing key, the message is delivered
         self.send_message('foo', routing_key='test.messageformat.1')
         self.assertEqual(1, self.server.tasks.qsize())
-        handler, message = self.server.tasks.get()
+        handler, message, channel = self.server.tasks.get()
         handler(message)
         self.assertTrue(handle_message.called)
         message = handle_message.call_args[0][0]
@@ -80,7 +80,7 @@ class MessageReaderTest(
         # With routing key, the message is delivered to the correct handler
         self.send_message('foo', routing_key='test.messageformat.2')
         self.assertEqual(1, self.server.tasks.qsize())
-        handler, message = self.server.tasks.get()
+        handler, message, channel = self.server.tasks.get()
         handler(message)
         self.assertFalse(handle_message_2.called)
         self.assertTrue(handle_message_1.called)
@@ -126,6 +126,7 @@ class MessageReaderTest(
         handler.message.header.message_id = None
         handler.message.header.headers = None
         session = self.server.get_session()
+        session.channel = self.server.channel  # XXX
         session.send(gocept.amqprun.message.Message(
             {}, 'body', routing_key=u'test.routing'))
         # Patch out basic_ack because we haven't actually received a message
@@ -140,6 +141,7 @@ class MessageReaderTest(
         handler.message.header.message_id = None
         handler.message.header.headers = None
         session = self.server.get_session()
+        session.channel = self.server.channel  # XXX
         session.send(gocept.amqprun.message.Message(
             {}, u'body', routing_key='test.routing'))
         # Patch out basic_ack because we haven't actually received a message
@@ -153,6 +155,7 @@ class MessageReaderTest(
         handler = mock.Mock()
         handler.message.header.message_id = None
         session = self.server.get_session()
+        session.channel = self.server.channel  # XXX
         session.send(gocept.amqprun.message.Message(
             {u'content_type': u'text/plain'},
             'body', routing_key='test.routing'))
@@ -175,9 +178,9 @@ class MessageReaderTest(
         self.assertEqual(2, self.server.tasks.qsize())
 
     def test_send_works_when_not_started_yet(self):
-        server = self.create_server()
+        self.start_server()
         with mock.patch('gocept.amqprun.session.Session.send') as send:
-            server.send(mock.sentinel.message)
+            self.server.send(mock.sentinel.message)
             send.assert_called_with(mock.sentinel.message)
 
     def test_channel_of_any_task_in_the_queue_is_open(self):
@@ -408,5 +411,5 @@ class ConsumerTest(unittest.TestCase):
         zope.interface.alsoProvides(
             channel, gocept.amqprun.interfaces.IChannelManager)
         consumer(channel, method, {}, '')
-        handler, message = tasks.get()
+        handler, message, channel = tasks.get()
         self.assertEqual('route', message.routing_key)
