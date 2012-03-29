@@ -1,21 +1,23 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
+# Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import collections
+import gocept.amqprun.channel
+import gocept.amqprun.interfaces
 import gocept.amqprun.testing
-import os
 import mock
+import os
 import pika.spec
 import random
 import signal
 import subprocess
 import sys
-import threading
 import tempfile
+import threading
 import time
 import unittest
 import zope.component
-import zope.component.testing
+import zope.interface
 
 
 class MessageReaderTest(
@@ -174,20 +176,8 @@ class MessageReaderTest(
 
 class TestChannelSwitch(unittest.TestCase):
 
-    def setUp(self):
-        import gocept.amqprun.channel
-        import gocept.amqprun.interfaces
-        zope.component.testing.setUp()
-        zope.component.provideAdapter(
-            gocept.amqprun.channel.Manager,
-            adapts=(mock.Mock,))
-
-    def tearDown(self):
-        zope.component.testing.tearDown()
-
     def create_server(self):
         from gocept.amqprun.server import Server
-        import pika.channel
         server = Server(mock.sentinel.hostname)
         server.connection = mock.Mock()
         server.connection.lock = threading.Lock()
@@ -196,11 +186,13 @@ class TestChannelSwitch(unittest.TestCase):
         # which we can't get rid off otherwise, but which in turn leads
         # the ZCA here to assume that the channel-mock already provides
         # IChannelManager. (That's actually two bugs in ZCA in one go...)
-        channel_spec = [x for x in dir(pika.channel.Channel)
+        channel_spec = [x for x in dir(gocept.amqprun.channel.Channel)
                         if not x.startswith('__')]
         server.channel = mock.Mock(channel_spec)
+        zope.interface.alsoProvides(
+            server.channel, gocept.amqprun.interfaces.IChannelManager)
         server.channel.callbacks = collections.OrderedDict()
-        new_channel = mock.Mock(pika.channel.Channel)
+        new_channel = mock.Mock(gocept.amqprun.channel.Channel)
         new_channel.callbacks = {}
         new_channel.handler = mock.Mock()
         server.connection.channel.return_value = new_channel
@@ -265,9 +257,8 @@ class TestChannelSwitch(unittest.TestCase):
         self.assertFalse(server._switching_channels)
 
     def test_run_calls_switch_channel_once_in_a_while(self):
-        import gocept.amqprun.interfaces
         server = self.create_server()
-        gocept.amqprun.interfaces.IChannelManager(server.channel).acquire()
+        server.channel.close_if_possible.return_value = False
         self.assertEquals(360, server.CHANNEL_LIFE_TIME)
         server.CHANNEL_LIFE_TIME = 0.4
         server._channel_opened = time.time()
@@ -286,28 +277,24 @@ class TestChannelSwitch(unittest.TestCase):
     def test_old_channel_should_be_closed(self):
         server = self.create_server()
         old_channel = server.channel
+        old_channel.close_if_possible.return_value = True
         server.switch_channel()
         self.assertEqual(old_channel, server._old_channel)
         server.run_once()
-        self.assertTrue(old_channel.close.called)
+        self.assertTrue(old_channel.close_if_possible.called)
         self.assertIsNone(server._old_channel)
         self.assertFalse(server._switching_channels)
 
     def test_old_channel_should_remain_if_closing_is_not_possible(self):
-        import gocept.amqprun.interfaces
         server = self.create_server()
         old_channel = server.channel
-        gocept.amqprun.interfaces.IChannelManager(old_channel).acquire()
+        old_channel.close_if_possible.return_value = False
         server.switch_channel()
         self.assertEqual(old_channel, server._old_channel)
         server.run_once()
-        self.assertFalse(old_channel.close.called)
+        self.assertTrue(old_channel.close_if_possible.called)
         self.assertIsNotNone(server._old_channel)
-        # After releasing the channel is closed
-        gocept.amqprun.interfaces.IChannelManager(old_channel).release()
-        server.run_once()
-        self.assertTrue(old_channel.close.called)
-        self.assertIsNone(server._old_channel)
+        self.assertTrue(server._switching_channels)
 
     def test_active_connection_lock_should_defer_switch_channel(self):
         server = self.create_server()

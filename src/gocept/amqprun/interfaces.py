@@ -113,9 +113,6 @@ class IChannelManager(zope.interface.Interface):
     def release():
         """Indicate channel is no longer being used."""
 
-    def get_count():
-        """Return how often the channel is currenlty being used."""
-
     def close_if_possible():
         """Close the channel if it is no longer used by anyone."""
 

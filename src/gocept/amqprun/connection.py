@@ -1,10 +1,12 @@
-# Copyright (c) 2010-2011 gocept gmbh & co. kg
+# Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import asyncore
+import gocept.amqprun.channel
 import logging
 import os
 import pika
+import pika.channel
 import threading
 import time
 
@@ -87,6 +89,10 @@ class Connection(pika.AsyncoreConnection):
             if self.outbound_buffer:
                 self.notify()
                 time.sleep(0.05)
+
+    def channel(self):
+        return gocept.amqprun.channel.Channel(
+            pika.channel.ChannelHandler(self))
 
     @property
     def is_main_thread(self):
