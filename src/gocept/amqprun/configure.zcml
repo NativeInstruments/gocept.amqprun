@@ -3,6 +3,4 @@
   <include package="zope.component" file="meta.zcml" />
   <include package="zope.component" />
 
-  <adapter factory=".channel.Manager" />
-
 </configure>

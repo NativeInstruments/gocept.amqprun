@@ -72,9 +72,8 @@ class AMQPDataManager(object):
             # If a TPC has begun already, do nothing. tpc_abort handles
             # everything we do as well.
             return
-        with self.connection_lock:
-            self.session.reset()
-            gocept.amqprun.interfaces.IChannelManager(self._channel).release()
+        self.session.reset()
+        gocept.amqprun.interfaces.IChannelManager(self._channel).release()
 
     def tpc_begin(self, transaction):
         log.debug("Acquire commit lock for %s", transaction)
@@ -118,6 +117,7 @@ class AMQPDataManager(object):
     def tpc_abort(self, transaction):
         log.debug('tx_rollback')
         self._channel.tx_rollback()
+        self.connection_lock.release()
         # The original idea was to reject the message here. Reject with requeue
         # immediately re-queues the message in the current rabbitmq
         # implementation (2.1.1). We let the message dangle until the channel
@@ -125,7 +125,6 @@ class AMQPDataManager(object):
         # us.
         self.session.reset()
         gocept.amqprun.interfaces.IChannelManager(self._channel).release()
-        self.connection_lock.release()
 
     def tpc_vote(self, transaction):
         log.debug("tx_commit")
@@ -133,8 +132,8 @@ class AMQPDataManager(object):
 
     def tpc_finish(self, transaction):
         log.debug("releasing commit lock")
-        gocept.amqprun.interfaces.IChannelManager(self._channel).release()
         self.connection_lock.release()
+        gocept.amqprun.interfaces.IChannelManager(self._channel).release()
 
     def sortKey(self):
         # Try to sort last, so that we vote last.

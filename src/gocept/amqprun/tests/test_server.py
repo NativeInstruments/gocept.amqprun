@@ -1,21 +1,24 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
+# Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+import Queue
 import collections
+import gocept.amqprun.channel
+import gocept.amqprun.interfaces
 import gocept.amqprun.testing
-import os
 import mock
+import os
 import pika.spec
 import random
 import signal
 import subprocess
 import sys
-import threading
 import tempfile
+import threading
 import time
 import unittest
 import zope.component
-import zope.component.testing
+import zope.interface
 
 
 class MessageReaderTest(
@@ -30,7 +33,7 @@ class MessageReaderTest(
         # this test simply should not hang indefinitely
         self.start_server()
 
-    def test_messages_wo_handler_declaration_should_not_arrive_in_tasks(self):
+    def test_messages_wo_handler_should_not_arrive_in_tasks(self):
         self.start_server()
         self.send_message('foo')
         self.assertEqual(0, self.server.tasks.qsize())
@@ -39,10 +42,10 @@ class MessageReaderTest(
         import gocept.amqprun.handler
         # Provide a handler
         handle_message = mock.Mock()
-        decl = gocept.amqprun.handler.HandlerDeclaration(
+        handler = gocept.amqprun.handler.Handler(
             self.get_queue_name('test.case.1'),
             'test.messageformat.1', handle_message)
-        zope.component.provideUtility(decl, name='queue')
+        zope.component.provideUtility(handler, name='queue')
         self.start_server()
 
         # Without routing key, the message is not delivered
@@ -52,8 +55,8 @@ class MessageReaderTest(
         # With routing key, the message is delivered
         self.send_message('foo', routing_key='test.messageformat.1')
         self.assertEqual(1, self.server.tasks.qsize())
-        handler = self.server.tasks.get()
-        handler()
+        handler, message = self.server.tasks.get()
+        handler(message)
         self.assertTrue(handle_message.called)
         message = handle_message.call_args[0][0]
         self.assertEquals('foo', message.body)
@@ -63,56 +66,56 @@ class MessageReaderTest(
         # Provide two handlers
         handle_message_1 = mock.Mock()
         handle_message_2 = mock.Mock()
-        decl_1 = gocept.amqprun.handler.HandlerDeclaration(
+        handler_1 = gocept.amqprun.handler.Handler(
             self.get_queue_name('test.case.2'),
             'test.messageformat.2', handle_message_1)
-        decl_2 = gocept.amqprun.handler.HandlerDeclaration(
+        handler_2 = gocept.amqprun.handler.Handler(
             self.get_queue_name('test.case.3'),
             'test.messageformat.3', handle_message_2)
-        zope.component.provideUtility(decl_1, name='1')
-        zope.component.provideUtility(decl_2, name='2')
+        zope.component.provideUtility(handler_1, name='1')
+        zope.component.provideUtility(handler_2, name='2')
         self.start_server()
 
         self.assertEqual(0, self.server.tasks.qsize())
         # With routing key, the message is delivered to the correct handler
         self.send_message('foo', routing_key='test.messageformat.2')
         self.assertEqual(1, self.server.tasks.qsize())
-        handler = self.server.tasks.get()
-        handler()
+        handler, message = self.server.tasks.get()
+        handler(message)
         self.assertFalse(handle_message_2.called)
         self.assertTrue(handle_message_1.called)
 
     def test_unicode_queue_names_should_work(self):
         import gocept.amqprun.interfaces
-        class Decl(object):
+        class Handler(object):
             zope.interface.classProvides(
-                gocept.amqprun.interfaces.IHandlerDeclaration)
+                gocept.amqprun.interfaces.IHandler)
             queue_name = self.get_queue_name(u'test.case.2')
             routing_key = 'test.messageformat.2'
             arguments = {}
-        zope.component.provideUtility(Decl, name='decl')
+        zope.component.provideUtility(Handler, name='handler')
         self.start_server()
 
     def test_unicode_routing_keys_should_work_for_handler(self):
         import gocept.amqprun.interfaces
-        class Decl(object):
+        class Handler(object):
             zope.interface.classProvides(
-                gocept.amqprun.interfaces.IHandlerDeclaration)
+                gocept.amqprun.interfaces.IHandler)
             queue_name = self.get_queue_name('test.case.2')
             routing_key = u'test.messageformat.2'
             arguments = {}
-        zope.component.provideUtility(Decl, name='decl')
+        zope.component.provideUtility(Handler, name='handler')
         self.start_server()
 
     def test_unicode_arguments_should_work_for_handler(self):
         import gocept.amqprun.interfaces
-        class Decl(object):
+        class Handler(object):
             zope.interface.classProvides(
-                gocept.amqprun.interfaces.IHandlerDeclaration)
+                gocept.amqprun.interfaces.IHandler)
             queue_name = self.get_queue_name('test.case.2')
             routing_key = 'test.messageformat.2'
             arguments = {u'x-ha-policy': u'all'}
-        zope.component.provideUtility(Decl, name='decl')
+        zope.component.provideUtility(Handler, name='handler')
         self.start_server()
 
     def test_unicode_routing_keys_should_work_for_message(self):
@@ -160,10 +163,10 @@ class MessageReaderTest(
     def test_multiple_routing_keys_should_recieve_messages_for_all(self):
         import gocept.amqprun.handler
         handle_message = mock.Mock()
-        decl = gocept.amqprun.handler.HandlerDeclaration(
+        handler = gocept.amqprun.handler.Handler(
             self.get_queue_name('test.routing'),
             ['route.1', 'route.2'], handle_message)
-        zope.component.provideUtility(decl, name='decl')
+        zope.component.provideUtility(handler, name='handler')
         self.start_server()
 
         self.assertEqual(0, self.server.tasks.qsize())
@@ -180,20 +183,8 @@ class MessageReaderTest(
 
 class TestChannelSwitch(unittest.TestCase):
 
-    def setUp(self):
-        import gocept.amqprun.channel
-        import gocept.amqprun.interfaces
-        zope.component.testing.setUp()
-        zope.component.provideAdapter(
-            gocept.amqprun.channel.Manager,
-            adapts=(mock.Mock,))
-
-    def tearDown(self):
-        zope.component.testing.tearDown()
-
     def create_server(self):
         from gocept.amqprun.server import Server
-        import pika.channel
         server = Server(mock.sentinel.hostname)
         server.connection = mock.Mock()
         server.connection.lock = threading.Lock()
@@ -202,11 +193,13 @@ class TestChannelSwitch(unittest.TestCase):
         # which we can't get rid off otherwise, but which in turn leads
         # the ZCA here to assume that the channel-mock already provides
         # IChannelManager. (That's actually two bugs in ZCA in one go...)
-        channel_spec = [x for x in dir(pika.channel.Channel)
+        channel_spec = [x for x in dir(gocept.amqprun.channel.Channel)
                         if not x.startswith('__')]
         server.channel = mock.Mock(channel_spec)
+        zope.interface.alsoProvides(
+            server.channel, gocept.amqprun.interfaces.IChannelManager)
         server.channel.callbacks = collections.OrderedDict()
-        new_channel = mock.Mock(pika.channel.Channel)
+        new_channel = mock.Mock(gocept.amqprun.channel.Channel)
         new_channel.callbacks = {}
         new_channel.handler = mock.Mock()
         server.connection.channel.return_value = new_channel
@@ -236,11 +229,10 @@ class TestChannelSwitch(unittest.TestCase):
         self.assertEqual(new_channel, server.channel)
 
     def test_switch_channel_calls_consume_on_new_channel(self):
-        from gocept.amqprun.handler import HandlerDeclaration
+        from gocept.amqprun.handler import Handler
         server = self.create_server()
-        decl = HandlerDeclaration(
-            'queue_name', 'routing_key', lambda x: None)
-        zope.component.provideUtility(decl, name='handler')
+        handler = Handler('queue_name', 'routing_key', lambda x: None)
+        zope.component.provideUtility(handler, name='handler')
         server.switch_channel()
         self.assertTrue(server.channel.basic_consume.called)
 
@@ -271,9 +263,8 @@ class TestChannelSwitch(unittest.TestCase):
         self.assertFalse(server._switching_channels)
 
     def test_run_calls_switch_channel_once_in_a_while(self):
-        import gocept.amqprun.interfaces
         server = self.create_server()
-        gocept.amqprun.interfaces.IChannelManager(server.channel).acquire()
+        server.channel.close_if_possible.return_value = False
         self.assertEquals(360, server.CHANNEL_LIFE_TIME)
         server.CHANNEL_LIFE_TIME = 0.4
         server._channel_opened = time.time()
@@ -292,28 +283,24 @@ class TestChannelSwitch(unittest.TestCase):
     def test_old_channel_should_be_closed(self):
         server = self.create_server()
         old_channel = server.channel
+        old_channel.close_if_possible.return_value = True
         server.switch_channel()
         self.assertEqual(old_channel, server._old_channel)
         server.run_once()
-        self.assertTrue(old_channel.close.called)
+        self.assertTrue(old_channel.close_if_possible.called)
         self.assertIsNone(server._old_channel)
         self.assertFalse(server._switching_channels)
 
     def test_old_channel_should_remain_if_closing_is_not_possible(self):
-        import gocept.amqprun.interfaces
         server = self.create_server()
         old_channel = server.channel
-        gocept.amqprun.interfaces.IChannelManager(old_channel).acquire()
+        old_channel.close_if_possible.return_value = False
         server.switch_channel()
         self.assertEqual(old_channel, server._old_channel)
         server.run_once()
-        self.assertFalse(old_channel.close.called)
+        self.assertTrue(old_channel.close_if_possible.called)
         self.assertIsNotNone(server._old_channel)
-        # After releasing the channel is closed
-        gocept.amqprun.interfaces.IChannelManager(old_channel).release()
-        server.run_once()
-        self.assertTrue(old_channel.close.called)
-        self.assertIsNone(server._old_channel)
+        self.assertTrue(server._switching_channels)
 
     def test_active_connection_lock_should_defer_switch_channel(self):
         server = self.create_server()
@@ -399,10 +386,10 @@ class ConsumerTest(unittest.TestCase):
     def test_routing_key_should_be_transferred_to_message(self):
         from gocept.amqprun.server import Consumer
         handler = mock.Mock()
-        tasks = mock.Mock()
+        tasks = Queue.Queue()
         consumer = Consumer(handler, tasks)
         method = mock.Mock()
         method.routing_key = 'route'
         consumer(mock.sentinel.channel, method, {}, '')
-        message = handler.call_args[0][0]
+        handler, message = tasks.get()
         self.assertEqual('route', message.routing_key)

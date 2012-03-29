@@ -1,4 +1,4 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
+# Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import Queue
@@ -43,21 +43,21 @@ class Worker(threading.Thread):
         self.running = True
         while self.running:
             try:
-                handler = self.queue.get(timeout=self.timeout)
+                handler, message = self.queue.get(timeout=self.timeout)
             except Queue.Empty:
                 pass
             else:
                 try:
                     self.log.info('Processing message %s %s (%s)',
-                                  handler.message.delivery_tag,
-                                  handler.message.header.message_id,
-                                  handler.message.routing_key)
-                    self.log.debug(str(handler.message.body))
+                                  message.delivery_tag,
+                                  message.header.message_id,
+                                  message.routing_key)
+                    self.log.debug(str(message.body))
                     transaction.begin()
                     session = self.session_factory()
                     try:
-                        session.ack(handler.message)
-                        response = handler()
+                        session.ack(message)
+                        response = handler(message)
                         for msg in response:
                             self.log.info(
                                 'Sending message (%s)', msg.routing_key)
@@ -66,7 +66,7 @@ class Worker(threading.Thread):
                     except:
                         self.log.error(
                             'Error while processing message %s',
-                            handler.message.delivery_tag,
+                            message.delivery_tag,
                             exc_info=True)
                         transaction.abort()
                 except:
