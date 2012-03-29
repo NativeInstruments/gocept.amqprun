@@ -105,7 +105,7 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
                 ))
         zope.configuration.xmlconfig.string(config.encode('utf-8'))
         return zope.component.getUtility(
-            gocept.amqprun.interfaces.IHandlerDeclaration,
+            gocept.amqprun.interfaces.IHandler,
             name='gocept.amqprun.amqpwrite.' + queue_name)
 
     def test_directive_registers_handler_as_utility(self):

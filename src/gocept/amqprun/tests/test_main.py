@@ -107,7 +107,7 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         self.assertEquals(1, self.server.call_count)
         self.assertEquals(2, self.worker.call_count)
         utilities = list(zope.component.getUtilitiesFor(
-            gocept.amqprun.interfaces.IHandlerDeclaration))
+            gocept.amqprun.interfaces.IHandler))
         self.assertEquals(1, len(utilities))
         self.assertEquals('basic', utilities[0][0])
 

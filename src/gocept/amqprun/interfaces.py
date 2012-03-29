@@ -1,4 +1,4 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
+# Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import re
@@ -8,7 +8,7 @@ import zope.schema
 import zope.schema.interfaces
 
 
-class IHandlerDeclaration(zope.interface.Interface):
+class IHandler(zope.interface.Interface):
 
     queue_name = zope.interface.Attribute(
         'Name of the queue to declare/bind')
@@ -21,15 +21,6 @@ class IHandlerDeclaration(zope.interface.Interface):
         'Arguments that are forwarded to the queue declare process')
 
     def __call__(message):
-        """Return IHandler for given message."""
-
-
-class IHandler(zope.interface.Interface):
-
-    message = zope.interface.Attribute(
-        "IMessage instance the handler handles.")
-
-    def __call__():
         """Handle message.
 
         Returns a sequence of IMessage objects to be passed to AMQP.
@@ -112,9 +103,6 @@ class IChannelManager(zope.interface.Interface):
 
     def release():
         """Indicate channel is no longer being used."""
-
-    def get_count():
-        """Return how often the channel is currenlty being used."""
 
     def close_if_possible():
         """Close the channel if it is no longer used by anyone."""
