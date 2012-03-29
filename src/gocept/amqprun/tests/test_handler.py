@@ -1,4 +1,4 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
+# Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import mock
@@ -20,29 +20,12 @@ class TestDeclaration(unittest.TestCase):
         self.assertEquals('queue.name', decl.queue_name)
         self.assertEquals('routing.key', decl.routing_key)
 
-    def test_factored_handler_should_have_message_context(self):
-        import gocept.amqprun.interfaces
-        handler = mock.Mock()
-        handler.return_value = None
-        message = mock.Mock()
-        decl = self.get_decl(handler)
-        factored_handler = decl(message)
-        self.assertTrue(zope.interface.verify.verifyObject(
-            gocept.amqprun.interfaces.IHandler, factored_handler))
-        self.assertFalse(handler.called)
-        # Call the handler
-        result = factored_handler()
-        self.assertEquals([], result)
-        self.assertTrue(handler.called)
-        handler.assert_called_with(message)
-
-    def test_factored_handler_should_return_messages(self):
+    def test_calling_handler_declaration_should_return_messages(self):
         handler = mock.Mock()
         handler.return_value = [mock.sentinel.msg1, mock.sentinel.msg2]
         message = mock.Mock()
         decl = self.get_decl(handler)
-        factored_handler = decl(message)
-        result = factored_handler()
+        result = decl(message)
         self.assertEquals([mock.sentinel.msg1, mock.sentinel.msg2], result)
 
     def test_invalid_handler_function_should_raise_typeerror(self):

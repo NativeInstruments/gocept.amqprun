@@ -1,4 +1,4 @@
-## Copyright (c) 2010-2011 gocept gmbh & co. kg
+## Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import Queue
@@ -29,7 +29,7 @@ class Consumer(object):
             header, body, method.delivery_tag, method.routing_key)
         log.debug("Received message %s via routing key '%s'",
                   message.delivery_tag, method.routing_key)
-        self.tasks.put(self.handler(message))
+        self.tasks.put((self.handler, message))
 
 
 class Server(object, pika.connection.NullReconnectionStrategy):
