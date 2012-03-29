@@ -29,7 +29,8 @@ class Consumer(object):
             header, body, method.delivery_tag, method.routing_key)
         log.debug("Received message %s via routing key '%s'",
                   message.delivery_tag, method.routing_key)
-        self.tasks.put((self.handler, message))
+        # XXX queue should contain sessions storing this information
+        self.tasks.put((self.handler, message, channel))
         gocept.amqprun.interfaces.IChannelManager(channel).acquire()
 
 
@@ -84,6 +85,9 @@ class Server(object, pika.connection.NullReconnectionStrategy):
 
     def send(self, message):
         session = self.get_session()
+        with self.connection.lock:
+            session.channel = self.channel
+            gocept.amqprun.interfaces.IChannelManager(self.channel).acquire()
         session.send(message)
 
     def get_session(self):

@@ -43,7 +43,9 @@ class Worker(threading.Thread):
         self.running = True
         while self.running:
             try:
-                handler, message = self.queue.get(timeout=self.timeout)
+                # XXX queue should contain sessions, not tuples
+                handler, message, channel = self.queue.get(
+                    timeout=self.timeout)
             except Queue.Empty:
                 pass
             else:
@@ -55,6 +57,7 @@ class Worker(threading.Thread):
                     self.log.debug(str(message.body))
                     transaction.begin()
                     session = self.session_factory()
+                    session.channel = channel
                     try:
                         session.ack(message)
                         response = handler(message)

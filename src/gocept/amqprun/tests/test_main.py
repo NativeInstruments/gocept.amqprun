@@ -2,6 +2,7 @@
 # Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+import gocept.amqprun.session
 import gocept.amqprun.testing
 import gocept.amqprun.tests.integration
 import logging
@@ -11,6 +12,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import zope.component
 
@@ -79,6 +81,28 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
                 break
         else:
             self.fail('Message was not received again')
+
+    def test_messages_should_always_be_acked_on_their_own_channel(self):
+        self.assertEquals([], self.messages_received)
+        self.expect_response_on('test.response')
+
+        ack = gocept.amqprun.session.Session.ack
+        started_ack = threading.Event()
+        resume_ack = threading.Event()
+
+        def new_ack(self, message):
+            started_ack.set()
+            resume_ack.wait()
+            ack(self, message)
+
+        with mock.patch('gocept.amqprun.session.Session.ack', new_ack):
+            self.send_message('blarf', routing_key='test.routing')
+            started_ack.wait()
+            self.loop.CHANNEL_LIFE_TIME = 0
+            self.loop.switch_channel()
+            resume_ack.set()
+            self.wait_for_response(timeout=3)
+            self.assertEquals(1, len(self.messages_received))
 
 
 class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
