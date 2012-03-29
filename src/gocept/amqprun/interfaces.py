@@ -1,4 +1,4 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
+# Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import re
@@ -21,15 +21,6 @@ class IHandlerDeclaration(zope.interface.Interface):
         'Arguments that are forwarded to the queue declare process')
 
     def __call__(message):
-        """Return IHandler for given message."""
-
-
-class IHandler(zope.interface.Interface):
-
-    message = zope.interface.Attribute(
-        "IMessage instance the handler handles.")
-
-    def __call__():
         """Handle message.
 
         Returns a sequence of IMessage objects to be passed to AMQP.

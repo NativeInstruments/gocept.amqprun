@@ -1,6 +1,7 @@
 # Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+import Queue
 import collections
 import gocept.amqprun.channel
 import gocept.amqprun.interfaces
@@ -54,8 +55,8 @@ class MessageReaderTest(
         # With routing key, the message is delivered
         self.send_message('foo', routing_key='test.messageformat.1')
         self.assertEqual(1, self.server.tasks.qsize())
-        handler = self.server.tasks.get()
-        handler()
+        handler, message = self.server.tasks.get()
+        handler(message)
         self.assertTrue(handle_message.called)
         message = handle_message.call_args[0][0]
         self.assertEquals('foo', message.body)
@@ -79,8 +80,8 @@ class MessageReaderTest(
         # With routing key, the message is delivered to the correct handler
         self.send_message('foo', routing_key='test.messageformat.2')
         self.assertEqual(1, self.server.tasks.qsize())
-        handler = self.server.tasks.get()
-        handler()
+        handler, message = self.server.tasks.get()
+        handler(message)
         self.assertFalse(handle_message_2.called)
         self.assertTrue(handle_message_1.called)
 
@@ -380,10 +381,10 @@ class ConsumerTest(unittest.TestCase):
     def test_routing_key_should_be_transferred_to_message(self):
         from gocept.amqprun.server import Consumer
         handler = mock.Mock()
-        tasks = mock.Mock()
+        tasks = Queue.Queue()
         consumer = Consumer(handler, tasks)
         method = mock.Mock()
         method.routing_key = 'route'
         consumer(mock.sentinel.channel, method, {}, '')
-        message = handler.call_args[0][0]
+        handler, message = tasks.get()
         self.assertEqual('route', message.routing_key)
