@@ -5,9 +5,9 @@ import gocept.amqprun.interfaces
 import zope.interface
 
 
-class HandlerDeclaration(object):
+class Handler(object):
 
-    zope.interface.implements(gocept.amqprun.interfaces.IHandlerDeclaration)
+    zope.interface.implements(gocept.amqprun.interfaces.IHandler)
 
     def __init__(self, queue_name, routing_key, handler_function,
                  arguments=None):
@@ -23,7 +23,8 @@ class HandlerDeclaration(object):
 
 
 def declare(queue_name, routing_key, arguments=None):
-    return lambda handler_function: HandlerDeclaration(
+    return lambda handler_function: Handler(
         queue_name, routing_key, handler_function, arguments)
 
+# BBB
 handle = declare

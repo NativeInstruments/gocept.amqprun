@@ -86,7 +86,7 @@ def writefiles_directive(
     # those substitions itself. So we support '{}' in addition to '${}'
     pattern = re.sub(r'(^|[^$]){', r'\1${', pattern)
     writer = FileWriter(directory, pattern)
-    handler = gocept.amqprun.handler.HandlerDeclaration(
+    handler = gocept.amqprun.handler.Handler(
         queue_name, routing_key, writer, arguments)
     zope.component.zcml.utility(
         _context,

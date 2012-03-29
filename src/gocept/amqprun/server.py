@@ -99,7 +99,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
 
     def switch_channel(self):
         if not zope.component.getUtilitiesFor(
-            gocept.amqprun.interfaces.IHandlerDeclaration):
+            gocept.amqprun.interfaces.IHandler):
             return False
         if self._switching_channels:
             return False
@@ -140,24 +140,23 @@ class Server(object, pika.connection.NullReconnectionStrategy):
 
     def _declare_and_bind_queues(self):
         assert self.channel is not None
-        for name, declaration in zope.component.getUtilitiesFor(
-            gocept.amqprun.interfaces.IHandlerDeclaration):
-            queue_name = unicode(declaration.queue_name).encode('UTF-8')
-            decl_args = declaration.arguments or {}
+        for name, handler in zope.component.getUtilitiesFor(
+            gocept.amqprun.interfaces.IHandler):
+            queue_name = unicode(handler.queue_name).encode('UTF-8')
+            handler_args = handler.arguments or {}
             arguments = dict(
-                (unicode(key).encode('UTF-8'),
-                 unicode(value).encode('UTF-8')) for key, value
-                                                 in decl_args.iteritems())
+                (unicode(key).encode('UTF-8'), unicode(value).encode('UTF-8'))
+                for key, value in handler_args.iteritems())
             log.info(
                 "Channel[%s]: Handling routing key(s) '%s' on queue '%s'"
                 " via '%s'",
                 self.channel.handler.channel_number,
-                declaration.routing_key, queue_name, name)
+                handler.routing_key, queue_name, name)
             self.channel.queue_declare(
                 queue=queue_name, durable=True,
                 exclusive=False, auto_delete=False,
                 arguments=arguments)
-            routing_keys = declaration.routing_key
+            routing_keys = handler.routing_key
             if not isinstance(routing_keys, list):
                 routing_keys = [routing_keys]
             for routing_key in routing_keys:
@@ -166,8 +165,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
                     queue=queue_name, exchange='amq.topic',
                     routing_key=routing_key)
             self.channel.basic_consume(
-                Consumer(declaration, self.tasks),
-                queue=queue_name)
+                Consumer(handler, self.tasks), queue=queue_name)
 
     # Connection Strategy Interface
 
