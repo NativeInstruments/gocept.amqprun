@@ -180,6 +180,18 @@ class MessageReaderTest(
             server.send(mock.sentinel.message)
             send.assert_called_with(mock.sentinel.message)
 
+    def test_channel_of_any_task_in_the_queue_is_open(self):
+        import gocept.amqprun.handler
+        handle_message = mock.Mock()
+        handler = gocept.amqprun.handler.Handler(
+            self.get_queue_name('test.case.1'),
+            'test.messageformat.1', handle_message)
+        zope.component.provideUtility(handler, name='queue')
+        self.start_server()
+        self.send_message('foo', routing_key='test.messageformat.1')
+        self.assertEqual(1, self.server.tasks.qsize())
+        self.assertFalse(self.server.channel.close_if_possible())
+
 
 class TestChannelSwitch(unittest.TestCase):
 
@@ -214,12 +226,14 @@ class TestChannelSwitch(unittest.TestCase):
         self.assertEqual(2, channel.basic_cancel.call_count)
         channel.basic_cancel.assert_called_with(mock.sentinel.ct2)
 
-    def test_switch_channel_should_empty_tasks(self):
+    def test_switch_channel_should_empty_tasks_and_release_channel(self):
         server = self.create_server()
+        channel = server.channel
         server.tasks.put(mock.sentinel.task1)
         server.tasks.put(mock.sentinel.task2)
         server.switch_channel()
         self.assertEqual(0, server.tasks.qsize())
+        self.assertEqual(2, channel.release.call_count)
 
     def test_switch_channel_should_open_new_channel(self):
         server = self.create_server()
@@ -390,6 +404,9 @@ class ConsumerTest(unittest.TestCase):
         consumer = Consumer(handler, tasks)
         method = mock.Mock()
         method.routing_key = 'route'
-        consumer(mock.sentinel.channel, method, {}, '')
+        channel = mock.Mock()
+        zope.interface.alsoProvides(
+            channel, gocept.amqprun.interfaces.IChannelManager)
+        consumer(channel, method, {}, '')
         handler, message = tasks.get()
         self.assertEqual('route', message.routing_key)
