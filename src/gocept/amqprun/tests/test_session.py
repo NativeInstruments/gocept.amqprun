@@ -1,4 +1,4 @@
-# Copyright (c) 201 gocept gmbh & co. kg
+# Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import mock
