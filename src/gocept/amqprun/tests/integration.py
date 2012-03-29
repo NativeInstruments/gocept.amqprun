@@ -16,9 +16,9 @@ def handle_message_and_error(message):
     raise RuntimeError('Error')
 
 
-handler = gocept.amqprun.handler.HandlerDeclaration(
+handler = gocept.amqprun.handler.Handler(
     'test.queue', 'test.routing', handle_message)
 
 
-handler_error = gocept.amqprun.handler.HandlerDeclaration(
+handler_error = gocept.amqprun.handler.Handler(
     'test.queue.error', 'test.error', handle_message_and_error)

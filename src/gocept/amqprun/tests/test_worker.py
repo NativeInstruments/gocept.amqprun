@@ -37,7 +37,7 @@ class WorkerTest(unittest.TestCase):
 
     def _create_task(self, handler):
         return (
-            gocept.amqprun.handler.HandlerDeclaration('foo', 'bar', handler),
+            gocept.amqprun.handler.Handler('foo', 'bar', handler),
             mock.Mock())
 
     def test_worker_can_be_stopped_from_outside(self):

@@ -8,7 +8,7 @@ import zope.schema
 import zope.schema.interfaces
 
 
-class IHandlerDeclaration(zope.interface.Interface):
+class IHandler(zope.interface.Interface):
 
     queue_name = zope.interface.Attribute(
         'Name of the queue to declare/bind')
