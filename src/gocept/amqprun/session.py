@@ -1,4 +1,4 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
+# Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import gocept.amqprun.interfaces
@@ -14,6 +14,9 @@ log = logging.getLogger(__name__)
 class Session(object):
 
     zope.interface.implements(gocept.amqprun.interfaces.ISession)
+
+    # XXX should be proper part of session, not written to it later
+    channel = None
 
     def __init__(self, context):
         self.messages = []
@@ -54,9 +57,8 @@ class AMQPDataManager(object):
 
     def __init__(self, server, session):
         self.connection_lock = server.connection.lock
-        with self.connection_lock:
-            self._channel = server.channel
         self.session = session
+        self._channel = session.channel
         self._tpc_begin = False
 
     # XXX refactor structure of Session and AMQPDataManager, see #9988
