@@ -30,6 +30,7 @@ class Consumer(object):
         log.debug("Received message %s via routing key '%s'",
                   message.delivery_tag, method.routing_key)
         self.tasks.put((self.handler, message))
+        gocept.amqprun.interfaces.IChannelManager(channel).acquire()
 
 
 class Server(object, pika.connection.NullReconnectionStrategy):
@@ -116,6 +117,9 @@ class Server(object, pika.connection.NullReconnectionStrategy):
                     self.tasks.get(block=False)
                 except Queue.Empty:
                     break
+                else:
+                    gocept.amqprun.interfaces.IChannelManager(
+                        self.channel).release()
             self._old_channel = self.channel
             self.channel = None
             self.open_channel()

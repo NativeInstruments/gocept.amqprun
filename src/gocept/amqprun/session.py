@@ -56,7 +56,6 @@ class AMQPDataManager(object):
         self.connection_lock = server.connection.lock
         with self.connection_lock:
             self._channel = server.channel
-            gocept.amqprun.interfaces.IChannelManager(self._channel).acquire()
         self.session = session
         self._tpc_begin = False
 

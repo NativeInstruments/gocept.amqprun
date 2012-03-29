@@ -1,4 +1,4 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
+# Copyright (c) 201 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import mock
@@ -226,10 +226,6 @@ class DataManagerTest(unittest.TestCase):
         dm.tpc_begin(None)
         dm.abort(None)
         self.assertFalse(self.channel.basic_reject.called)
-
-    def test_init_should_acquire_channel(self):
-        self.get_dm()
-        self.assertTrue(self.channel_manager.acquire.called)
 
     def test_tpc_finish_should_release_channel(self):
         dm = self.get_dm()
