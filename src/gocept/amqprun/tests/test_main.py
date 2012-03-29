@@ -1,8 +1,9 @@
 # coding: utf8
-# Copyright (c) 2010 gocept gmbh & co. kg
+# Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import gocept.amqprun.testing
+import gocept.amqprun.tests.integration
 import logging
 import mock
 import os
@@ -17,7 +18,6 @@ import zope.component
 class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
 
     def setUp(self):
-        import gocept.amqprun.tests.integration
         super(TestMainWithQueue, self).setUp()
         self.messages_received = []
         gocept.amqprun.tests.integration.messages_received = (
@@ -28,18 +28,21 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
         self.start_server()
 
     def tearDown(self):
-        import gocept.amqprun.tests.integration
         gocept.amqprun.tests.integration.messages_received = None
         super(TestMainWithQueue, self).tearDown()
+
+    def wait_for_handler(self):
+        for i in range(100):
+            if self.messages_received:
+                break
+            time.sleep(0.25)
+        else:
+            self.fail('Message was not received')
 
     def test_message_should_be_processed(self):
         self.assertEquals([], self.messages_received)
         self.send_message('blarf', routing_key='test.routing')
-        for i in range(100):
-            if self.messages_received:
-                break
-        else:
-            self.fail('Message was not received')
+        self.wait_for_handler()
         self.assertEquals(1, len(self.messages_received))
 
     def test_existing_messages_in_queue_should_not_crash_startup(self):
@@ -62,11 +65,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
     def test_technical_errors_should_not_crash(self):
         self.assertEquals([], self.messages_received)
         self.send_message('blarf', routing_key='test.error')
-        for i in range(100):
-            if self.messages_received:
-                break
-        else:
-            self.fail('Message was not received')
+        self.wait_for_handler()
         self.assertEquals(1, len(self.messages_received))
 
     def test_rejected_messages_should_be_received_again_later(self):
