@@ -178,6 +178,9 @@ class MessageReaderTest(
         self.assertEqual(2, self.server.tasks.qsize())
 
     def test_send_works_when_not_started_yet(self):
+        # XXX The server should not need to be started here once reference
+        # counting on the channel doesn't use the connection lock anymore (see
+        # commit:c0815fc406ba).
         self.start_server()
         with mock.patch('gocept.amqprun.session.Session.send') as send:
             self.server.send(mock.sentinel.message)
