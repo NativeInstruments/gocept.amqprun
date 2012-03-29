@@ -38,6 +38,7 @@ class WorkerTest(unittest.TestCase):
     def _create_task(self, handler):
         return (
             gocept.amqprun.handler.Handler('foo', 'bar', handler),
+            mock.Mock(),
             mock.Mock())
 
     def test_worker_can_be_stopped_from_outside(self):
@@ -63,10 +64,10 @@ class WorkerTest(unittest.TestCase):
         messages = []
         self._create_worker()
         self.assertFalse(self.session_factory.called)
-        handler, message = self._create_task(
+        handler, message, channel = self._create_task(
             lambda msg: messages.append(msg))
 
-        self.queue.put((handler, message))
+        self.queue.put((handler, message, channel))
         time.sleep(0.1)
         self.assertEqual(1, len(messages))
         self.assertEqual(message, messages[0])
