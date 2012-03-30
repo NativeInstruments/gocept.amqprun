@@ -4,8 +4,6 @@ CHANGES
 0.8 (unreleased)
 ----------------
 
-- Fix bug that sending before the Server has started doesn't work (#10620).
-
 - Fix race condition that caused messages to be acknowledged on a different
   channel than they were received on (#10635).
 
