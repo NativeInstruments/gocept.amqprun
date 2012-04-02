@@ -46,11 +46,26 @@ class Server(object, pika.connection.NullReconnectionStrategy):
         self.connection_parameters = connection_parameters
         self.tasks = Queue.Queue()
         self.local = threading.local()
-        self.running = False
+        self._running = threading.Event()
         self.connection = None
         self.channel = None
         self._old_channel = None
         self._switching_channels = False
+
+    @property
+    def running(self):
+        return self._running.is_set()
+
+    @running.setter
+    def running(self, value):
+        if value:
+            self._running.set()
+        else:
+            self._running.clear()
+
+    def wait_until_running(self, timeout=None):
+        self._running.wait(timeout)
+        return self.running
 
     def start(self):
         log.info('Starting message reader.')

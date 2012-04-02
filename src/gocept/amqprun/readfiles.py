@@ -19,6 +19,8 @@ log = logging.getLogger(__name__)
 
 class FileStoreReader(threading.Thread):
 
+    zope.interface.Interface(gocept.amqprun.interfaces.ILoop)
+
     def __init__(self, path, routing_key):
         self.running = False
         self.routing_key = routing_key
@@ -27,6 +29,12 @@ class FileStoreReader(threading.Thread):
         self.session = Session(self)
         super(FileStoreReader, self).__init__()
         self.daemon = True
+
+    def wait_until_running(self, timeout=None):
+        deadline = time.time() + timeout
+        while not self.running or time.time() > deadline:
+            time.sleep(0.025)
+        return self.running
 
     def run(self):
         log.info('starting')

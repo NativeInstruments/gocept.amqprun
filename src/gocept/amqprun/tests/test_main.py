@@ -2,6 +2,8 @@
 # Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+import gocept.amqprun.interfaces
+import gocept.amqprun.message
 import gocept.amqprun.session
 import gocept.amqprun.testing
 import gocept.amqprun.tests.integration
@@ -14,13 +16,14 @@ import sys
 import tempfile
 import threading
 import time
+import transaction
 import zope.component
 
 
-class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
+class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
 
     def setUp(self):
-        super(TestMainWithQueue, self).setUp()
+        super(ReceiveMessages, self).setUp()
         self.messages_received = []
         gocept.amqprun.tests.integration.messages_received = (
             self.messages_received)
@@ -31,7 +34,7 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
 
     def tearDown(self):
         gocept.amqprun.tests.integration.messages_received = None
-        super(TestMainWithQueue, self).tearDown()
+        super(ReceiveMessages, self).tearDown()
 
     def wait_for_handler(self):
         for i in range(100):
@@ -103,6 +106,27 @@ class TestMainWithQueue(gocept.amqprun.testing.MainTestCase):
             resume_ack.set()
             self.wait_for_response(timeout=3)
             self.assertEquals(1, len(self.messages_received))
+
+
+class SendMessages(gocept.amqprun.testing.MainTestCase):
+
+    def test_processstart_event_means_messages_can_be_sent(self):
+        self.make_config(__name__, 'basic')
+        self.expect_message_on('test_send')
+
+        def handler(event):
+            message = gocept.amqprun.message.Message(
+                {}, 'foo', routing_key='test_send')
+            zope.component.getUtility(
+                gocept.amqprun.interfaces.ISender).send(message)
+            transaction.commit()
+
+        zope.component.provideHandler(
+            handler, (gocept.amqprun.interfaces.IProcessStarting,))
+        self.start_server()
+
+        message = self.wait_for_message()
+        self.assertEqual('foo', message.body)
 
 
 class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
@@ -179,11 +203,16 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         import gocept.amqprun.main
         import zope.component
         config = self.make_config(__name__, 'basic')
-        handler = mock.Mock()
+        self.handler_called = False
+
+        def handler(event):
+            self.handler_called = True
+            self.assertTrue(self.server().wait_until_running.called)
+
         zope.component.provideHandler(
             handler, (gocept.amqprun.interfaces.IProcessStarting,))
         gocept.amqprun.main.main(config)
-        self.assertTrue(handler.called)
+        self.assertTrue(self.handler_called)
 
     def test_main_should_register_ISender(self):
         import gocept.amqprun.interfaces
