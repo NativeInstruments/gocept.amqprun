@@ -9,6 +9,9 @@ CHANGES
 - Fix race condition that caused messages to be acknowledged on a different
   channel than they were received on (#10635).
 
+- Fix race condition that caused attempts at sending messages before the
+  server was started properly (#10620).
+
 
 0.7 (2012-03-22)
 ----------------
