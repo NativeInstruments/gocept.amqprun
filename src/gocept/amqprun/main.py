@@ -75,7 +75,7 @@ def main(config_file):
     server_thread = threading.Thread(target=server.start)
     server_thread.start()
     server.wait_until_running()
-    zope.event.notify(gocept.amqprun.interfaces.ProcessStarting())
+    zope.event.notify(gocept.amqprun.interfaces.ProcessStarted())
     while server_thread.is_alive():
         time.sleep(1)
     server_thread.join()

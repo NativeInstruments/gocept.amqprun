@@ -145,7 +145,7 @@ def readfiles_directive(_context, directory, routing_key):
     reader = FileStoreReader(directory, routing_key)
     zope.component.zcml.subscriber(
         _context,
-        for_=(gocept.amqprun.interfaces.IProcessStarting,),
+        for_=(gocept.amqprun.interfaces.IProcessStarted,),
         handler=lambda event: reader.start())
     zope.component.zcml.subscriber(
         _context,

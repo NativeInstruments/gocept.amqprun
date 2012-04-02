@@ -115,18 +115,13 @@ class IChannelManager(zope.interface.Interface):
         """Close the channel if it is no longer used by anyone."""
 
 
-class IProcessStarting(zope.interface.Interface):
-    """Event to indicate the process is being started.
-
-    When this event is fired, the server must already have been started.
-
-    """
+class IProcessStarted(zope.interface.Interface):
+    """Event to indicate the server has been started."""
 
 
-class ProcessStarting(object):
-    """Event to indicate the process is being started."""
+class ProcessStarted(object):
 
-    zope.interface.implements(IProcessStarting)
+    zope.interface.implements(IProcessStarted)
 
 
 class IProcessStopping(zope.interface.Interface):
@@ -134,7 +129,6 @@ class IProcessStopping(zope.interface.Interface):
 
 
 class ProcessStopping(object):
-    """Event to indicate the process is being stopped."""
 
     zope.interface.implements(IProcessStopping)
 

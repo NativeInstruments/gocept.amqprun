@@ -122,7 +122,7 @@ class SendMessages(gocept.amqprun.testing.MainTestCase):
             transaction.commit()
 
         zope.component.provideHandler(
-            handler, (gocept.amqprun.interfaces.IProcessStarting,))
+            handler, (gocept.amqprun.interfaces.IProcessStarted,))
         self.start_server()
 
         message = self.wait_for_message()
@@ -210,7 +210,7 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
             self.assertTrue(self.server().wait_until_running.called)
 
         zope.component.provideHandler(
-            handler, (gocept.amqprun.interfaces.IProcessStarting,))
+            handler, (gocept.amqprun.interfaces.IProcessStarted,))
         gocept.amqprun.main.main(config)
         self.assertTrue(self.handler_called)
 
