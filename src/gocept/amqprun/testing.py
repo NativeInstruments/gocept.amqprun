@@ -96,11 +96,14 @@ class QueueTestCase(unittest.TestCase):
             'amq.topic', routing_key=routing_key)
         time.sleep(0.1)
 
-    def expect_response_on(self, routing_key):
+    def expect_message_on(self, routing_key):
         self.channel.queue_bind(
             self.receive_queue, 'amq.topic', routing_key=routing_key)
 
-    def wait_for_response(self, timeout=100):
+    # BBB
+    expect_response_on = expect_message_on
+
+    def wait_for_message(self, timeout=100):
         """Wait for a response on `self.receive_queue`.
 
         timeout ... wait for n seconds.
@@ -114,6 +117,9 @@ class QueueTestCase(unittest.TestCase):
         else:
             self.fail('No message received')
         return message
+
+    # BBB
+    wait_for_response = wait_for_message
 
     def create_server(self, **kw):
         import gocept.amqprun.server
@@ -143,11 +149,7 @@ class LoopTestCase(unittest.TestCase):
         self.loop = loop
         self.thread = threading.Thread(target=self.loop.start)
         self.thread.start()
-        for i in range(100):
-            if self.loop.running:
-                break
-            time.sleep(0.025)
-        else:
+        if not self.loop.wait_until_running(2.5):
             self.fail('Loop did not start up.')
 
 

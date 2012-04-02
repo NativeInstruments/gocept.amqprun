@@ -81,6 +81,13 @@ class ILoop(zope.interface.Interface):
 
     running = zope.interface.Attribute('bool: is the loop running?')
 
+    def wait_until_running(timeout=None):
+        """Block until the loop is running.
+
+        Optionally apply a timeout given in seconds.
+
+        """
+
     def start():
         pass
 
@@ -109,7 +116,11 @@ class IChannelManager(zope.interface.Interface):
 
 
 class IProcessStarting(zope.interface.Interface):
-    """Event to indicate the process is being started."""
+    """Event to indicate the process is being started.
+
+    When this event is fired, the server must already have been started.
+
+    """
 
 
 class ProcessStarting(object):

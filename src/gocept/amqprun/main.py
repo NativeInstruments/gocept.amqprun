@@ -58,8 +58,6 @@ def main(config_file):
     signal.signal(signal.SIGINT, stop_server)
     signal.signal(signal.SIGTERM, stop_server)
 
-    zope.event.notify(gocept.amqprun.interfaces.ProcessStarting())
-
     workers = []
     for i in range(conf.worker.amount):
         worker = gocept.amqprun.worker.Worker(
@@ -76,6 +74,8 @@ def main(config_file):
     # is explicitly stopped by the signal handler.
     server_thread = threading.Thread(target=server.start)
     server_thread.start()
+    server.wait_until_running()
+    zope.event.notify(gocept.amqprun.interfaces.ProcessStarting())
     while server_thread.is_alive():
         time.sleep(1)
     server_thread.join()
