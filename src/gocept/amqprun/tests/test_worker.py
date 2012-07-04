@@ -127,3 +127,19 @@ class WorkerTest(unittest.TestCase):
         self.assertEqual(0, self.queue.qsize())
         self.assertTrue(transaction.abort.called)
         self.assertTrue(self.worker.is_alive())
+
+    def test_handler_with_principal_should_create_interaction(self):
+        import zope.security.management
+
+        def store_principal(message):
+            interaction = zope.security.management.getInteraction()
+            self.principal = interaction.participations[0].principal.id
+
+        self._create_worker()
+        task = self._create_task(store_principal)
+        task[0].principal = 'userid'
+        self.queue.put(task)
+        time.sleep(0.1)
+        self.assertEqual(0, self.queue.qsize())
+        self.assertEqual('userid', self.principal)
+        self.assertFalse(zope.security.management.queryInteraction())

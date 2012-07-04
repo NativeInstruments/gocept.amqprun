@@ -59,7 +59,10 @@ Kit (ZTK) so you can use adapters, utilities and all the buzz.
             ],
         readfiles=[
             'gocept.filestore',
-            ]),
+            ],
+        security=[
+            'zope.security>=4.0.0dev',
+           ]),
     entry_points=dict(console_scripts=[
         'server = gocept.amqprun.main:main',
     ]),

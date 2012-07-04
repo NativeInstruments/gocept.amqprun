@@ -57,7 +57,12 @@ the message body and send a message. The ``declare`` decorator takes two
 arguments, the queue name and the routing key (you can also pass in a list to
 bind the function to multiple routing keys). The ``declare`` decorator also
 supports an optional ``arguments`` argument that is a dictionary to be passed
-to the AMQP queue_declare call to, e.g., support mirrored queues on RabbitMQ::
+to the AMQP queue_declare call to, e.g., support mirrored queues on RabbitMQ.
+The optional argument ``principal`` specifies to wrap the handler call into a
+zope.security interaction using the given principal id (you need the
+``[security]`` extra to use this integration functionality).
+
+::
 
     import logging
     import gocept.amqprun.handler

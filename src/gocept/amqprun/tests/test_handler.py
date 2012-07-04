@@ -64,3 +64,17 @@ class TestHandler(unittest.TestCase):
         self.assertEquals('queue.name', handler.queue_name)
         self.assertEquals('routing.key', handler.routing_key)
         self.assertEquals({'x-ha-policy': 'all'}, handler.arguments)
+
+    def test_decorator_supports_principal(self):
+        import gocept.amqprun.handler
+        import gocept.amqprun.interfaces
+
+        @gocept.amqprun.handler.declare(
+            'queue.name', 'routing.key', principal='zope.user')
+        def handler(message):
+            return None
+        self.assertTrue(zope.interface.verify.verifyObject(
+            gocept.amqprun.interfaces.IHandler, handler))
+        self.assertEquals('queue.name', handler.queue_name)
+        self.assertEquals('routing.key', handler.routing_key)
+        self.assertEquals('zope.user', handler.principal)

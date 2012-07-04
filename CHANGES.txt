@@ -4,7 +4,8 @@ CHANGES
 0.9 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Introduce optional integration with zope.security: handlers can declare a
+  principal id with which an interaction will be created.
 
 
 0.8 (2012-04-04)
