@@ -6,6 +6,18 @@ import logging
 import threading
 import transaction
 
+try:
+    from zope.security.management import endInteraction as end_interaction
+    from zope.security.testing import create_interaction
+except ImportError:
+    def create_interaction(principal):
+        log.warn(
+            'create_interaction(%s) called but zope.security is not available',
+            principal)
+
+    def end_interaction():
+        pass
+
 
 log = logging.getLogger(__name__)
 
@@ -56,6 +68,8 @@ class Worker(threading.Thread):
                                   message.routing_key)
                     self.log.debug(str(message.body))
                     transaction.begin()
+                    if handler.principal is not None:
+                        create_interaction(handler.principal)
                     session = self.session_factory()
                     session.channel = channel
                     try:
@@ -76,6 +90,8 @@ class Worker(threading.Thread):
                     self.log.error(
                         'Unhandled exception, prevent thread from crashing',
                         exc_info=True)
+                finally:
+                    end_interaction()
 
     def stop(self):
         self.log.info('stopping')
