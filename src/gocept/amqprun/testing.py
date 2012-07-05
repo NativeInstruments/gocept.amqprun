@@ -177,7 +177,7 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         gocept.amqprun.worker.Worker.timeout = self._timeout
         # heuristic to avoid accreting more and more debug log output handlers
         handler = logging.root.handlers[-1]
-        if handler and isinstance(handler, logging.StreamHandler):
+        if isinstance(handler, logging.StreamHandler):
             logging.root.handlers.pop()
 
     def start_server(self):
