@@ -55,8 +55,8 @@ class MessageReaderTest(
         # With routing key, the message is delivered
         self.send_message('foo', routing_key='test.messageformat.1')
         self.assertEqual(1, self.server.tasks.qsize())
-        handler, message, channel = self.server.tasks.get()
-        handler(message)
+        session, handler = self.server.tasks.get()
+        handler(session.message_to_ack)
         self.assertTrue(handle_message.called)
         message = handle_message.call_args[0][0]
         self.assertEquals('foo', message.body)
@@ -80,8 +80,8 @@ class MessageReaderTest(
         # With routing key, the message is delivered to the correct handler
         self.send_message('foo', routing_key='test.messageformat.2')
         self.assertEqual(1, self.server.tasks.qsize())
-        handler, message, channel = self.server.tasks.get()
-        handler(message)
+        session, handler = self.server.tasks.get()
+        handler(session.message_to_ack)
         self.assertFalse(handle_message_2.called)
         self.assertTrue(handle_message_1.called)
 
@@ -122,46 +122,26 @@ class MessageReaderTest(
         import gocept.amqprun.message
         import transaction
         self.start_server()
-        handler = mock.Mock()
-        handler.message.header.message_id = None
-        handler.message.header.headers = None
-        session = self.server.get_session()
-        session.channel = self.server.channel  # XXX
-        session.send(gocept.amqprun.message.Message(
+        self.server.send(gocept.amqprun.message.Message(
             {}, 'body', routing_key=u'test.routing'))
-        # Patch out basic_ack because we haven't actually received a message
-        with mock.patch('pika.channel.Channel.basic_ack'):
-            transaction.commit()
+        transaction.commit()
 
     def test_unicode_body_should_work_for_message(self):
         import gocept.amqprun.message
         import transaction
         self.start_server()
-        handler = mock.Mock()
-        handler.message.header.message_id = None
-        handler.message.header.headers = None
-        session = self.server.get_session()
-        session.channel = self.server.channel  # XXX
-        session.send(gocept.amqprun.message.Message(
+        self.server.send(gocept.amqprun.message.Message(
             {}, u'body', routing_key='test.routing'))
-        # Patch out basic_ack because we haven't actually received a message
-        with mock.patch('pika.channel.Channel.basic_ack'):
-            transaction.commit()
+        transaction.commit()
 
     def test_unicode_header_should_work_for_message(self):
         import gocept.amqprun.message
         import transaction
         self.start_server()
-        handler = mock.Mock()
-        handler.message.header.message_id = None
-        session = self.server.get_session()
-        session.channel = self.server.channel  # XXX
-        session.send(gocept.amqprun.message.Message(
+        self.server.send(gocept.amqprun.message.Message(
             {u'content_type': u'text/plain'},
             'body', routing_key='test.routing'))
-        # Patch out basic_ack because we haven't actually received a message
-        with mock.patch('pika.channel.Channel.basic_ack'):
-            transaction.commit()
+        transaction.commit()
 
     def test_multiple_routing_keys_should_recieve_messages_for_all(self):
         import gocept.amqprun.handler
@@ -405,5 +385,5 @@ class ConsumerTest(unittest.TestCase):
         zope.interface.alsoProvides(
             channel, gocept.amqprun.interfaces.IChannelManager)
         consumer(channel, method, {}, '')
-        handler, message, channel = tasks.get()
-        self.assertEqual('route', message.routing_key)
+        session, handler = tasks.get()
+        self.assertEqual('route', session.message_to_ack.routing_key)

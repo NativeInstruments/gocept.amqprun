@@ -2,9 +2,13 @@
 # See also LICENSE.txt
 
 import gocept.amqprun.interfaces
+import logging
 import pika.channel
 import threading
 import zope.interface
+
+
+log = logging.getLogger(__name__)
 
 
 class Channel(pika.channel.Channel):
@@ -17,15 +21,24 @@ class Channel(pika.channel.Channel):
 
     def acquire(self):
         self._gocept_amqprun_refcount.inc()
+        log.debug('Channel[%s] acquired, refcount %s',
+                  self.handler.channel_number, self._gocept_amqprun_refcount)
 
     def release(self):
         self._gocept_amqprun_refcount.dec()
+        log.debug('Channel[%s] released, refcount %s',
+                  self.handler.channel_number, self._gocept_amqprun_refcount)
 
     def close_if_possible(self):
         if self._gocept_amqprun_refcount:
             return False
+        log.info('Closing channel %s', self.handler.channel_number)
         self.close()
         return True
+
+    @property
+    def connection_lock(self):
+        return self.handler.connection.lock
 
 
 class ThreadSafeCounter(object):
@@ -44,3 +57,6 @@ class ThreadSafeCounter(object):
     def dec(self):
         with self.lock:
             self.value -= 1
+
+    def __str__(self):
+        return str(self.value)

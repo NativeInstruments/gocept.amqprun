@@ -17,6 +17,7 @@ import tempfile
 import threading
 import time
 import transaction
+import unittest
 import zope.component
 
 
@@ -85,6 +86,7 @@ class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
         else:
             self.fail('Message was not received again')
 
+    @unittest.skip('clean up the Session/DataManager API first')
     def test_messages_should_always_be_acked_on_their_own_channel(self):
         self.assertEquals([], self.messages_received)
         self.expect_message_on('test.response')

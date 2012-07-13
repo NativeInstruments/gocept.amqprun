@@ -21,10 +21,10 @@ class DataManagerTest(unittest.TestCase):
             mock.Mock(return_value=self.channel_manager),
             adapts=(mock.Mock,),
             provides=gocept.amqprun.interfaces.IChannelManager)
-        self.server = mock.Mock()
-        self.server.connection = self.connection = mock.Mock()
+        self.connection = mock.Mock()
         self.connection.lock = threading.Lock()
-        self.server.channel = self.channel = mock.Mock()
+        self.channel = mock.Mock()
+        self.channel.connection_lock = self.connection.lock
 
     def tearDown(self):
         zope.component.testing.tearDown()
@@ -35,11 +35,9 @@ class DataManagerTest(unittest.TestCase):
 
     def get_dm(self):
         import gocept.amqprun.session
-        self.session = gocept.amqprun.session.Session(self.server)
-        self.session.channel = self.server.channel  # XXX
-        self.session.ack(self.get_message())
-        return gocept.amqprun.session.AMQPDataManager(
-            self.server, self.session)
+        self.session = gocept.amqprun.session.Session(
+            self.channel, self.get_message())
+        return gocept.amqprun.session.AMQPDataManager(self.session)
 
     def test_interface(self):
         import transaction.interfaces
@@ -255,9 +253,9 @@ class SessionTest(unittest.TestCase):
     def tearDown(self):
         self.patcher.__exit__()
 
-    def create_session(self):
+    def create_session(self, message=None):
         from gocept.amqprun.session import Session
-        return Session(mock.Mock())
+        return Session(mock.Mock(), message)
 
     def test_send_should_queue_messages(self):
         message = mock.sentinel.message
@@ -282,14 +280,3 @@ class SessionTest(unittest.TestCase):
         session.send('asdf')
         session.send('bsdf')
         self.assertEqual(1, transaction_get().join.call_count)
-
-    @mock.patch('transaction.get')
-    def test_joins_transaction_on_ack(self, transaction_get):
-        session = self.create_session()
-        session.ack(mock.Mock())
-        self.assertTrue(transaction_get().join.called)
-
-    def test_only_one_ack_is_allowed(self):
-        session = self.create_session()
-        session.ack(mock.Mock())
-        self.assertRaises(ValueError, lambda: session.ack(mock.Mock()))
