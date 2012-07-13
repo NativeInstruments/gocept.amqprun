@@ -100,9 +100,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
 
     def send(self, message):
         session = self.get_session()
-        with self.connection.lock:
-            session.channel = self.channel
-            gocept.amqprun.interfaces.IChannelManager(self.channel).acquire()
+        session.channel = self.send_channel
         session.send(message)
 
     def get_session(self):
@@ -198,6 +196,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
         log.info('AMQP connection opened.')
         with self.connection.lock:
             self.open_channel()
+        self.send_channel = self.connection.channel()
         log.info('Finished connection initialization')
 
     def on_connection_closed(self, connection):

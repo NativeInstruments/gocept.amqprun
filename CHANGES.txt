@@ -6,6 +6,8 @@ CHANGES
 
 - Introduce optional integration with zope.security: handlers can declare a
   principal id with which an interaction will be created.
+- Use a separate channel for sending messages that are not a response to a
+  received message.
 
 
 0.8 (2012-04-04)
