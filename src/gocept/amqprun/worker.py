@@ -40,9 +40,8 @@ class Worker(threading.Thread):
 
     timeout = 5
 
-    def __init__(self, queue, session_factory):
+    def __init__(self, queue):
         self.queue = queue
-        self.session_factory = session_factory
         self.running = False
         super(Worker, self).__init__()
         self.daemon = True
@@ -55,13 +54,12 @@ class Worker(threading.Thread):
         self.running = True
         while self.running:
             try:
-                # XXX queue should contain sessions, not tuples
-                handler, message, channel = self.queue.get(
-                    timeout=self.timeout)
+                session, handler = self.queue.get(timeout=self.timeout)
             except Queue.Empty:
                 pass
             else:
                 try:
+                    message = session.message_to_ack
                     self.log.info('Processing message %s %s (%s)',
                                   message.delivery_tag,
                                   message.header.message_id,
@@ -70,10 +68,8 @@ class Worker(threading.Thread):
                     transaction.begin()
                     if handler.principal is not None:
                         create_interaction(handler.principal)
-                    session = self.session_factory()
-                    session.channel = channel
+                    session.join_transaction()
                     try:
-                        session.ack(message)
                         response = handler(message)
                         for msg in response:
                             self.log.info(

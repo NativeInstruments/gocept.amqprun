@@ -60,8 +60,7 @@ def main(config_file):
 
     workers = []
     for i in range(conf.worker.amount):
-        worker = gocept.amqprun.worker.Worker(
-            server.tasks, server.get_session)
+        worker = gocept.amqprun.worker.Worker(server.tasks)
         workers.append(worker)
         worker.start()
 

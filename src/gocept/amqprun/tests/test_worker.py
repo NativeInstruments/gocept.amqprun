@@ -14,7 +14,7 @@ class WorkerTest(unittest.TestCase):
     def setUp(self):
         import gocept.amqprun.worker
         self.queue = Queue.Queue()
-        self.session_factory = mock.Mock()
+        self.session = mock.Mock()
         self._timeout = gocept.amqprun.worker.Worker.timeout
         gocept.amqprun.worker.Worker.timeout = 0.05
 
@@ -26,8 +26,7 @@ class WorkerTest(unittest.TestCase):
 
     def _create_worker(self):
         import gocept.amqprun.worker
-        self.worker = gocept.amqprun.worker.Worker(
-            self.queue, self.session_factory)
+        self.worker = gocept.amqprun.worker.Worker(self.queue)
         self.worker.start()
         # wait for thread to start
         for i in range(10):
@@ -36,10 +35,9 @@ class WorkerTest(unittest.TestCase):
                 break
 
     def _create_task(self, handler):
+        ANY = None
         return (
-            gocept.amqprun.handler.Handler('foo', 'bar', handler),
-            mock.Mock(),
-            mock.Mock())
+            self.session, gocept.amqprun.handler.Handler(ANY, ANY, handler))
 
     def test_worker_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
@@ -63,28 +61,24 @@ class WorkerTest(unittest.TestCase):
     def test_handle_message(self):
         messages = []
         self._create_worker()
-        self.assertFalse(self.session_factory.called)
-        handler, message, channel = self._create_task(
+        session, handler = self._create_task(
             lambda msg: messages.append(msg))
 
-        self.queue.put((handler, message, channel))
+        self.queue.put((session, handler))
         time.sleep(0.1)
         self.assertEqual(1, len(messages))
-        self.assertEqual(message, messages[0])
-        self.assertTrue(self.session_factory.called)
+        self.assertEqual(session.message_to_ack, messages[0])
 
     def test_messages_returned_by_handler_should_be_sent(self):
         self._create_worker()
-        self.assertFalse(self.session_factory.called)
 
         message1 = mock.Mock()
         message2 = mock.Mock()
 
         self.queue.put(self._create_task(lambda msg: [message1, message2]))
         time.sleep(0.1)
-        session = self.session_factory()
-        self.assertEqual(2, session.send.call_count)
-        session.send.assert_called_with(message2)
+        self.assertEqual(2, self.session.send.call_count)
+        self.session.send.assert_called_with(message2)
 
     @mock.patch('transaction.commit')
     def test_transaction_should_commit(self, transaction_commit):
@@ -137,7 +131,7 @@ class WorkerTest(unittest.TestCase):
 
         self._create_worker()
         task = self._create_task(store_principal)
-        task[0].principal = 'userid'
+        task[1].principal = 'userid'
         self.queue.put(task)
         time.sleep(0.1)
         self.assertEqual(0, self.queue.qsize())

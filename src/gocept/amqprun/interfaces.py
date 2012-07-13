@@ -54,11 +54,6 @@ class ISession(zope.interface.Interface):
 
     messages = zope.interface.Attribute('List of messages to send.')
 
-    def ack(message):
-        """Stores message that should be ACKed on commit.
-        A session can only ACK one single message.
-        """
-
     def send(message):
         """Queues up message for sending upon transaction commit."""
 

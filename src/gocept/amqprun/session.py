@@ -15,25 +15,14 @@ class Session(object):
 
     zope.interface.implements(gocept.amqprun.interfaces.ISession)
 
-    # XXX should be proper part of session, not written to it later
-    channel = None
-
-    def __init__(self, context):
+    def __init__(self, channel, message_to_ack=None):
         self.messages = []
-        self.context = context
-        self.message_to_ack = None
         self._needs_to_join = True
-
-    def ack(self, message):
-        if self.message_to_ack is not None:
-            raise ValueError(
-                'Message to ACK already set to %s' %
-                self.message_to_ack.delivery_tag)
-        self.message_to_ack = message
-        self._join_transaction()
+        self.channel = channel
+        self.message_to_ack = message_to_ack
 
     def send(self, message):
-        self._join_transaction()
+        self.join_transaction()
         self.messages.append(message)
 
     def reset(self):
@@ -41,10 +30,10 @@ class Session(object):
         self.message_to_ack = None
         self._needs_to_join = True
 
-    def _join_transaction(self):
+    def join_transaction(self):
         if not self._needs_to_join:
             return
-        dm = AMQPDataManager(self.context, self)
+        dm = AMQPDataManager(self)
         transaction.get().join(dm)
         self._needs_to_join = False
 
@@ -55,9 +44,9 @@ class AMQPDataManager(object):
 
     transaction_manager = None
 
-    def __init__(self, server, session):
-        self.connection_lock = server.connection.lock
+    def __init__(self, session):
         self.session = session
+        self.connection_lock = session.channel.connection_lock
         self._channel = session.channel
         self._tpc_begin = False
 
