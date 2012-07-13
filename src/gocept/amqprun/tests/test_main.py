@@ -87,7 +87,7 @@ class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
 
     def test_messages_should_always_be_acked_on_their_own_channel(self):
         self.assertEquals([], self.messages_received)
-        self.expect_response_on('test.response')
+        self.expect_message_on('test.response')
 
         ack = gocept.amqprun.session.Session.ack
         started_ack = threading.Event()
@@ -104,7 +104,7 @@ class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
             self.loop.CHANNEL_LIFE_TIME = 0
             self.loop.switch_channel()
             resume_ack.set()
-            self.wait_for_response(timeout=3)
+            self.wait_for_message(timeout=3)
             self.assertEquals(1, len(self.messages_received))
 
 

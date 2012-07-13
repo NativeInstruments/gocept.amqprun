@@ -79,12 +79,12 @@ class ReaderIntegrationTest(gocept.amqprun.testing.MainTestCase):
                 routing_key='test.data',
                 directory=self.tmpdir))
 
-        self.expect_response_on('test.data')
+        self.expect_message_on('test.data')
         self.start_server()
         f = open(os.path.join(self.tmpdir, 'new', 'foo.xml'), 'w')
         f.write('contents')
         f.close()
-        message = self.wait_for_response()
+        message = self.wait_for_message()
         self.assertEqual('contents', message.body)
         self.assertEqual(
             'foo.xml', message.properties['application_headers']['X-Filename'])
