@@ -182,6 +182,11 @@ class MainTestCase(LoopTestCase, QueueTestCase):
 
     def start_server(self):
         import gocept.amqprun.main
+        self.server_started = threading.Event()
+        zope.component.getSiteManager().registerHandler(
+            lambda x: self.server_started.set(),
+            [gocept.amqprun.interfaces.IProcessStarted])
+
         self.thread = threading.Thread(
             target=gocept.amqprun.main.main, args=(self.config.name,))
         self.thread.start()
@@ -193,6 +198,7 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         else:
             self.fail('Server did not start up.')
         self.loop = gocept.amqprun.main.main_server
+        self.server_started.wait()
 
     def make_config(self, package, name, mapping=None):
         zcml_base = string.Template(
