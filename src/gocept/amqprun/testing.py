@@ -7,6 +7,7 @@ import datetime
 import email.utils
 import gocept.amqprun
 import gocept.amqprun.connection
+import gocept.amqprun.interfaces
 import logging
 import mock
 import os
@@ -19,7 +20,24 @@ import tempfile
 import threading
 import time
 import unittest
+import zope.component
 import zope.event
+
+
+class SettingsLayer(plone.testing.Layer):
+
+    defaultBases = (plone.testing.zca.LAYER_CLEANUP,)
+
+    def setUp(self):
+        plone.testing.zca.pushGlobalRegistry()
+        settings = dict()
+        zope.component.provideUtility(
+            settings, provides=gocept.amqprun.interfaces.ISettings)
+
+    def tearDown(self):
+        plone.testing.zca.popGlobalRegistry()
+
+SETTINGS_LAYER = SettingsLayer()
 
 
 class ZCMLSandbox(plone.testing.zca.ZCMLSandbox):

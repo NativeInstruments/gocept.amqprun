@@ -8,6 +8,7 @@ CHANGES
   principal id with which an interaction will be created.
 - Use a separate channel for sending messages that are not a response to a
   received message.
+- Introduce SETTINGS_LAYER for tests relying on ISettings.
 
 
 0.8 (2012-04-04)
