@@ -66,7 +66,7 @@ class AMQPDataManager(object):
         gocept.amqprun.interfaces.IChannelManager(self._channel).release()
 
     def tpc_begin(self, transaction):
-        log.debug("Acquire commit lock for %s", transaction)
+        log.debug("Acquire commit lock: %s for %s", self, transaction)
         self.connection_lock.acquire()
         self._tpc_begin = True
         self._channel.tx_select()
@@ -121,7 +121,7 @@ class AMQPDataManager(object):
         self._channel.tx_commit()
 
     def tpc_finish(self, transaction):
-        log.debug("releasing commit lock")
+        log.debug("Release commit lock: %s for %s", self, transaction)
         self.connection_lock.release()
         gocept.amqprun.interfaces.IChannelManager(self._channel).release()
 
