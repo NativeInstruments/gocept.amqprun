@@ -98,11 +98,11 @@ class Connection(pika.AsyncoreConnection):
     def is_main_thread(self):
         return self._main_thread_lock.acquire(False)
 
-    def close(self):
+    def close(self, *args, **kw):
         if not self.connection_open:
             return
         if self.is_main_thread:
-            pika.AsyncoreConnection.close(self)
+            pika.AsyncoreConnection.close(self, *args, **kw)
             self.notifier_dispatcher.close()
             self._main_thread_lock.release()
         else:
