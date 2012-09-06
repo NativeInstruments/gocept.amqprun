@@ -81,19 +81,18 @@ class DataManagerTest(unittest.TestCase):
 
     def test_tpc_abort_should_release_connection_lock(self):
         dm = self.get_dm()
-        self.connection.lock.acquire()
+        dm.tpc_begin(None)
         dm.tpc_abort(None)
         self.assertTrue(self.connection.lock.acquire(False))
 
     def test_tpc_abort_should_tx_rollback(self):
         dm = self.get_dm()
-        self.connection.lock.acquire()
+        dm.tpc_begin(None)
         dm.tpc_abort(None)
         self.assertTrue(self.channel.tx_rollback.called)
 
     def test_tpc_abort_should_not_reject_message(self):
         dm = self.get_dm()
-        self.connection.lock.acquire()
         dm.tpc_abort(None)
         self.assertFalse(self.channel.basic_reject.called)
 
@@ -101,6 +100,11 @@ class DataManagerTest(unittest.TestCase):
         dm = self.get_dm()
         dm.abort(None)
         self.assertFalse(self.channel.basic_reject.called)
+
+    def test_tpc_abort_should_not_tx_rollback_nor_release_lock_if_tpc_begin_was_not_called(self):
+        dm = self.get_dm()
+        dm.tpc_abort(None)
+        self.assertFalse(self.channel.tx_rollback.called)
 
     def test_abort_should_acquire_and_release_lock(self):
         dm = self.get_dm()
@@ -215,7 +219,7 @@ class DataManagerTest(unittest.TestCase):
         dm = self.get_dm()
         m1 = mock.Mock()
         self.session.send(m1)
-        self.connection.lock.acquire()
+        dm.tpc_begin(None)
         dm.tpc_abort(None)
         self.assertEqual([], self.session.messages)
         self.assertTrue(self.connection.lock.acquire(False))

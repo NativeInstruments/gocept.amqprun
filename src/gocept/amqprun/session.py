@@ -67,8 +67,8 @@ class AMQPDataManager(object):
 
     def tpc_begin(self, transaction):
         log.debug("Acquire commit lock: %s for %s", self, transaction)
-        self.connection_lock.acquire()
         self._tpc_begin = True
+        self.connection_lock.acquire()
         self._channel.tx_select()
 
     def commit(self, transaction):
@@ -105,9 +105,10 @@ class AMQPDataManager(object):
                 self.message.header.message_id)
 
     def tpc_abort(self, transaction):
-        log.debug('tx_rollback')
-        self._channel.tx_rollback()
-        self.connection_lock.release()
+        if self._tpc_begin:
+            log.debug('tx_rollback')
+            self._channel.tx_rollback()
+            self.connection_lock.release()
         # The original idea was to reject the message here. Reject with requeue
         # immediately re-queues the message in the current rabbitmq
         # implementation (2.1.1). We let the message dangle until the channel
