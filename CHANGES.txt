@@ -4,7 +4,9 @@ CHANGES
 0.10 (unreleased)
 -----------------
 
-- Nothing changed yet.
+- Fix IDataManager implementation: tpc_abort() may also be called without a
+  prior tpc_begin() (happens for errors in savepoints, for example).
+- Fix method signature of Connection.close().
 
 
 0.9 (2012-08-31)
