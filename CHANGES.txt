@@ -4,7 +4,7 @@ CHANGES
 0.9.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Improve logging of IChannelManager.acquire/release.
 
 
 0.9.1 (2012-09-06)
