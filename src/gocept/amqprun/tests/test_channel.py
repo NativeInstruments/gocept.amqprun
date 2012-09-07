@@ -27,3 +27,14 @@ class TestChannel(unittest.TestCase):
     def test_interface(self):
         from gocept.amqprun.interfaces import IChannelManager
         zope.interface.verify.verifyObject(IChannelManager, self.channel)
+
+
+class CallerName(unittest.TestCase):
+
+    def test_caller_name(self):
+        def foo():
+            return gocept.amqprun.channel.caller_name()
+
+        self.assertEqual(
+            'gocept.amqprun.tests.test_channel.CallerName.test_caller_name',
+            foo())
