@@ -4,7 +4,8 @@ CHANGES
 0.9.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix IDataManager implementation: abort() may be called multiple times,
+  regardless of transaction outcome. Only release the channel refcount once.
 
 
 0.9.3 (2012-09-07)
