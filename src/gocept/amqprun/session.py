@@ -48,6 +48,7 @@ class AMQPDataManager(object):
         self.session = session
         self.connection_lock = session.channel.connection_lock
         self._channel = session.channel
+        self._channel_released = False
         self._tpc_begin = False
         self.message_tag =getattr(self.message, 'delivery_tag', None)
 
@@ -56,15 +57,22 @@ class AMQPDataManager(object):
     def message(self):
         return self.session.message_to_ack
 
+    def _release_channel(self):
+        if not self._channel_released:
+            self._channel_released = True
+            gocept.amqprun.interfaces.IChannelManager(self._channel).release()
+
     def abort(self, transaction):
-        # Called on transaction.abort() *and* on errors in tpc_vote/tpc_finish
-        # of any datamanger *if* self has *not* voted, yet.
-        if self._tpc_begin:
-            # If a TPC has begun already, do nothing. tpc_abort handles
-            # everything we do as well.
-            return
+        # Called on
+        # - transaction.abort()
+        # - errors in savepoints
+        # - errors after a tpc_begin in tpc_vote/tpc_finish, *if* self has
+        #   *not* yet voted (tpc_abort will still be called afterwards).
+        #   NOTE: if self *has* voted, tpc_abort will be called *instead*
+        #   of abort.
+        # - during afterCommitHooks, regardless of transaction outcome
         self.session.reset()
-        gocept.amqprun.interfaces.IChannelManager(self._channel).release()
+        self._release_channel()
 
     def tpc_begin(self, transaction):
         log.debug("Acquire commit lock by %s", self)
@@ -107,17 +115,17 @@ class AMQPDataManager(object):
                 self.message.header.message_id)
 
     def tpc_abort(self, transaction):
-        if self._tpc_begin:
-            log.debug('tx_rollback')
-            self._channel.tx_rollback()
-            self.connection_lock.release()
         # The original idea was to reject the message here. Reject with requeue
         # immediately re-queues the message in the current rabbitmq
         # implementation (2.1.1). We let the message dangle until the channel
         # is closed. At this point the message is re-queued and re-submitted to
         # us.
+        if self._tpc_begin:
+            log.debug('tx_rollback')
+            self._channel.tx_rollback()
+            self.connection_lock.release()
         self.session.reset()
-        gocept.amqprun.interfaces.IChannelManager(self._channel).release()
+        self._release_channel()
 
     def tpc_vote(self, transaction):
         log.debug("tx_commit")
@@ -126,7 +134,7 @@ class AMQPDataManager(object):
     def tpc_finish(self, transaction):
         log.debug("Release commit lock by %s", self)
         self.connection_lock.release()
-        gocept.amqprun.interfaces.IChannelManager(self._channel).release()
+        self._release_channel()
 
     def sortKey(self):
         # Try to sort last, so that we vote last.

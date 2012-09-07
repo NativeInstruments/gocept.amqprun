@@ -247,6 +247,18 @@ class DataManagerTest(unittest.TestCase):
         dm.abort(None)
         self.assertTrue(self.channel_manager.release.called)
 
+    def test_multiple_abort_should_release_channel_only_once(self):
+        dm = self.get_dm()
+        dm.abort(None)
+        dm.abort(None)
+        self.assertEqual(1, self.channel_manager.release.call_count)
+
+    def test_abort_and_tpc_abort_should_release_channel_only_once(self):
+        dm = self.get_dm()
+        dm.abort(None)
+        dm.tpc_abort(None)
+        self.assertEqual(1, self.channel_manager.release.call_count)
+
 
 class SessionTest(unittest.TestCase):
 
