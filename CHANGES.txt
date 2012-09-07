@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.9.3 (unreleased)
+0.9.3 (2012-09-07)
 ------------------
 
 - Improve logging of IDataManager.
