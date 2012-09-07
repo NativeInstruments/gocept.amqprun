@@ -227,15 +227,6 @@ class TestChannelSwitch(unittest.TestCase):
         server.switch_channel()
         self.assertTrue(server.channel.basic_consume.called)
 
-    def test_switch_channel_should_return_false_when_alrady_switching(self):
-        server = self.create_server()
-        self.assertTrue(server.switch_channel())  # Switched
-        # Switch is still in progress as the old channel hasn't been closed.
-        self.assertFalse(server.switch_channel())
-        # After switch has been completed, switching becomes possible again
-        server._switching_channels = False
-        self.assertTrue(server.switch_channel())
-
     def test_switch_channel_should_acquire_and_release_connection_lock(self):
         server = self.create_server()
         server.connection.lock = mock.Mock()
