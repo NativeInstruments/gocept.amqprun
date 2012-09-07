@@ -118,13 +118,13 @@ class Server(object, pika.connection.NullReconnectionStrategy):
     def switch_channel(self):
         if not zope.component.getUtilitiesFor(
             gocept.amqprun.interfaces.IHandler):
-            return False
+            return
         if self._switching_channels:
-            return False
+            return
         log.info('Switching to a new channel')
         locked = self.connection.lock.acquire(False)
         if not locked:
-            return False
+            return
         try:
             self._switching_channels = True
             for consumer_tag in self.channel.callbacks.keys():
@@ -140,7 +140,6 @@ class Server(object, pika.connection.NullReconnectionStrategy):
             self._old_channel = self.channel
             self.channel = None
             self.open_channel()
-            return True  # Switch successful
         finally:
             self.connection.lock.release()
 
