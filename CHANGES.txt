@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.9.4 (unreleased)
+0.9.4 (2012-09-07)
 ------------------
 
 - Fix IDataManager implementation: abort() may be called multiple times,
