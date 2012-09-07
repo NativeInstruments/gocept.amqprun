@@ -2,6 +2,7 @@
 # See also LICENSE.txt
 
 import gocept.amqprun.channel
+import gocept.testing.assertion
 import mock
 import unittest
 import zope.interface.verify
@@ -29,12 +30,13 @@ class TestChannel(unittest.TestCase):
         zope.interface.verify.verifyObject(IChannelManager, self.channel)
 
 
-class CallerName(unittest.TestCase):
+class CallerName(unittest.TestCase,
+                 gocept.testing.assertion.Ellipsis):
 
     def test_caller_name(self):
         def foo():
             return gocept.amqprun.channel.caller_name()
 
-        self.assertEqual(
-            'gocept.amqprun.tests.test_channel.CallerName.test_caller_name',
-            foo())
+        self.assertEllipsis(
+            '<gocept.amqprun.tests.test_channel.CallerName...>'
+            ':test_caller_name', foo())

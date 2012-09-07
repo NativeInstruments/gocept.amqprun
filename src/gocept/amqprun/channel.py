@@ -23,14 +23,14 @@ class Channel(pika.channel.Channel):
     def acquire(self):
         self._gocept_amqprun_refcount.inc()
         log.debug(
-            'Channel[%s] acquired by <%s>, refcount %s',
+            'Channel[%s] acquired by %s, refcount %s',
             self.handler.channel_number, caller_name(),
             self._gocept_amqprun_refcount)
 
     def release(self):
         self._gocept_amqprun_refcount.dec()
         log.debug(
-            'Channel[%s] released by <%s>, refcount %s',
+            'Channel[%s] released by %s, refcount %s',
             self.handler.channel_number, caller_name(),
             self._gocept_amqprun_refcount)
 
@@ -69,6 +69,9 @@ class ThreadSafeCounter(object):
 
 def caller_name():
     frame = sys._getframe(2)
-    class_ = frame.f_locals.get('self').__class__
     function = frame.f_code.co_name
-    return '.'.join([class_.__module__, class_.__name__, function])
+    obj = frame.f_locals.get('self')
+    if obj is None:
+        return function
+    else:
+        return '%r:%s' % (obj, function)

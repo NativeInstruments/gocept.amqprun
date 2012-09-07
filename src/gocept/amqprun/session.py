@@ -49,6 +49,7 @@ class AMQPDataManager(object):
         self.connection_lock = session.channel.connection_lock
         self._channel = session.channel
         self._tpc_begin = False
+        self.message_tag =getattr(self.message, 'delivery_tag', None)
 
     # XXX refactor structure of Session and AMQPDataManager, see #9988
     @property
@@ -66,7 +67,7 @@ class AMQPDataManager(object):
         gocept.amqprun.interfaces.IChannelManager(self._channel).release()
 
     def tpc_begin(self, transaction):
-        log.debug("Acquire commit lock: %s for %s", self, transaction)
+        log.debug("Acquire commit lock by %s", self)
         self._tpc_begin = True
         self.connection_lock.acquire()
         self._channel.tx_select()
@@ -76,7 +77,8 @@ class AMQPDataManager(object):
             log.debug("Ack'ing message %s.", self.message.delivery_tag)
             self._channel.basic_ack(self.message.delivery_tag)
         for message in self.session.messages:
-            log.debug("Publishing message (%s).", message.routing_key)
+            log.debug("Publishing message to %s in response to %s.",
+                      message.routing_key, self.message_tag)
             self._set_references(message)
             self._channel.basic_publish(
                 message.exchange, message.routing_key,
@@ -122,10 +124,17 @@ class AMQPDataManager(object):
         self._channel.tx_commit()
 
     def tpc_finish(self, transaction):
-        log.debug("Release commit lock: %s for %s", self, transaction)
+        log.debug("Release commit lock by %s", self)
         self.connection_lock.release()
         gocept.amqprun.interfaces.IChannelManager(self._channel).release()
 
     def sortKey(self):
         # Try to sort last, so that we vote last.
         return "~gocept.amqprun:%f" % time.time()
+
+    def __repr__(self):
+        message = ''
+        if self.message_tag is not None:
+            message = ', message %s' % self.message_tag
+        return '<gocept.amqprun.session.DataManager for %s%s>' % (
+            transaction.get(), message)
