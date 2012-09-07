@@ -73,7 +73,9 @@ class Worker(threading.Thread):
                         response = handler(message)
                         for msg in response:
                             self.log.info(
-                                'Sending message (%s)', msg.routing_key)
+                                'Sending message to %s in response '
+                                'to message %s', msg.routing_key,
+                                message.delivery_tag)
                             session.send(msg)
                         transaction.commit()
                     except:
