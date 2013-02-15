@@ -56,7 +56,7 @@ class MessageReaderTest(
         self.send_message('foo', routing_key='test.messageformat.1')
         self.assertEqual(1, self.server.tasks.qsize())
         session, handler = self.server.tasks.get()
-        handler(session.message_to_ack)
+        handler(session.received_message)
         self.assertTrue(handle_message.called)
         message = handle_message.call_args[0][0]
         self.assertEquals('foo', message.body)
@@ -81,7 +81,7 @@ class MessageReaderTest(
         self.send_message('foo', routing_key='test.messageformat.2')
         self.assertEqual(1, self.server.tasks.qsize())
         session, handler = self.server.tasks.get()
-        handler(session.message_to_ack)
+        handler(session.received_message)
         self.assertFalse(handle_message_2.called)
         self.assertTrue(handle_message_1.called)
 
@@ -377,4 +377,4 @@ class ConsumerTest(unittest.TestCase):
             channel, gocept.amqprun.interfaces.IChannelManager)
         consumer(channel, method, {}, '')
         session, handler = tasks.get()
-        self.assertEqual('route', session.message_to_ack.routing_key)
+        self.assertEqual('route', session.received_message.routing_key)

@@ -4,7 +4,7 @@ CHANGES
 0.9.5 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Refactor Session / DataManager responsibilities (#9988).
 
 
 0.9.4 (2012-09-07)
