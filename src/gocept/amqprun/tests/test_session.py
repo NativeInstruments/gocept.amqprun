@@ -134,7 +134,7 @@ class DataManagerTest(unittest.TestCase):
 
     def test_messages_should_be_sent_with_correlation_id(self):
         dm = self.get_dm()
-        dm.message.header.message_id = 'message id'
+        dm.session.received_message.header.message_id = 'message id'
         msg = mock.Mock()
         msg.header.correlation_id = None
         msg.header.headers = None
@@ -144,7 +144,7 @@ class DataManagerTest(unittest.TestCase):
 
     def test_existing_correlation_id_should_not_be_overwritten(self):
         dm = self.get_dm()
-        dm.message.header.message_id = 'message id'
+        dm.session.received_message.header.message_id = 'message id'
         msg = mock.Mock()
         msg.header.correlation_id = mock.sentinel.correlation_id
         msg.header.headers = None
@@ -155,7 +155,7 @@ class DataManagerTest(unittest.TestCase):
 
     def test_messages_should_be_sent_with_references_header(self):
         dm = self.get_dm()
-        dm.message.header.message_id = 'message id'
+        dm.session.received_message.header.message_id = 'message id'
         msg = mock.Mock()
         msg.header.headers = None
         self.session.send(msg)
@@ -166,8 +166,9 @@ class DataManagerTest(unittest.TestCase):
 
     def test_references_header_contains_parents_references(self):
         dm = self.get_dm()
-        dm.message.header.message_id = 'message id'
-        dm.message.header.headers = {'references': 'parent id'}
+        dm.session.received_message.header.message_id = 'message id'
+        dm.session.received_message.header.headers = {
+            'references': 'parent id'}
         msg = mock.Mock()
         msg.header.headers = None
         self.session.send(msg)
@@ -178,8 +179,8 @@ class DataManagerTest(unittest.TestCase):
 
     def test_no_references_when_parent_has_no_reference_header(self):
         dm = self.get_dm()
-        dm.message.header.message_id = 'message id'
-        dm.message.header.headers = {'X-Foo': 'bar'}
+        dm.session.received_message.header.message_id = 'message id'
+        dm.session.received_message.header.headers = {'X-Foo': 'bar'}
         msg = mock.Mock()
         msg.header.headers = None
         self.session.send(msg)
@@ -190,7 +191,7 @@ class DataManagerTest(unittest.TestCase):
 
     def test_existing_references_header_should_not_be_overwritten(self):
         dm = self.get_dm()
-        dm.message.header.message_id = 'message id'
+        dm.session.received_message.header.message_id = 'message id'
         msg = mock.Mock()
         msg.header.headers = {'references': 'custom id'}
         self.session.send(msg)
@@ -200,7 +201,7 @@ class DataManagerTest(unittest.TestCase):
 
     def test_no_references_should_be_created_when_parent_lacks_message_id(self):
         dm = self.get_dm()
-        dm.message.header.message_id = None
+        dm.session.received_message.header.message_id = None
         msg = mock.Mock()
         msg.header.headers = {}
         self.session.send(msg)

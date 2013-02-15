@@ -59,7 +59,7 @@ class Worker(threading.Thread):
                 pass
             else:
                 try:
-                    message = session.message_to_ack
+                    message = session.received_message
                     self.log.info('Processing message %s %s (%s)',
                                   message.delivery_tag,
                                   message.header.message_id,

@@ -67,7 +67,7 @@ class WorkerTest(unittest.TestCase):
         self.queue.put((session, handler))
         time.sleep(0.1)
         self.assertEqual(1, len(messages))
-        self.assertEqual(session.message_to_ack, messages[0])
+        self.assertEqual(session.received_message, messages[0])
 
     def test_messages_returned_by_handler_should_be_sent(self):
         self._create_worker()

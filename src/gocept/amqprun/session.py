@@ -15,11 +15,12 @@ class Session(object):
 
     zope.interface.implements(gocept.amqprun.interfaces.ISession)
 
-    def __init__(self, channel, message_to_ack=None):
+    def __init__(self, channel, received_message=None):
         self.messages = []
         self._needs_to_join = True
         self.channel = channel
-        self.message_to_ack = message_to_ack
+        self.received_message = received_message
+        self.received_tag =getattr(self.received_message, 'delivery_tag', None)
 
     def send(self, message):
         self.join_transaction()
@@ -37,6 +38,51 @@ class Session(object):
         transaction.get().join(dm)
         self._needs_to_join = False
 
+    def flush(self):
+        self.ack_received_message()
+        self.publish_response_messages()
+        self.reset()
+
+    def ack_received_message(self):
+        if self.received_message is None:
+            return
+        log.debug("Ack'ing message %s.", self.received_message.delivery_tag)
+        self.channel.basic_ack(self.received_message.delivery_tag)
+
+    def publish_response_messages(self):
+        for message in self.messages:
+            log.debug("Publishing message to %s in response to %s.",
+                      message.routing_key, self.received_tag)
+            self._set_references(message)
+            self.channel.basic_publish(
+                message.exchange, message.routing_key,
+                message.body, message.header)
+
+    def _set_references(self, message):
+        if self.received_message is None:
+            # no reply
+            return
+        received_header = self.received_message.header
+        if not received_header.message_id:
+            return
+        if not message.header.correlation_id:
+            message.header.correlation_id = received_header.message_id
+        if message.header.headers is None:
+            message.header.headers = {}
+        if 'references' not in message.header.headers:
+            if (received_header.headers and
+                received_header.headers.get('references')):
+                parent_references = (
+                    received_header.headers['references'] + '\n')
+            else:
+                parent_references = ''
+            message.header.headers['references'] = (
+                parent_references +
+                received_header.message_id)
+
+    def __repr__(self):
+        return '<gocept.amqprun.session.Session %s>' % self.received_tag
+
 
 class AMQPDataManager(object):
 
@@ -50,12 +96,6 @@ class AMQPDataManager(object):
         self._channel = session.channel
         self._channel_released = False
         self._tpc_begin = False
-        self.message_tag =getattr(self.message, 'delivery_tag', None)
-
-    # XXX refactor structure of Session and AMQPDataManager, see #9988
-    @property
-    def message(self):
-        return self.session.message_to_ack
 
     def _release_channel(self):
         if not self._channel_released:
@@ -81,38 +121,7 @@ class AMQPDataManager(object):
         self._channel.tx_select()
 
     def commit(self, transaction):
-        if self.message is not None:
-            log.debug("Ack'ing message %s.", self.message.delivery_tag)
-            self._channel.basic_ack(self.message.delivery_tag)
-        for message in self.session.messages:
-            log.debug("Publishing message to %s in response to %s.",
-                      message.routing_key, self.message_tag)
-            self._set_references(message)
-            self._channel.basic_publish(
-                message.exchange, message.routing_key,
-                message.body, message.header)
-        self.session.reset()
-
-    def _set_references(self, message):
-        if self.message is None:
-            # no reply
-            return
-        if not self.message.header.message_id:
-            return
-        if not message.header.correlation_id:
-            message.header.correlation_id = self.message.header.message_id
-        if message.header.headers is None:
-            message.header.headers = {}
-        if 'references' not in message.header.headers:
-            if (self.message.header.headers and
-                self.message.header.headers.get('references')):
-                parent_references = (
-                    self.message.header.headers['references'] + '\n')
-            else:
-                parent_references = ''
-            message.header.headers['references'] = (
-                parent_references +
-                self.message.header.message_id)
+        self.session.flush()
 
     def tpc_abort(self, transaction):
         # The original idea was to reject the message here. Reject with requeue
@@ -141,8 +150,5 @@ class AMQPDataManager(object):
         return "~gocept.amqprun:%f" % time.time()
 
     def __repr__(self):
-        message = ''
-        if self.message_tag is not None:
-            message = ', message %s' % self.message_tag
-        return '<gocept.amqprun.session.DataManager for %s%s>' % (
-            transaction.get(), message)
+        return '<gocept.amqprun.session.DataManager for %s, %s>' % (
+            transaction.get(), self.session)
