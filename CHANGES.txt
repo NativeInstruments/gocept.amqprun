@@ -4,7 +4,7 @@ CHANGES
 0.9.6 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Allow test server to take longer time for startup on slow computers.
 
 
 0.9.5 (2013-04-16)
