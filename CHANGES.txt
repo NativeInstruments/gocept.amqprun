@@ -1,12 +1,18 @@
 CHANGES
 =======
 
-0.9.5 (unreleased)
+0.9.6 (unreleased)
+------------------
+
+- Allow test server to take longer time for startup on slow computers.
+
+- Add principal to Handler interface.
+
+
+0.9.5 (2013-04-16)
 ------------------
 
 - Refactor Session / DataManager responsibilities (#9988).
-
-- Add principal to Handler interface.
 
 
 0.9.4 (2012-09-07)
