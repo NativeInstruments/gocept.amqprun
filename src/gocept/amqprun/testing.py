@@ -208,7 +208,7 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         self.thread = threading.Thread(
             target=gocept.amqprun.main.main, args=(self.config.name,))
         self.thread.start()
-        for i in range(100):
+        for i in range(200):
             if (gocept.amqprun.main.main_server is not None and
                 gocept.amqprun.main.main_server.running):
                 break
