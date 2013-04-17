@@ -20,6 +20,10 @@ class IHandler(zope.interface.Interface):
     arguments = zope.interface.Attribute(
         'Arguments that are forwarded to the queue declare process')
 
+    principal = zope.interface.Attribute(
+        'If set, message is handled inside a zope.security interaction with '
+        'the given principal_id.')
+
     def __call__(message):
         """Handle message.
 
