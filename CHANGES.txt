@@ -6,6 +6,8 @@ CHANGES
 
 - Refactor Session / DataManager responsibilities (#9988).
 
+- Add principal to Handler interface.
+
 
 0.9.4 (2012-09-07)
 ------------------
