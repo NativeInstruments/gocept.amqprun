@@ -1,13 +1,14 @@
 # Copyright (c) 2010 gocept gmbh & co. kg
 # See also LICENSE.txt
 
-from gocept.amqprun.readfiles import FileStoreReader
+from gocept.amqprun.readfiles import FileStoreReader, FileStoreDataManager
 import gocept.amqprun.interfaces
 import gocept.amqprun.testing
 import mock
 import os
 import shutil
 import tempfile
+import unittest
 import zope.component
 
 
@@ -59,6 +60,28 @@ class ReaderTest(gocept.amqprun.testing.LoopTestCase):
     def test_loop_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
         self.create_reader()
+
+
+class FileStoreDataManagerTest(unittest.TestCase):
+
+    def setUp(self):
+        self.session = mock.Mock()
+        self.dm = FileStoreDataManager(self.session)
+
+    def test_committing_transaction_should_commit_and_reset_session(self):
+        UNUSED_TRANSACTION = None
+        self.dm.tpc_begin(UNUSED_TRANSACTION)
+        self.dm.commit(UNUSED_TRANSACTION)
+        self.dm.tpc_vote(UNUSED_TRANSACTION)
+        self.dm.tpc_finish(UNUSED_TRANSACTION)
+        self.assertTrue(self.session.commit.called)
+        self.assertTrue(self.session.reset.called)
+
+    def test_aborting_transaction_should_commit_and_reset_session(self):
+        UNUSED_TRANSACTION = None
+        self.dm.abort(UNUSED_TRANSACTION)
+        self.assertFalse(self.session.commit.called)
+        self.assertTrue(self.session.reset.called)
 
 
 class ReaderIntegrationTest(gocept.amqprun.testing.MainTestCase):

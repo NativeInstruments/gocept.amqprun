@@ -109,7 +109,7 @@ class FileStoreDataManager(object):
         self._tpc_begin = False
 
     def abort(self, transaction):
-        self.tpc_abort()
+        self.tpc_abort(transaction)
 
     def tpc_begin(self, transaction):
         pass
