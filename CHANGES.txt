@@ -1,8 +1,8 @@
 CHANGES
 =======
 
-0.9.6 (unreleased)
-------------------
+0.10 (2013-05-28)
+-----------------
 
 - Support more than one Server in a single process.
 
