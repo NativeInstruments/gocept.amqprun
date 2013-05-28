@@ -6,7 +6,9 @@ import gocept.amqprun.channel
 import logging
 import os
 import pika
+import pika.asyncore_adapter
 import pika.channel
+import socket
 import threading
 import time
 
@@ -35,6 +37,13 @@ class WriteDispatcher(asyncore.file_dispatcher):
         os.read(self.fileno(), 1)
 
 
+class RabbitDispatcher(pika.asyncore_adapter.RabbitDispatcher):
+
+    def __init__(self, connection):
+        asyncore.dispatcher.__init__(self, map=connection.socket_map)
+        self.connection = connection
+
+
 class Connection(pika.AsyncoreConnection):
 
     _close_now = False
@@ -43,6 +52,7 @@ class Connection(pika.AsyncoreConnection):
         self.lock = threading.Lock()
         self._main_thread_lock = threading.RLock()
         self._main_thread_lock.acquire()
+        self.socket_map = {}
         self.notifier_dispatcher = None
         credentials = None
         if parameters.username and parameters.password:
@@ -64,8 +74,14 @@ class Connection(pika.AsyncoreConnection):
     def connect(self, host, port):
         if not self.notifier_dispatcher:
             self.notifier_r, self.notifier_w = os.pipe()
-            self.notifier_dispatcher = WriteDispatcher(self.notifier_r)
-        pika.AsyncoreConnection.connect(self, host, port)
+            self.notifier_dispatcher = WriteDispatcher(
+                self.notifier_r, map=self.socket_map)
+
+        # not calling super since we need to use our subclassed
+        # RabbitDispatcher
+        self.dispatcher = RabbitDispatcher(self)
+        self.dispatcher.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.dispatcher.connect((host, port or pika.spec.PORT))
 
     def reconnect(self):
         pika.AsyncoreConnection.reconnect(self)
@@ -79,7 +95,7 @@ class Connection(pika.AsyncoreConnection):
         # another thread detects that there is data to be written, it notifies
         # the main thread about it using the notifier pipe.
         if self.is_main_thread:
-            pika.asyncore_loop(count=1, timeout=timeout)
+            pika.asyncore_loop(self.socket_map, count=1, timeout=timeout)
             if self._close_now:
                 self.close()
         else:
