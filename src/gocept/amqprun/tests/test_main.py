@@ -86,21 +86,21 @@ class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
         else:
             self.fail('Message was not received again')
 
-    @unittest.skip('clean up the Session/DataManager API first')
     def test_messages_should_always_be_acked_on_their_own_channel(self):
         self.assertEquals([], self.messages_received)
         self.expect_message_on('test.response')
 
-        ack = gocept.amqprun.session.Session.ack
+        ack = gocept.amqprun.session.Session.ack_received_message
         started_ack = threading.Event()
         resume_ack = threading.Event()
 
-        def new_ack(self, message):
+        def new_ack(self):
             started_ack.set()
             resume_ack.wait()
-            ack(self, message)
+            ack(self)
 
-        with mock.patch('gocept.amqprun.session.Session.ack', new_ack):
+        with mock.patch('gocept.amqprun.session.Session.ack_received_message',
+                        new_ack):
             self.send_message('blarf', routing_key='test.routing')
             started_ack.wait()
             self.loop.CHANNEL_LIFE_TIME = 0
