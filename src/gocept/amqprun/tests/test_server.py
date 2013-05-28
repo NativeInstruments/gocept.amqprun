@@ -25,8 +25,8 @@ class MessageReaderTest(
     gocept.amqprun.testing.LoopTestCase,
     gocept.amqprun.testing.QueueTestCase):
 
-    def start_server(self):
-        self.server = self.create_server()
+    def start_server(self, **kw):
+        self.server = self.create_server(**kw)
         self.start_thread(self.server)
 
     def test_loop_can_be_stopped_from_outside(self):
@@ -84,6 +84,19 @@ class MessageReaderTest(
         handler(session.received_message)
         self.assertFalse(handle_message_2.called)
         self.assertTrue(handle_message_1.called)
+
+    def test_handlers_disabled_should_not_handle_messages(self):
+        import gocept.amqprun.handler
+        # Provide a handler
+        handle_message = mock.Mock()
+        handler = gocept.amqprun.handler.Handler(
+            self.get_queue_name('test.case.1'),
+            'test.messageformat.1', handle_message)
+        zope.component.provideUtility(handler, name='queue')
+        self.start_server(setup_handlers=False)
+
+        self.send_message('foo', routing_key='test.messageformat.1')
+        self.assertEqual(0, self.server.tasks.qsize())
 
     def test_unicode_queue_names_should_work(self):
         import gocept.amqprun.interfaces

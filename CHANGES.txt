@@ -7,6 +7,9 @@ CHANGES
 - Fix a bug in the <amqp:readfiles> transaction implementation that caused
   crash when aborting a transaction (#12437).
 
+- Introduce ``setup_handlers`` parameter for Server so clients can disable
+  setting up handlers.
+
 - Allow test server to take longer time for startup on slow computers.
 
 
