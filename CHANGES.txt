@@ -4,11 +4,13 @@ CHANGES
 0.9.6 (unreleased)
 ------------------
 
-- Fix a bug in the <amqp:readfiles> transaction implementation that caused
-  crash when aborting a transaction (#12437).
+- Support more than one Server in a single process.
 
 - Introduce ``setup_handlers`` parameter for Server so clients can disable
   setting up handlers.
+
+- Fix a bug in the <amqp:readfiles> transaction implementation that caused
+  crash when aborting a transaction (#12437).
 
 - Allow test server to take longer time for startup on slow computers.
 

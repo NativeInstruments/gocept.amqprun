@@ -164,14 +164,19 @@ class LoopTestCase(unittest.TestCase):
             self.loop.stop()
             self.thread.join()
         super(LoopTestCase, self).tearDown()
-        self.assertEqual({}, asyncore.socket_map)
+        if self.loop is not None and getattr(self.loop, 'connection', None):
+            self.assertEqual({}, self.loop.connection.socket_map)
 
     def start_thread(self, loop):
         self.loop = loop
-        self.thread = threading.Thread(target=self.loop.start)
-        self.thread.start()
-        if not self.loop.wait_until_running(2.5):
+        self.thread = self._start_thread(loop)
+
+    def _start_thread(self, loop):
+        thread = threading.Thread(target=loop.start)
+        thread.start()
+        if not loop.wait_until_running(2.5):
             self.fail('Loop did not start up.')
+        return thread
 
 
 class MainTestCase(LoopTestCase, QueueTestCase):
