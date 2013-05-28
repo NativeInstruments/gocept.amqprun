@@ -42,7 +42,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
 
     CHANNEL_LIFE_TIME = 360
 
-    def __init__(self, connection_parameters):
+    def __init__(self, connection_parameters, setup_handlers=True):
         self.connection_parameters = connection_parameters
         self.tasks = Queue.Queue()
         self.local = threading.local()
@@ -51,6 +51,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
         self.channel = None
         self._old_channel = None
         self._switching_channels = False
+        self.setup_handlers = setup_handlers
 
     @property
     def running(self):
@@ -159,6 +160,8 @@ class Server(object, pika.connection.NullReconnectionStrategy):
             self.connection.lock.release()
 
     def _declare_and_bind_queues(self):
+        if not self.setup_handlers:
+            return
         assert self.channel is not None
         for name, handler in zope.component.getUtilitiesFor(
             gocept.amqprun.interfaces.IHandler):

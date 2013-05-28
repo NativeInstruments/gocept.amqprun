@@ -145,9 +145,12 @@ class QueueTestCase(unittest.TestCase):
                       username=self.layer['amqp-username'],
                       password=self.layer['amqp-password'],
                       virtualhost=self.layer['amqp-virtualhost'])
+        # XXX not DRY, the default value is declared in Server.__init__()
+        setup_handlers = kw.pop('setup_handlers', True)
         params.update(kw)
         return gocept.amqprun.server.Server(
-            gocept.amqprun.connection.Parameters(**params))
+            gocept.amqprun.connection.Parameters(**params),
+            setup_handlers=setup_handlers)
 
 
 class LoopTestCase(unittest.TestCase):
