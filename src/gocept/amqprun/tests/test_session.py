@@ -4,6 +4,7 @@
 import mock
 import threading
 import time
+import transaction
 import unittest
 import zope.component
 import zope.component.testing
@@ -27,6 +28,7 @@ class DataManagerTest(unittest.TestCase):
         self.channel.connection_lock = self.connection.lock
 
     def tearDown(self):
+        transaction.abort()
         zope.component.testing.tearDown()
 
     def get_message(self):
