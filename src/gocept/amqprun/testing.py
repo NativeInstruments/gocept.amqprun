@@ -2,7 +2,6 @@
 # See also LICENSE.txt
 
 import amqplib.client_0_8 as amqp
-import asyncore
 import datetime
 import email.utils
 import gocept.amqprun

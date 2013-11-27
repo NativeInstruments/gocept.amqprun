@@ -201,7 +201,8 @@ class DataManagerTest(unittest.TestCase):
         ((_, _, _, header), _) = self.channel.basic_publish.call_args
         self.assertEqual('custom id', header.headers['references'])
 
-    def test_no_references_should_be_created_when_parent_lacks_message_id(self):
+    def test_no_references_should_be_created_when_parent_lacks_message_id(
+            self):
         dm = self.get_dm()
         dm.session.received_message.header.message_id = None
         msg = mock.Mock()

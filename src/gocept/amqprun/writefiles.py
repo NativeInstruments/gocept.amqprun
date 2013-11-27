@@ -34,7 +34,7 @@ class FileWriter(object):
                    directory, self.header_filename(filename))
 
         zope.event.notify(gocept.amqprun.interfaces.MessageStored(
-                message, path))
+            message, path))
 
     def write(self, content, *path):
         output = open(os.path.join(*path), 'w')
