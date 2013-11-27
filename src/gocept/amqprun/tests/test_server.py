@@ -100,6 +100,7 @@ class MessageReaderTest(
 
     def test_unicode_queue_names_should_work(self):
         import gocept.amqprun.interfaces
+
         class Handler(object):
             zope.interface.classProvides(
                 gocept.amqprun.interfaces.IHandler)
@@ -111,6 +112,7 @@ class MessageReaderTest(
 
     def test_unicode_routing_keys_should_work_for_handler(self):
         import gocept.amqprun.interfaces
+
         class Handler(object):
             zope.interface.classProvides(
                 gocept.amqprun.interfaces.IHandler)
@@ -122,6 +124,7 @@ class MessageReaderTest(
 
     def test_unicode_arguments_should_work_for_handler(self):
         import gocept.amqprun.interfaces
+
         class Handler(object):
             zope.interface.classProvides(
                 gocept.amqprun.interfaces.IHandler)

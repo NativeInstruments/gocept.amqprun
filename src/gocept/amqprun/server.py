@@ -118,7 +118,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
 
     def switch_channel(self):
         if not zope.component.getUtilitiesFor(
-            gocept.amqprun.interfaces.IHandler):
+                gocept.amqprun.interfaces.IHandler):
             return
         if self._switching_channels:
             return
@@ -164,7 +164,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
             return
         assert self.channel is not None
         for name, handler in zope.component.getUtilitiesFor(
-            gocept.amqprun.interfaces.IHandler):
+                gocept.amqprun.interfaces.IHandler):
             queue_name = unicode(handler.queue_name).encode('UTF-8')
             handler_args = handler.arguments or {}
             arguments = dict(

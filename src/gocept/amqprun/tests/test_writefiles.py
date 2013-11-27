@@ -90,19 +90,18 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
 
     def run_directive(
         self, routing_key=None, queue_name=None,
-        directory=None, pattern=None,
-        arguments=None):
+        directory=None, pattern=None, arguments=None):
         import gocept.amqprun.interfaces
         config = string.Template(unicode(
             pkg_resources.resource_string(__name__, 'writefiles.zcml'),
             'utf8'))
         config = config.substitute(dict(
-                routing_key=routing_key,
-                queue_name=queue_name,
-                directory=directory,
-                pattern=pattern,
-                arguments=arguments,
-                ))
+            routing_key=routing_key,
+            queue_name=queue_name,
+            directory=directory,
+            pattern=pattern,
+            arguments=arguments,
+        ))
         zope.configuration.xmlconfig.string(config.encode('utf-8'))
         return zope.component.getUtility(
             gocept.amqprun.interfaces.IHandler,
@@ -110,26 +109,26 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
 
     def test_directive_registers_handler_as_utility(self):
         handler = self.run_directive(
-                routing_key='test.foo test.bar',
-                queue_name='test.queue',
-                directory='/dev/null')
+            routing_key='test.foo test.bar',
+            queue_name='test.queue',
+            directory='/dev/null')
         self.assertEqual(['test.foo', 'test.bar'], handler.routing_key)
 
     def test_pattern_supports_escape_with_and_without_dollar(self):
         handler = self.run_directive(
-                routing_key='test.foo test.bar',
-                queue_name='test.queue',
-                directory='/dev/null',
-                pattern='{foo}/${bar}/{qux}')
+            routing_key='test.foo test.bar',
+            queue_name='test.queue',
+            directory='/dev/null',
+            pattern='{foo}/${bar}/{qux}')
         self.assertEqual(
             '${foo}/${bar}/${qux}', handler.handler_function.pattern)
 
     def test_directive_supports_arguments(self):
         handler = self.run_directive(
-                routing_key='test.foo test.bar',
-                queue_name='test.queue',
-                directory='/dev/null',
-                arguments='x-ha-policy = all')
+            routing_key='test.foo test.bar',
+            queue_name='test.queue',
+            directory='/dev/null',
+            arguments='x-ha-policy = all')
         self.assertEqual({'x-ha-policy': 'all'}, handler.arguments)
 
 

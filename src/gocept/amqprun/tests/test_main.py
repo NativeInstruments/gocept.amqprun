@@ -17,7 +17,6 @@ import tempfile
 import threading
 import time
 import transaction
-import unittest
 import zope.component
 
 
