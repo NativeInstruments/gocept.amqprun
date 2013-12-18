@@ -4,4 +4,7 @@ syntax: glob
 .installed.cfg
 bin
 develop-eggs
+include
+local
+lib
 parts
