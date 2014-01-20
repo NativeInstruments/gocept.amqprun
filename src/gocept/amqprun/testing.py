@@ -15,6 +15,8 @@ import plone.testing
 import plone.testing.zca
 import signal
 import string
+import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -224,6 +226,32 @@ class MainTestCase(LoopTestCase, QueueTestCase):
             self.fail('Server did not start up.')
         self.loop = gocept.amqprun.main.main_server
         self.server_started.wait()
+
+    def start_server_in_subprocess(self):
+        script = tempfile.NamedTemporaryFile(suffix='.py')
+        script.write("""
+import sys
+sys.path[:] = %(path)r
+import gocept.amqprun.main
+gocept.amqprun.main.main('%(config)s')
+        """ % dict(path=sys.path, config=self.config.name))
+        script.flush()
+        self.stdout = tempfile.TemporaryFile()
+        process = subprocess.Popen(
+            [sys.executable, script.name],
+            stdout=self.stdout, stderr=subprocess.STDOUT)
+        time.sleep(1)
+        self.pid = process.pid
+
+    def wait_for_subprocess_exit(self, timeout=30):
+        for i in range(timeout):
+            result = os.waitpid(self.pid, os.WNOHANG)
+            if result != (0, 0):
+                break
+            time.sleep(0.5)
+        else:
+            os.kill(self.pid, signal.SIGKILL)
+            self.fail('Child process did not exit')
 
     def make_config(self, package, name, mapping=None):
         zcml_base = string.Template(
