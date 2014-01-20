@@ -228,41 +228,17 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
 
 class TestMainProcess(gocept.amqprun.testing.MainTestCase):
 
-    def start_server(self):
-        self.make_config(__name__, 'process')
-        script = tempfile.NamedTemporaryFile(suffix='.py')
-        script.write("""
-import sys
-sys.path[:] = %(path)r
-import gocept.amqprun.main
-gocept.amqprun.main.main('%(config)s')
-        """ % dict(path=sys.path, config=self.config.name))
-        script.flush()
-        self.log = tempfile.TemporaryFile()
-        process = subprocess.Popen(
-            [sys.executable, script.name],
-            stdout=self.log, stderr=subprocess.STDOUT)
-        time.sleep(1)
-        self.pid = process.pid
-
     def assert_shutdown(self, signal_):
-        self.start_server()
+        self.make_config(__name__, 'process')
+        self.start_server_in_subprocess()
         self._queues.append('test.queue')
         for i in range(50):
             self.send_message('honk', 'test.routing')
         os.kill(self.pid, signal_)
-        time.sleep(1)
-        self.log.seek(0)
-        for i in range(22):
-            result = os.waitpid(self.pid, os.WNOHANG)
-            if result != (0, 0):
-                break
-            time.sleep(0.5)
-        else:
-            os.kill(self.pid, signal.SIGKILL)
-            self.fail('Child process did not exit')
+        self.wait_for_subprocess_exit()
+        self.stdout.seek(0)
         self.assertIn('Received signal %s, terminating.' % signal_,
-                      self.log.read())
+                      self.stdout.read())
 
     def test_sigterm_shuts_down_process_properly(self):
         self.assert_shutdown(signal.SIGTERM)
