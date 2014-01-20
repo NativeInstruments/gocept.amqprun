@@ -4,7 +4,9 @@
 import gocept.amqprun.interfaces
 import gocept.filestore
 import logging
+import os
 import os.path
+import signal
 import threading
 import time
 import transaction
@@ -40,8 +42,12 @@ class FileStoreReader(threading.Thread):
         log.info('starting')
         self.running = True
         while self.running:
-            self.scan()
-            time.sleep(1)
+            try:
+                self.scan()
+                time.sleep(1)
+            except:
+                log.error('Unhandled exception, terminating.', exc_info=True)
+                os.kill(os.getpid(), signal.SIGUSR1)
 
     def stop(self):
         log.info('stopping')

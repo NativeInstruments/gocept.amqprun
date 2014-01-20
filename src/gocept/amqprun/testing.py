@@ -245,13 +245,14 @@ gocept.amqprun.main.main('%(config)s')
 
     def wait_for_subprocess_exit(self, timeout=30):
         for i in range(timeout):
-            result = os.waitpid(self.pid, os.WNOHANG)
-            if result != (0, 0):
-                break
+            pid, status = os.waitpid(self.pid, os.WNOHANG)
+            if (pid, status) != (0, 0):
+                return status
             time.sleep(0.5)
         else:
             os.kill(self.pid, signal.SIGKILL)
-            self.fail('Child process did not exit')
+            self.stdout.seek(0)
+            self.fail('Child process did not exit\n' + self.stdout.read())
 
     def make_config(self, package, name, mapping=None):
         zcml_base = string.Template(
