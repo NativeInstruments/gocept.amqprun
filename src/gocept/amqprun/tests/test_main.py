@@ -141,6 +141,9 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         patcher = mock.patch('gocept.amqprun.worker.Worker')
         self.worker = patcher.start()
         self.patchers.append(patcher)
+        patcher = mock.patch('sys.exit')
+        patcher.start()
+        self.patchers.append(patcher)
 
     def tearDown(self):
         for patcher in self.patchers:
