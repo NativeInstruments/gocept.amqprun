@@ -8,6 +8,7 @@ import gocept.amqprun.worker
 import logging
 import pkg_resources
 import signal
+import sys
 import threading
 import time
 import zope.component
@@ -55,8 +56,13 @@ def main(config_file):
             worker.stop()
         server.stop()
 
+    def stop_server_on_error(signum, frame):
+        stop_server(signum, frame)
+        server.exit_status = 1
+
     signal.signal(signal.SIGINT, stop_server)
     signal.signal(signal.SIGTERM, stop_server)
+    signal.signal(signal.SIGUSR1, stop_server_on_error)
 
     workers = []
     for i in range(conf.worker.amount):
@@ -80,3 +86,4 @@ def main(config_file):
     server_thread.join()
     log.info('Exiting')
     main_server = None
+    sys.exit(server.exit_status)

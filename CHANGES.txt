@@ -4,7 +4,9 @@ CHANGES
 0.11 (unreleased)
 -----------------
 
-- Nothing changed yet.
+- Crash the process on filesystem errors for <amqp:readfiles>. Previously only
+  the file reading thread crashed, but the process kept running, unaware that
+  it now was not doing its job anymore, since the thread had died.
 
 
 0.10 (2013-05-28)
