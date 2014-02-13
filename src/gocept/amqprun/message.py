@@ -29,7 +29,7 @@ class Message(object):
         header = header.copy()
         result = pika.spec.BasicProperties()
         result.timestamp = time.time()
-        result.delivery_mode = 2 # persistent
+        result.delivery_mode = 2  # persistent
         result.message_id = email.utils.make_msgid('gocept.amqprun')
         for key in dir(result):
             value = header.pop(key, self)
