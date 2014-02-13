@@ -3,14 +3,20 @@
 
 import gocept.amqprun.handler
 import gocept.amqprun.interfaces
+import logging
 import os.path
 import re
+import time
+import transaction
 import zope.component.zcml
 import zope.configuration.fields
 import zope.event
 import zope.interface
 import zope.schema
 import zope.xmlpickle
+
+
+log = logging.getLogger(__name__)
 
 
 class FileWriter(object):
@@ -22,33 +28,11 @@ class FileWriter(object):
         self.pattern = pattern
 
     def __call__(self, message):
-        path = message.generate_filename(self.pattern)
-        directory = os.path.join(self.directory, os.path.dirname(path))
-        filename = os.path.basename(path)
-
-        self.ensure_directory(directory)
-
-        self.write(message.body,
-                   directory, filename)
-        self.write(zope.xmlpickle.dumps(message.header),
-                   directory, self.header_filename(filename))
-
-        zope.event.notify(gocept.amqprun.interfaces.MessageStored(
-            message, path))
-
-    def write(self, content, *path):
-        output = open(os.path.join(*path), 'w')
-        output.write(content)
-        output.close()
-
-    def ensure_directory(self, path):
-        path = path.replace(self.directory, '')
-        parts = path.split(os.sep)
-        directory = self.directory
-        for d in parts:
-            directory = os.path.join(directory, d)
-            if not os.path.exists(directory):
-                os.mkdir(directory)
+        filename = message.generate_filename(self.pattern)
+        dm = FileDataManager(message, self.directory, filename)
+        transaction.get().join(dm)
+        zope.event.notify(
+            gocept.amqprun.interfaces.MessageStored(message, filename))
 
     @staticmethod
     def header_filename(filename):
@@ -59,6 +43,57 @@ class FileWriter(object):
     def is_header_file(filename):
         basename, extension = os.path.splitext(filename)
         return basename.endswith('.header')
+
+
+class FileDataManager(object):
+
+    def __init__(self, message, base_directory, path):
+        self.message = message
+        self.base_directory = base_directory
+        self.path = path
+
+    def abort(self, transaction):
+        pass
+
+    def tpc_begin(self, transaction):
+        pass
+
+    def commit(self, transaction):
+        pass
+
+    def tpc_abort(self, transaction):
+        pass
+
+    def tpc_vote(self, transaction):
+        directory = os.path.join(
+            self.base_directory, os.path.dirname(self.path))
+        filename = os.path.basename(self.path)
+        log.debug('Writing message to %s%s' % (directory, filename))
+        self._ensure_directory(directory)
+        self._write(self.message.body, directory, filename)
+        self._write(zope.xmlpickle.dumps(self.message.header),
+                    directory, FileWriter.header_filename(filename))
+
+    def tpc_finish(self, transaction):
+        pass
+
+    def sortKey(self):
+        # Try to sort last, so that we vote last.
+        return "~gocept.amqprun.writefiles:%f" % time.time()
+
+    def _write(self, content, *path):
+        output = open(os.path.join(*path), 'w')
+        output.write(content)
+        output.close()
+
+    def _ensure_directory(self, path):
+        path = path.replace(self.base_directory, '')
+        parts = path.split(os.sep)
+        directory = self.base_directory
+        for d in parts:
+            directory = os.path.join(directory, d)
+            if not os.path.exists(directory):
+                os.mkdir(directory)
 
 
 class IWriteFilesDirective(zope.interface.Interface):

@@ -1,0 +1,17 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:amqp="http://namespaces.gocept.com/amqp">
+
+  <include package="zope.component" file="meta.zcml" />
+  <include package="gocept.amqprun" file="meta.zcml" />
+
+  <amqp:writefiles
+    routing_key="${routing_key}"
+    queue_name="${queue_name}"
+    directory="${directory}"
+    pattern="${pattern}"
+    arguments="${arguments}"
+    />
+
+  <subscriber handler="gocept.amqprun.tests.writefiles_error.provoke_error" />
+
+</configure>
