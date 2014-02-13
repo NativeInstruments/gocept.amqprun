@@ -9,6 +9,7 @@ import shutil
 import string
 import tempfile
 import time
+import transaction
 import unittest
 import zope.component
 import zope.xmlpickle
@@ -40,6 +41,7 @@ class FileWriterTest(unittest.TestCase):
         writer = FileWriter(self.tmpdir, pattern='foo')
         message = self.create_message()
         writer(message)
+        transaction.commit()
         contents = open(os.path.join(self.tmpdir, 'foo')).read()
         self.assertEqual(message.body, contents)
 
@@ -49,6 +51,7 @@ class FileWriterTest(unittest.TestCase):
         writer = FileWriter(self.tmpdir, pattern='foo/bar/baz')
         message = self.create_message()
         writer(message)
+        transaction.commit()
         filename = os.path.join(
             self.tmpdir, 'foo', 'bar', 'baz')
         self.assertTrue(os.path.exists(filename))
@@ -61,6 +64,7 @@ class FileWriterTest(unittest.TestCase):
         writer = FileWriter(self.tmpdir, pattern='foo.xml')
         message = self.create_message()
         writer(message)
+        transaction.commit()
         self.assertEqual(2, len(os.listdir(self.tmpdir)))
         self.assertTrue(os.path.exists(os.path.join(self.tmpdir, 'foo.xml')))
         contents = open(os.path.join(self.tmpdir, 'foo.header.xml')).read()
@@ -77,6 +81,7 @@ class FileWriterTest(unittest.TestCase):
             handler, (gocept.amqprun.interfaces.IMessageStored,))
         writer = FileWriter(self.tmpdir, pattern='foo/bar/baz')
         writer(self.create_message())
+        transaction.commit()
         self.assertEqual('foo/bar/baz', self.event.path)
 
 
@@ -154,4 +159,24 @@ class WriterIntegrationTest(gocept.amqprun.testing.MainTestCase):
         body = 'This is only a test.'
         self.send_message(body, routing_key='test.data')
         self.wait_for_processing()
-        self.assertEqual(2, len(os.listdir(self.tmpdir)))
+        for i in range(100):
+            if 2 == len(os.listdir(self.tmpdir)):
+                break
+            time.sleep(0.05)
+        else:
+            self.fail('Message was not written to disk.')
+
+    def test_message_should_not_be_written_on_error(self):
+        self.assertEqual(0, len(os.listdir(self.tmpdir)))
+        self.make_config(
+            __name__, 'writefiles-error', dict(
+                routing_key='test.data',
+                directory=self.tmpdir,
+                queue_name=self.get_queue_name('test'),
+                pattern='', arguments=''))
+        self.start_server()
+        body = 'This is only a test.'
+        self.send_message(body, routing_key='test.data')
+        self.wait_for_processing()
+        time.sleep(1)
+        self.assertEqual(0, len(os.listdir(self.tmpdir)))

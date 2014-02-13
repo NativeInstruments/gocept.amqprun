@@ -4,7 +4,10 @@ CHANGES
 0.12 (unreleased)
 -----------------
 
-- Nothing changed yet.
+- Include <amqp:writefiles> into the transaction handling, i.e. write to file
+  only on commit. Previously, when an error occurred e.g. inside the
+  MessageStored event, duplicate files would be written (each time the message
+  was processed again on retry after the error).
 
 
 0.11 (2014-01-21)
