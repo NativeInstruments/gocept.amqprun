@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.12 (unreleased)
+0.12 (2014-02-13)
 -----------------
 
 - Include <amqp:writefiles> into the transaction handling, i.e. write to file
