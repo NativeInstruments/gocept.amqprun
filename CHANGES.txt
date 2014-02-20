@@ -1,8 +1,8 @@
 CHANGES
 =======
 
-0.13 (unreleased)
------------------
+0.12.1 (2014-02-20)
+-------------------
 
 - Add safeguard that two handlers cannot bind to the same queue.
 
