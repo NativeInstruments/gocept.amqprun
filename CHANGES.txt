@@ -4,7 +4,7 @@ CHANGES
 0.12.2 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Add ``xfilename`` variable to the ``<amqp:writefiles pattern="">`` setting.
 
 
 0.12.1 (2014-02-20)

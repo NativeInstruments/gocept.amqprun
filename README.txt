@@ -263,6 +263,7 @@ variables are available:
 
   :date: The date the message arrived, formatted ``%Y-%m-%d``
   :msgid: The value of the message-id header
+  :xfilename: The value of the X-Filename header
   :routing_key: The routing key of the message
   :unique: A token that guarantees the filename will be unique in its directory
 
