@@ -164,9 +164,15 @@ class Server(object, pika.connection.NullReconnectionStrategy):
         if not self.setup_handlers:
             return
         assert self.channel is not None
+        bound_queues = {}
         for name, handler in zope.component.getUtilitiesFor(
                 gocept.amqprun.interfaces.IHandler):
             queue_name = unicode(handler.queue_name).encode('UTF-8')
+            if queue_name in bound_queues:
+                raise ValueError('Queue %r already bound to handler for %r' % (
+                    queue_name, bound_queues[queue_name]))
+            else:
+                bound_queues[queue_name] = handler.routing_key
             handler_args = handler.arguments or {}
             arguments = dict(
                 (unicode(key).encode('UTF-8'), unicode(value).encode('UTF-8'))
