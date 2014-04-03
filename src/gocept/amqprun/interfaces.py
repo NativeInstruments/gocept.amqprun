@@ -31,6 +31,14 @@ class IHandler(zope.interface.Interface):
 
         """
 
+    def exception():
+        """Handle an exception that occurred during __call__ or
+        the transaction commit.
+
+        Returns a sequence of IMessage objects to be passed to AMQP.
+
+        """
+
 
 class IMessage(zope.interface.Interface):
     """A message received from or sent to the queue."""
