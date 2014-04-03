@@ -22,6 +22,9 @@ class Handler(object):
     def __call__(self, message):
         return self.handler_function(message) or []
 
+    def exception(self, exception):
+        return []
+
 
 def declare(queue_name, routing_key, arguments=None, principal=None):
     return lambda handler_function: Handler(

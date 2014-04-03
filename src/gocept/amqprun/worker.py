@@ -71,25 +71,36 @@ class Worker(threading.Thread):
                     session.join_transaction()
                     try:
                         response = handler(message)
-                        for msg in response:
-                            self.log.info(
-                                'Sending message to %s in response '
-                                'to message %s', msg.routing_key,
-                                message.delivery_tag)
-                            session.send(msg)
+                        self._send_response(session, message, response)
                         transaction.commit()
-                    except:
+                    except Exception:
                         self.log.error(
                             'Error while processing message %s',
-                            message.delivery_tag,
-                            exc_info=True)
+                            message.delivery_tag, exc_info=True)
                         transaction.abort()
+                        if hasattr(handler, 'exception'):  # BBB pre-0.13
+                            try:
+                                response = handler.exception()
+                                self._send_response(session, message, response)
+                                transaction.commit()
+                            except:
+                                self.log.error(
+                                    'Error during exception handling',
+                                    exc_info=True)
+                                transaction.abort()
                 except:
                     self.log.error(
                         'Unhandled exception, prevent thread from crashing',
                         exc_info=True)
                 finally:
                     end_interaction()
+
+    def _send_response(self, session, message, response):
+        for msg in response:
+            self.log.info(
+                'Sending message to %s in response to message %s',
+                msg.routing_key, message.delivery_tag)
+            session.send(msg)
 
     def stop(self):
         self.log.info('stopping')
