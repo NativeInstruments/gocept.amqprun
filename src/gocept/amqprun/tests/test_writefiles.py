@@ -12,6 +12,7 @@ import time
 import transaction
 import unittest
 import zope.component
+import zope.configuration.xmlconfig
 import zope.xmlpickle
 
 
