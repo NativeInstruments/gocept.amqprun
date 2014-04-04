@@ -10,5 +10,9 @@
     component="gocept.amqprun.tests.integration.handler_error"
     name="error"
     />
+  <utility
+    component="gocept.amqprun.tests.integration.handler_iresponse"
+    name="response"
+    />
 
 </configure>

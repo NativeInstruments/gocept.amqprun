@@ -3,10 +3,12 @@
 
 import Queue
 import gocept.amqprun.handler
+import gocept.amqprun.interfaces
 import mock
 import time
 import transaction
 import unittest
+import zope.interface
 
 
 class WorkerTest(unittest.TestCase):
@@ -90,16 +92,42 @@ class WorkerTest(unittest.TestCase):
 
     @mock.patch('transaction.commit')
     @mock.patch('transaction.abort')
-    def test_on_exception_transaction_should_abort(self, abort, commit):
-        calls = []
-        abort.side_effect = lambda: calls.append('abort')
-        commit.side_effect = lambda: calls.append('commit')
+    def test_on_exception_transaction_should_abort(self, mock1, mock2):
         self._create_worker()
         provoke_error = mock.Mock(side_effect=RuntimeError('provoked error'))
         self.queue.put(self._create_task(provoke_error))
         time.sleep(0.1)
         self.assertEqual(0, self.queue.qsize())
         self.assertTrue(provoke_error.called)
+        self.assertFalse(transaction.commit.called)
+        self.assertTrue(transaction.abort.called)
+
+    @mock.patch('transaction.commit')
+    @mock.patch('transaction.abort')
+    def test_on_exception_with_response_transaction_should_abort_then_commit(
+            self, abort, commit):
+        calls = []
+        abort.side_effect = lambda: calls.append('abort')
+        self.commit_called = False
+
+        def commit_effect():
+            if not self.commit_called:
+                self.commit_called = True
+                raise RuntimeError('provoked error')
+            calls.append('commit')
+
+        commit.side_effect = commit_effect
+
+        self._create_worker()
+        response = mock.Mock()
+        response.responses = []
+        response.exception.return_value = []
+        zope.interface.alsoProvides(
+            response, gocept.amqprun.interfaces.IResponse)
+        self.queue.put(self._create_task(lambda x: response))
+        time.sleep(0.1)
+        self.assertEqual(0, self.queue.qsize())
+        self.assertTrue(response.exception.called)
         self.assertEqual(['abort', 'commit'], calls)
 
     @mock.patch('transaction.commit')

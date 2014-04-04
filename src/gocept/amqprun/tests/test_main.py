@@ -105,6 +105,32 @@ class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
             self.wait_for_message(timeout=3)
             self.assertEquals(1, len(self.messages_received))
 
+    def test_exception_handling_with_iresponse_acks_original_message(self):
+        self.assertEquals([], self.messages_received)
+        self.expect_message_on('test.iresponse-error')
+
+        def ack(session):
+            self.ack_called = True
+            original_ack(session)
+        self.ack_called = False
+        original_ack = gocept.amqprun.session.Session.ack_received_message
+
+        def flush(session):
+            if not self.flush_called:
+                self.flush_called = True
+                raise RuntimeError('provoked error')
+            original_flush(session)
+        self.flush_called = False
+        original_flush = gocept.amqprun.session.Session.flush
+
+        with mock.patch.multiple('gocept.amqprun.session.Session',
+                                 ack_received_message=ack, flush=flush):
+            self.send_message('blarf', routing_key='test.iresponse')
+            self.wait_for_message()
+            self.assertTrue(self.ack_called)
+            self.assertEquals(1, len(self.messages_received))
+            self.assertTrue(self.messages_received[0]._exception)
+
 
 class SendMessages(gocept.amqprun.testing.MainTestCase):
 

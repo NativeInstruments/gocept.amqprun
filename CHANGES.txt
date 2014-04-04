@@ -4,7 +4,7 @@ CHANGES
 0.13.0 (unreleased)
 -------------------
 
-- Introduce ``IHandler.exception()`` for transaction-integrated error handling.
+- Introduce ``IResponse`` for transaction-integrated exception handling.
 
 
 0.12.2 (2014-02-20)
