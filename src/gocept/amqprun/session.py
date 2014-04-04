@@ -20,7 +20,15 @@ class Session(object):
         self._needs_to_join = True
         self.channel = channel
         self.received_message = received_message
-        self.received_tag =getattr(self.received_message, 'delivery_tag', None)
+
+    @property
+    def received_message(self):
+        return self._received_message
+
+    @received_message.setter
+    def received_message(self, value):
+        self._received_message = value
+        self.received_tag = getattr(value, 'delivery_tag', None)
 
     def send(self, message):
         self.join_transaction()
@@ -28,7 +36,7 @@ class Session(object):
 
     def reset(self):
         self.messages[:] = []
-        self.message_to_ack = None
+        self.received_message = None
         self._needs_to_join = True
 
     def join_transaction(self):

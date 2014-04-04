@@ -1,6 +1,7 @@
 # Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+from gocept.amqprun.interfaces import IResponse
 import Queue
 import logging
 import threading
@@ -69,19 +70,27 @@ class Worker(threading.Thread):
                     if handler.principal is not None:
                         create_interaction(handler.principal)
                     session.join_transaction()
+                    response = None
                     try:
                         response = handler(message)
-                        self._send_response(session, message, response)
+                        if IResponse.providedBy(response):
+                            response_messages = response.responses
+                        else:
+                            response_messages = response
+                        self._send_response(
+                            session, message, response_messages)
                         transaction.commit()
                     except Exception:
                         self.log.error(
                             'Error while processing message %s',
                             message.delivery_tag, exc_info=True)
                         transaction.abort()
-                        if hasattr(handler, 'exception'):  # BBB pre-0.13
+                        if IResponse.providedBy(response):
                             try:
-                                response = handler.exception()
-                                self._send_response(session, message, response)
+                                session.received_message = message
+                                error_messages = response.exception()
+                                self._send_response(
+                                    session, message, error_messages)
                                 transaction.commit()
                             except:
                                 self.log.error(

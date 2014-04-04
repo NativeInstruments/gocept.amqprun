@@ -27,15 +27,23 @@ class IHandler(zope.interface.Interface):
     def __call__(message):
         """Handle message.
 
-        Returns a sequence of IMessage objects to be passed to AMQP.
+        Returns either a sequence of IMessage objects to be passed to AMQP,
+        or an IResponse object.
 
         """
 
-    def exception():
-        """Handle an exception that occurred during __call__ or
-        the transaction commit.
 
-        Returns a sequence of IMessage objects to be passed to AMQP.
+class IResponse(zope.interface.Interface):
+
+    responses = zope.interface.Attribute(
+        'Sequence of IMessage objects (responses to original message)')
+
+    def exception():
+        """Handle an exception that occurred during the transaction commit.
+
+        Returns a sequence of IMessage objects (error messages) to be passed to
+        AMQP. Note: The original message will also be acked -- if that's not
+        desired, implementers should raise an exception instead.
 
         """
 
