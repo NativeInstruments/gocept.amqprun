@@ -6,6 +6,11 @@ CHANGES
 
 - Introduce ``IResponse`` for transaction-integrated exception handling.
 
+- Fix timing bug: when the remote side closes the socket and at the same time a
+  channel switch is triggered, this used to break down (since the socket is
+  closed). We now ignore the channel switch attempt and simply wait for the
+  reconnect, which opens a new channel anyway.
+
 
 0.12.2 (2014-02-20)
 -------------------

@@ -388,6 +388,22 @@ class DyingRabbitTest(
         # Do something with the channel
         self.server.channel.tx_select()
 
+    def test_remote_close_should_not_break_switch_channel(self):
+        port = random.randint(30000, 40000)
+        pid = self.tcpwatch(port)
+        self.start_server(port)
+        self.assertTrue(self.server.connection.is_alive())
+
+        os.kill(pid, signal.SIGINT)
+        self.server.switch_channel()
+        self.pid = self.tcpwatch(port)
+        time.sleep(1)
+
+        self.assertTrue(self.thread.is_alive())
+        self.assertTrue(self.server.connection.is_alive())
+        # Do something with the channel
+        self.server.channel.tx_select()
+
     def tcpwatch(self, port):
         script = tempfile.NamedTemporaryFile(suffix='.py')
         script.write("""
