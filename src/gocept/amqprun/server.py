@@ -113,7 +113,12 @@ class Server(object, pika.connection.NullReconnectionStrategy):
     def open_channel(self):
         assert self.channel is None
         log.debug('Opening new channel')
-        self.channel = self.connection.channel()
+        try:
+            self.channel = self.connection.channel()
+        except pika.exceptions.ChannelClosed:
+            log.debug('Opening new channel aborted due to closed connection,'
+                      ' since a reconnect should happen soon anyway.')
+            return
         self._declare_and_bind_queues()
         self._channel_opened = time.time()
 
