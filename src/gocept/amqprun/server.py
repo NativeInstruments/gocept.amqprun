@@ -128,12 +128,15 @@ class Server(object, pika.connection.NullReconnectionStrategy):
             return
         if self._switching_channels:
             return
-        log.info('Switching to a new channel')
         locked = self.connection.lock.acquire(False)
         if not locked:
+            log.debug(
+                'Want to switch channel, but connection lock not available;'
+                ' will try again later.')
             return
         try:
             self._switching_channels = True
+            log.info('Switching to a new channel')
             for consumer_tag in self.channel.callbacks.keys():
                 self.channel.basic_cancel(consumer_tag)
             while True:
