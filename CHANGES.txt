@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.13.0 (unreleased)
+0.13.0 (2014-04-16)
 -------------------
 
 - Introduce ``IResponse`` for transaction-integrated exception handling.
