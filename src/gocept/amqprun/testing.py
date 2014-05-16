@@ -22,6 +22,8 @@ import threading
 import time
 import unittest
 import zope.component
+import zope.component.globalregistry
+import zope.component.hooks
 import zope.event
 
 
@@ -180,6 +182,11 @@ class LoopTestCase(unittest.TestCase):
         return thread
 
 
+def set_zca_registry(registry):
+    plone.testing.zca._hookRegistry(registry)
+    zope.component.getSiteManager.reset()
+
+
 class MainTestCase(LoopTestCase, QueueTestCase):
 
     def setUp(self):
@@ -189,7 +196,9 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         gocept.amqprun.worker.Worker.timeout = 0.05
         self.orig_signal = signal.signal
         signal.signal = mock.Mock()
-        plone.testing.zca.pushGlobalRegistry()
+        self.orig_registry = zope.component.getGlobalSiteManager()
+        set_zca_registry(
+            zope.component.globalregistry.BaseGlobalComponents('amqprun-main'))
 
     def tearDown(self):
         import gocept.amqprun.interfaces
@@ -199,7 +208,7 @@ class MainTestCase(LoopTestCase, QueueTestCase):
             if isinstance(t, gocept.amqprun.worker.Worker):
                 t.stop()
         signal.signal = self.orig_signal
-        plone.testing.zca.popGlobalRegistry()
+        set_zca_registry(self.orig_registry)
         super(MainTestCase, self).tearDown()
         gocept.amqprun.worker.Worker.timeout = self._timeout
         # heuristic to avoid accreting more and more debug log output handlers

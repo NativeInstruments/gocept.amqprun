@@ -4,7 +4,8 @@ CHANGES
 0.13.1 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Run integration tests (MainTestCase) in a separate ZCA, isolated from any
+  registrations that might have been done by other tests.
 
 
 0.13.0 (2014-04-16)
