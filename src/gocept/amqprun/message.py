@@ -7,6 +7,7 @@ import gocept.amqprun.interfaces
 import pika.spec
 import string
 import time
+import types
 import zope.interface
 
 
@@ -20,6 +21,9 @@ class Message(object):
         if not isinstance(header, pika.spec.BasicProperties):
             header = self.convert_header(header)
         self.header = header
+        if not isinstance(body, (basestring, types.NoneType)):
+            raise ValueError(
+                'Message body must be basestring, not %s' % type(body))
         self.body = body
         self.delivery_tag = delivery_tag
         self.routing_key = (
