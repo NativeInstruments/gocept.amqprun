@@ -332,7 +332,11 @@ variables:
     default: guest
 
 :AMQP_VIRTUALHOST:
-    default: /
+    default: None, so a vhost with a temporary name is created and
+    deleted automatically (using ``AMQP_RABBITMQCTL`` command)
+
+:AMQP_RABBITMQCTL:
+   default: 'sudo rabbitmqctl'
 
 The source code is available in the mercurial repository at
 https://code.gocept.com/hg/public/gocept.amqprun

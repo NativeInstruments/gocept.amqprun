@@ -7,6 +7,8 @@ CHANGES
 - Run integration tests (MainTestCase) in a separate ZCA, isolated from any
   registrations that might have been done by other tests.
 
+- Create temporary virtualhost on the rabbitmq server per test run.
+
 
 0.13.0 (2014-04-16)
 -------------------
