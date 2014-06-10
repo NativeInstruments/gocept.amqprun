@@ -58,12 +58,20 @@ ZCML_LAYER = ZCMLSandbox(
 class QueueLayer(plone.testing.Layer):
 
     defaultBases = [ZCML_LAYER]
+    RABBITMQCTL_COMMAND = os.environ.get(
+        'AMQP_RABBITMQCTL', 'sudo rabbitmqctl')
 
     def setUp(self):
         self['amqp-hostname'] = os.environ.get('AMQP_HOSTNAME', 'localhost')
         self['amqp-username'] = os.environ.get('AMQP_USERNAME', 'guest')
         self['amqp-password'] = os.environ.get('AMQP_PASSWORD', 'guest')
-        self['amqp-virtualhost'] = os.environ.get('AMQP_VIRTUALHOST', '/')
+        self['amqp-virtualhost'] = os.environ.get('AMQP_VIRTUALHOST', None)
+        if self['amqp-virtualhost'] is None:
+            self['amqp-virtualhost'] = '/test.%f' % time.time()
+            self.rabbitmqctl('add_vhost %s' % self['amqp-virtualhost'])
+            self.rabbitmqctl('set_permissions -p %s guest ".*" ".*" ".*"'
+                             % self['amqp-virtualhost'])
+            self['amqp-virtualhost-created'] = True
         self['amqp-connection'] = amqp.Connection(
             host=self['amqp-hostname'],
             userid=self['amqp-username'],
@@ -74,6 +82,15 @@ class QueueLayer(plone.testing.Layer):
     def tearDown(self):
         self['amqp-channel'].close()
         self['amqp-connection'].close()
+        if 'amqp-virtualhost-created' in self:
+            self.rabbitmqctl('delete_vhost %s' % self['amqp-virtualhost'])
+
+    def rabbitmqctl(self, parameter):
+        command = '%s %s' % (self.RABBITMQCTL_COMMAND, parameter)
+        stdout = subprocess.check_output(
+            'LANG=C %s' % command, stderr=subprocess.STDOUT, shell=True)
+        if 'done' not in stdout:
+            raise RuntimeError('%s failed:\n%s' % command, stdout)
 
 QUEUE_LAYER = QueueLayer()
 
