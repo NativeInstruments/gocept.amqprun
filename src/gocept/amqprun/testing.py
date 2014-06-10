@@ -147,7 +147,7 @@ class QueueTestCase(unittest.TestCase):
         params = dict(hostname=self.layer['amqp-hostname'],
                       username=self.layer['amqp-username'],
                       password=self.layer['amqp-password'],
-                      virtualhost=self.layer['amqp-virtualhost'])
+                      virtual_host=self.layer['amqp-virtualhost'])
         # XXX not DRY, the default value is declared in Server.__init__()
         setup_handlers = kw.pop('setup_handlers', True)
         params.update(kw)
