@@ -81,9 +81,12 @@ class QueueLayer(plone.testing.Layer):
 
     def tearDown(self):
         self['amqp-channel'].close()
+        del self['amqp-channel']
         self['amqp-connection'].close()
+        del self['amqp-connection']
         if 'amqp-virtualhost-created' in self:
             self.rabbitmqctl('delete_vhost %s' % self['amqp-virtualhost'])
+            del self['amqp-virtualhost-created']
 
     def rabbitmqctl(self, parameter):
         command = '%s %s' % (self.RABBITMQCTL_COMMAND, parameter)
