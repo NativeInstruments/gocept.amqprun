@@ -23,7 +23,6 @@ import time
 import unittest
 import zope.component
 import zope.component.globalregistry
-import zope.component.hooks
 import zope.event
 
 
