@@ -68,8 +68,9 @@ class QueueLayer(plone.testing.Layer):
         if self['amqp-virtualhost'] is None:
             self['amqp-virtualhost'] = '/test.%f' % time.time()
             self.rabbitmqctl('add_vhost %s' % self['amqp-virtualhost'])
-            self.rabbitmqctl('set_permissions -p %s guest ".*" ".*" ".*"'
-                             % self['amqp-virtualhost'])
+            self.rabbitmqctl(
+                'set_permissions -p %s %s ".*" ".*" ".*"'
+                % (self['amqp-virtualhost'], self['amqp-username']))
             self['amqp-virtualhost-created'] = True
         self['amqp-connection'] = amqp.Connection(
             host=self['amqp-hostname'],
