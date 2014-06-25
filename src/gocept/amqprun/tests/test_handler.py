@@ -92,7 +92,7 @@ class ErrorHandlingHandlerTest(
     def get_declaration(self):
         import gocept.amqprun.handler
 
-        class ExampleHandler(gocept.amqprun.handler.ResponseHandler):
+        class ExampleHandler(gocept.amqprun.handler.ErrorHandlingHandler):
 
             queue_name = 'test.foo'
             routing_key = 'routing.key'
@@ -111,11 +111,11 @@ class ErrorHandlingHandlerTest(
         self.assertTrue(
             zope.interface.verify.verifyObject(
                 gocept.amqprun.interfaces.IHandler,
-                gocept.amqprun.handler.ResponseHandler()))
+                gocept.amqprun.handler.ErrorHandlingHandler()))
         self.assertTrue(
             zope.interface.verify.verifyObject(
                 gocept.amqprun.interfaces.IResponse,
-                gocept.amqprun.handler.ResponseHandler()))
+                gocept.amqprun.handler.ErrorHandlingHandler()))
 
     def test_call_should_call_run(self):
         handler = self.get_handler()
