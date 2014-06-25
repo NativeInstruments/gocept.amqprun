@@ -1,8 +1,10 @@
 CHANGES
 =======
 
-0.13.1 (unreleased)
+0.14.0 (unreleased)
 -------------------
+
+- Introduce ``gocept.amqprun.handler.ErrorHandlingHandler`` base class.
 
 - Run integration tests (MainTestCase) in a separate ZCA, isolated from any
   registrations that might have been done by other tests.
