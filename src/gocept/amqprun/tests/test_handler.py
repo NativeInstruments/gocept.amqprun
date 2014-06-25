@@ -1,6 +1,7 @@
 # Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+import gocept.testing.assertion
 import mock
 import unittest
 import zope.interface.verify
@@ -78,3 +79,74 @@ class TestHandler(unittest.TestCase):
         self.assertEquals('queue.name', handler.queue_name)
         self.assertEquals('routing.key', handler.routing_key)
         self.assertEquals('zope.user', handler.principal)
+
+
+class ErrorHandlingHandlerTest(
+        unittest.TestCase, gocept.testing.assertion.String):
+
+    def setUp(self):
+        import gocept.amqprun.interfaces
+        self.message = mock.Mock(list(gocept.amqprun.interfaces.IMessage))
+        self.message.body = 'foo'
+
+    def get_declaration(self):
+        import gocept.amqprun.handler
+
+        class ExampleHandler(gocept.amqprun.handler.ResponseHandler):
+
+            queue_name = 'test.foo'
+            routing_key = 'routing.key'
+            error_routing_key = 'rounting.key.error'
+
+            run = mock.Mock()
+
+        return ExampleHandler
+
+    def get_handler(self):
+        return self.get_declaration()(self.message)
+
+    def test_should_conform_to_protocol(self):
+        import gocept.amqprun.interfaces
+        import gocept.amqprun.handler
+        self.assertTrue(
+            zope.interface.verify.verifyObject(
+                gocept.amqprun.interfaces.IHandler,
+                gocept.amqprun.handler.ResponseHandler()))
+        self.assertTrue(
+            zope.interface.verify.verifyObject(
+                gocept.amqprun.interfaces.IResponse,
+                gocept.amqprun.handler.ResponseHandler()))
+
+    def test_call_should_call_run(self):
+        handler = self.get_handler()
+        handler.handle()
+        handler.run.assert_called_with()
+
+    def test_returns_error_response_on_exception(self):
+        handler = self.get_handler()
+
+        def run(self):
+            self.send('foo', 'success')
+            raise RuntimeError('asdf')
+        handler.run = run.__get__(handler)
+        handler.handle()
+        self.assertEqual(1, len(handler.responses))
+        error = handler.responses[0]
+        self.assertEqual(handler.error_routing_key, error.routing_key)
+        self.assertStartsWith('RuntimeError: asdf\nTraceback', error.body)
+
+    def test_raises_exceptions_defined_in_error_reraise(self):
+        handler = self.get_handler()
+        handler.run.side_effect = RuntimeError('asdf')
+        handler.error_reraise = RuntimeError
+        with self.assertRaises(RuntimeError):
+            handler.handle()
+
+    def test_wrapping_exceptions_should_not_fail_with_null_bytes(self):
+        handler = self.get_handler()
+        handler.run.side_effect = RuntimeError(
+            'E: ONT\x00OE_SCH_ZERO_QTY\x00; Cannot perform scheduling'
+            ' on a line with 0 quantity.')
+        handler.handle()
+        error = handler.responses[0]
+        self.assertIn('E: ONTOE_SCH_ZERO_QTY; Cannot perform', error.body)
