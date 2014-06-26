@@ -40,7 +40,7 @@ class FileStoreReader(threading.Thread):
         return self.running
 
     def run(self):
-        log.info('starting')
+        log.info('starting to watch %s', self.filestore.path)
         self.running = True
         while self.running:
             try:
