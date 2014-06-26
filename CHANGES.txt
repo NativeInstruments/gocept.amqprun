@@ -11,6 +11,8 @@ CHANGES
 
 - Create temporary virtualhost on the rabbitmq server per test run.
 
+- Improved test-case method ``send_message`` to take headers as a parameter.
+
 
 0.13.0 (2014-04-16)
 -------------------
