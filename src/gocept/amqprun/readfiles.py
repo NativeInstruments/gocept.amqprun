@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
+# Copyright (c) 2010-2014 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import gocept.amqprun.interfaces
@@ -11,6 +11,7 @@ import threading
 import time
 import transaction
 import zope.component
+import zope.component.zcml
 import zope.configuration.fields
 import zope.interface
 import zope.schema
