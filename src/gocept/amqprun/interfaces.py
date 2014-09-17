@@ -38,7 +38,7 @@ class IResponse(zope.interface.Interface):
     responses = zope.interface.Attribute(
         'Sequence of IMessage objects (responses to original message)')
 
-    def exception():
+    def exception(exc_info):
         """Handle an exception that occurred during the transaction commit.
 
         Returns a sequence of IMessage objects (error messages) to be passed to

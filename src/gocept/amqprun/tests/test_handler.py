@@ -3,6 +3,7 @@
 
 import gocept.testing.assertion
 import mock
+import sys
 import unittest
 import zope.interface.verify
 
@@ -97,6 +98,7 @@ class ErrorHandlingHandlerTest(
             queue_name = 'test.foo'
             routing_key = 'routing.key'
             error_routing_key = 'rounting.key.error'
+            error_reraise = ()
 
             run = mock.Mock()
 
@@ -122,6 +124,18 @@ class ErrorHandlingHandlerTest(
         handler.handle()
         handler.run.assert_called_with()
 
+    def call_handler(self, handler):
+        # This is the core of what the Worker mainloop does.
+        try:
+            handler.handle()
+        except:
+            return handler.exception(sys.exc_info())
+        else:
+            if handler.error is not None:
+                return handler.exception(handler.error)
+            else:
+                return handler.responses
+
     def test_returns_error_response_on_exception(self):
         handler = self.get_handler()
 
@@ -129,9 +143,9 @@ class ErrorHandlingHandlerTest(
             self.send('foo', 'success')
             raise RuntimeError('asdf')
         handler.run = run.__get__(handler)
-        handler.handle()
-        self.assertEqual(1, len(handler.responses))
-        error = handler.responses[0]
+        responses = self.call_handler(handler)
+        self.assertEqual(1, len(responses))
+        error = responses[0]
         self.assertEqual(handler.error_routing_key, error.routing_key)
         self.assertStartsWith('RuntimeError: asdf\nTraceback', error.body)
 
@@ -147,6 +161,6 @@ class ErrorHandlingHandlerTest(
         handler.run.side_effect = RuntimeError(
             'E: ONT\x00OE_SCH_ZERO_QTY\x00; Cannot perform scheduling'
             ' on a line with 0 quantity.')
-        handler.handle()
-        error = handler.responses[0]
+        responses = self.call_handler(handler)
+        error = responses[0]
         self.assertIn('E: ONTOE_SCH_ZERO_QTY; Cannot perform', error.body)

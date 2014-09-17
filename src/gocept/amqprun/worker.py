@@ -4,6 +4,7 @@
 from gocept.amqprun.interfaces import IResponse
 import Queue
 import logging
+import sys
 import threading
 import transaction
 
@@ -74,6 +75,10 @@ class Worker(threading.Thread):
                     try:
                         response = handler(message)
                         if IResponse.providedBy(response):
+                            if response.error is not None:
+                                self._handle_exception(
+                                    response.error, session, message, response)
+                                continue
                             response_messages = response.responses
                         else:
                             response_messages = response
@@ -81,22 +86,8 @@ class Worker(threading.Thread):
                             session, message, response_messages)
                         transaction.commit()
                     except Exception:
-                        self.log.error(
-                            'Error while processing message %s',
-                            message.delivery_tag, exc_info=True)
-                        transaction.abort()
-                        if IResponse.providedBy(response):
-                            try:
-                                session.received_message = message
-                                error_messages = response.exception()
-                                self._send_response(
-                                    session, message, error_messages)
-                                transaction.commit()
-                            except:
-                                self.log.error(
-                                    'Error during exception handling',
-                                    exc_info=True)
-                                transaction.abort()
+                        self._handle_exception(
+                            sys.exc_info(), session, message, response)
                 except:
                     self.log.error(
                         'Unhandled exception, prevent thread from crashing',
@@ -110,6 +101,26 @@ class Worker(threading.Thread):
                 'Sending message to %s in response to message %s',
                 msg.routing_key, message.delivery_tag)
             session.send(msg)
+
+    def _handle_exception(self, exc_info, session, message, response):
+        transaction.abort()
+        if IResponse.providedBy(response):
+            try:
+                error_messages = response.exception(exc_info)
+                if error_messages:
+                    session.received_message = message
+                    self._send_response(
+                        session, message, error_messages)
+                    transaction.commit()
+            except:
+                self.log.error(
+                    'Error during exception handling',
+                    exc_info=True)
+                transaction.abort()
+        else:
+            self.log.error(
+                'Error while processing message %s',
+                message.delivery_tag, exc_info=True)
 
     def stop(self):
         self.log.info('stopping')

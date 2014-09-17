@@ -121,7 +121,7 @@ class WorkerTest(unittest.TestCase):
         self._create_worker()
         response = mock.Mock()
         response.responses = []
-        response.exception.return_value = []
+        response.exception.return_value = [mock.Mock()]
         zope.interface.alsoProvides(
             response, gocept.amqprun.interfaces.IResponse)
         self.queue.put(self._create_task(lambda x: response))

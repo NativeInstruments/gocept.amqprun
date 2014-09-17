@@ -57,6 +57,7 @@ class ErrorHandlingHandler(object):
     def __init__(self, message=None):
         self.message = message
         self.responses = []
+        self.error = None
 
     def __call__(self, message):
         handler = self.__class__(message)
@@ -70,12 +71,8 @@ class ErrorHandlingHandler(object):
         except self.error_reraise:
             raise
         except:
-            log.warning(
-                "Processing message %s caused an error. Sending '%s'",
-                self.message.delivery_tag, self.error_routing_key,
-                exc_info=True)
             self.responses[:] = []
-            self.responses.append(self._create_error_message())
+            self.error = sys.exc_info()
         return self.responses
 
     def _decode_message(self):
@@ -84,8 +81,19 @@ class ErrorHandlingHandler(object):
     def run(self):
         raise NotImplementedError()
 
-    def exception(self):
-        return [self._create_error_message()]
+    def exception(self, exc_info):
+        class_, exc, tb = exc_info
+        if class_ in self.error_reraise:
+            log.warning(
+                "Processing message %s caused a retryable error.",
+                self.message.delivery_tag)
+            return []
+        else:
+            log.warning(
+                "Processing message %s caused an error. Sending '%s'",
+                self.message.delivery_tag, self.error_routing_key,
+                exc_info=True)
+            return [self._create_error_message(exc_info)]
 
     def send(self, content, routing_key):
         self.responses.append(self._create_message(content, routing_key))
@@ -94,12 +102,12 @@ class ErrorHandlingHandler(object):
         return gocept.amqprun.message.Message(
             {}, content, routing_key=routing_key)
 
-    def _create_error_message(self):
-        content = '%s\n%s' % self._format_traceback()
+    def _create_error_message(self, exc_info):
+        content = '%s\n%s' % self._format_traceback(exc_info)
         return self._create_message(content, self.error_routing_key)
 
-    def _format_traceback(self):
-        class_, exc, tb = sys.exc_info()
+    def _format_traceback(self, exc_info):
+        class_, exc, tb = exc_info
         message = str(exc).replace('\x00', '')
         message = '%s: %s' % (class_.__name__, message)
         detail = ''.join(
