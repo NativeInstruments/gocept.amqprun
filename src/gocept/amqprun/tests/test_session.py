@@ -263,6 +263,14 @@ class DataManagerTest(unittest.TestCase):
         dm.tpc_abort(None)
         self.assertEqual(1, self.channel_manager.release.call_count)
 
+    def test_supports_savepoint_protocol(self):
+        # Since our implementation is a no-op this whole test is basically
+        # assertNothingRaised().
+        dm = self.get_dm()
+        transaction.get().join(dm)
+        sp = transaction.savepoint()
+        sp.rollback()
+
 
 class SessionTest(unittest.TestCase):
 

@@ -94,7 +94,7 @@ class Session(object):
 
 class AMQPDataManager(object):
 
-    zope.interface.implements(transaction.interfaces.IDataManager)
+    zope.interface.implements(transaction.interfaces.ISavepointDataManager)
 
     transaction_manager = None
 
@@ -157,6 +157,17 @@ class AMQPDataManager(object):
         # Try to sort last, so that we vote last.
         return "~gocept.amqprun:%f" % time.time()
 
+    def savepoint(self):
+        return NoOpSavepoint()
+
     def __repr__(self):
         return '<gocept.amqprun.session.DataManager for %s, %s>' % (
             transaction.get(), self.session)
+
+
+class NoOpSavepoint(object):
+
+    zope.interface.implements(transaction.interfaces.IDataManagerSavepoint)
+
+    def rollback(self):
+        pass
