@@ -4,7 +4,8 @@ CHANGES
 0.14.1 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Pretend to support savepoints so we can work together with other systems that
+  support (and require) them.
 
 
 0.14.0 (2014-09-09)
