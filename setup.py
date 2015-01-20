@@ -43,7 +43,7 @@ setup(
     version='0.15.1.dev0',
     author='gocept <cz at gocept dot com>',
     author_email='cz@gocept.com',
-    url='https://code.gocept.com/hg/public/gocept.amqprun',
+    url='https://bitbucket.org/gocept/gocept.amqprun',
     description="""\
 gocept.amqprun helps you writing and running AMQP consumers, and sending AMQP
 messages. It currently only supports AMQP 0-8 and integrates with the Zope Tool

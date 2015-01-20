@@ -4,7 +4,9 @@ CHANGES
 0.15.1 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Moved code to and bug tracker to Bitbucket_.
+
+.. _Bitbucket : https://bitbucket.org/gocept/gocept.amqprun
 
 
 0.15.0 (2014-10-08)

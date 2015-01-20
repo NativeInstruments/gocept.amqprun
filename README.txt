@@ -339,9 +339,9 @@ variables:
    default: 'sudo rabbitmqctl'
 
 The source code is available in the mercurial repository at
-https://code.gocept.com/hg/public/gocept.amqprun
+https://bitbucket.org/gocept/gocept.amqprun
 
 Please report any bugs you find at
-https://projects.gocept.com/projects/projects/gocept-amqprun/issues
+https://bitbucket.org/gocept/gocept.amqprun/issues
 
 .. vim: set ft=rst:
