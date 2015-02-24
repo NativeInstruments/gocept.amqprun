@@ -41,8 +41,8 @@ tests_require = writefiles_require + readfiles_require + security_require + [
 setup(
     name='gocept.amqprun',
     version='0.15.3.dev0',
-    author='gocept <cz at gocept dot com>',
-    author_email='cz@gocept.com',
+    author='gocept <mail at gocept dot com>',
+    author_email='mail@gocept.com',
     url='https://bitbucket.org/gocept/gocept.amqprun',
     description="""\
 gocept.amqprun helps you writing and running AMQP consumers, and sending AMQP
