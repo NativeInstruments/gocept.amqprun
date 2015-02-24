@@ -93,7 +93,7 @@ class QueueLayer(plone.testing.Layer):
         stdout = subprocess.check_output(
             'LANG=C %s' % command, stderr=subprocess.STDOUT, shell=True)
         if 'done' not in stdout:
-            raise RuntimeError('%s failed:\n%s' % command, stdout)
+            raise RuntimeError('%s failed:\n%s' % (command, stdout))
 
 QUEUE_LAYER = QueueLayer()
 
