@@ -249,7 +249,7 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         self.thread.start()
         for i in range(200):
             if (gocept.amqprun.main.main_server is not None and
-                gocept.amqprun.main.main_server.running):
+                    gocept.amqprun.main.main_server.running):
                 break
             time.sleep(0.025)
         else:
