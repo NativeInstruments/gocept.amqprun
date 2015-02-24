@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.15.2 (unreleased)
+0.15.2 (2015-02-24)
 -------------------
 
 - Fix error reporting in ``.testing.QueueLayer.rabbitmqctl()``.
