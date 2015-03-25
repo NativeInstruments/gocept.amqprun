@@ -70,6 +70,10 @@ class Connection(pika.AsyncoreConnection):
         pika.AsyncoreConnection.__init__(
             self, self._pika_parameters, wait_for_open=True,
             reconnection_strategy=self._reconnection_strategy)
+        if not self.is_alive():
+            raise RuntimeError(
+                'Connection not alive after connect, maybe the credentials '
+                'are wrong.')
 
     def connect(self, host, port):
         if not self.notifier_dispatcher:

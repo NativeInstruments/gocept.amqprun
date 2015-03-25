@@ -4,7 +4,8 @@ CHANGES
 0.15.3 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Raise ``RuntimeError`` if connection is not alive after connect. (This can
+  happen when the credentials are wrong.)
 
 
 0.15.2 (2015-02-24)
