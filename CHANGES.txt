@@ -4,7 +4,8 @@ CHANGES
 0.16.1 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Abort transaction in ``ErrorHandlingHandler`` on non recoverable error.
+  Fixes: https://bitbucket.org/gocept/gocept.amqprun/issue/4
 
 
 0.16.0 (2015-03-25)
