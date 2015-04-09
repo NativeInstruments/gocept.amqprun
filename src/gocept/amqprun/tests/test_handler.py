@@ -135,6 +135,17 @@ class ErrorHandlingHandlerTest(
         self.assertEqual(handler.error_routing_key, error.routing_key)
         self.assertStartsWith('RuntimeError: asdf\nTraceback', error.body)
 
+    def test_aborts_transaction_on_non_recoverable_error(self):
+        handler = self.get_handler()
+
+        def run(self):
+            self.send('foo', 'success')
+            raise RuntimeError('asdf')
+        handler.run = run.__get__(handler)
+        with mock.patch('transaction.abort') as abort:
+            handler.handle()
+        abort.assert_called_once_with()
+
     def test_raises_exceptions_defined_in_error_reraise(self):
         handler = self.get_handler()
         handler.run.side_effect = RuntimeError('asdf')
