@@ -4,7 +4,9 @@ CHANGES
 0.18.0 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Notify ``IConfigFinished`` event after `gocept.amqprun` is fully configured
+  but before the workers are started. This event can be used to open database
+  connections for instance.
 
 
 0.17.0 (2015-04-09)
