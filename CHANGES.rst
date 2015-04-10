@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-1.0 (unreleased)
+1.0 (2015-04-10)
 ----------------
 
 - Notify ``IConfigFinished`` event after `gocept.amqprun` is fully configured
