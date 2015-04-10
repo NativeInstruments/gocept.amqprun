@@ -50,9 +50,9 @@ messages. It currently only supports AMQP 0-8 and integrates with the Zope Tool
 Kit (ZTK) so you can use adapters, utilities and all the buzz.
 """,
     long_description=(
-        open('README.txt').read()
+        open('README.rst').read()
         + '\n\n'
-        + open('CHANGES.txt').read()),
+        + open('CHANGES.rst').read()),
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
