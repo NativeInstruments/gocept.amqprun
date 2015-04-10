@@ -40,7 +40,7 @@ tests_require = writefiles_require + readfiles_require + security_require + [
 
 setup(
     name='gocept.amqprun',
-    version='0.18.0.dev0',
+    version='1.0.dev0',
     author='gocept <mail at gocept dot com>',
     author_email='mail@gocept.com',
     url='https://bitbucket.org/gocept/gocept.amqprun',
@@ -58,13 +58,21 @@ Kit (ZTK) so you can use adapters, utilities and all the buzz.
     include_package_data=True,
     zip_safe=False,
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Console',
         'Framework :: Zope3',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Zope Public License',
+        'License :: OSI Approved',
+        'Natural Language :: English',
         'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2 :: Only',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python',
-        'Topic :: Software Development'
+        'Topic :: Software Development :: Libraries :: Application Frameworks',
+        'Topic :: Software Development',
     ],
     license='ZPL',
     namespace_packages=['gocept'],
