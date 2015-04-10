@@ -130,6 +130,15 @@ class IChannelManager(zope.interface.Interface):
         """Close the channel if it is no longer used by anyone."""
 
 
+class IConfigFinished(zope.interface.Interface):
+    """Event indicating that the configuration of gocept.amqprun was loaded."""
+
+
+class ConfigFinished(object):
+
+    zope.interface.implements(IConfigFinished)
+
+
 class IProcessStarted(zope.interface.Interface):
     """Event to indicate the server has been started."""
 

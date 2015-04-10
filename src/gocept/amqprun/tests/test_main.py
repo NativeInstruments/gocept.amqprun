@@ -241,6 +241,21 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         gocept.amqprun.main.main(config)
         self.assertTrue(self.handler_called)
 
+    def test_main_should_send_configfinished_event(self):
+        from gocept.amqprun.interfaces import ISender, IConfigFinished
+        from gocept.amqprun.main import main
+        from zope.component import provideHandler, queryUtility
+        config = self.make_config(__name__, 'basic')
+        self.handler_called = False
+
+        def handler(event):
+            self.handler_called = True
+            self.assertTrue(queryUtility(ISender))
+
+        provideHandler(handler, (IConfigFinished,))
+        main(config)
+        self.assertTrue(self.handler_called)
+
     def test_main_should_register_ISender(self):
         import gocept.amqprun.interfaces
         import gocept.amqprun.main

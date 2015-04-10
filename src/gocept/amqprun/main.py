@@ -49,6 +49,8 @@ def main(config_file):
     zope.component.provideUtility(server, gocept.amqprun.interfaces.ISender)
     main_server = server
 
+    zope.event.notify(gocept.amqprun.interfaces.ConfigFinished())
+
     def stop_server(signum, frame):
         log.info("Received signal %s, terminating." % signum)
         zope.event.notify(gocept.amqprun.interfaces.ProcessStopping())
