@@ -4,7 +4,7 @@ CHANGES
 1.1 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- ``.connection.Parameters`` no longer accepts arbitrary keyword parameters.
 
 
 1.0 (2015-04-10)

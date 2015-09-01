@@ -16,15 +16,14 @@ log = logging.getLogger(__name__)
 class Parameters(object):
     """Connection parameters with sensible defaults."""
 
-    heartbeat_interval = 0
-    hostname = NotImplemented
-    password = None
-    port = None
-    username = None
-    virtual_host = "/"
-
-    def __init__(self, **kw):
-        self.__dict__.update(kw)
+    def __init__(self, heartbeat_interval=0, hostname=NotImplemented,
+                 password=None, port=None, username=None, virtual_host="/"):
+        self.heartbeat_interval = heartbeat_interval
+        self.hostname = hostname
+        self.password = password
+        self.port = port
+        self.username = username
+        self.virtual_host = virtual_host
 
 
 class WriteDispatcher(asyncore.file_dispatcher):
