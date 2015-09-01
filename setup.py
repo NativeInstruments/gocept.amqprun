@@ -40,7 +40,7 @@ tests_require = writefiles_require + readfiles_require + security_require + [
 
 setup(
     name='gocept.amqprun',
-    version='1.1',
+    version='1.2.dev0',
     author='gocept <mail at gocept dot com>',
     author_email='mail@gocept.com',
     url='https://bitbucket.org/gocept/gocept.amqprun',
