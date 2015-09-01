@@ -52,3 +52,15 @@ class ConnectionTest(unittest.TestCase):
             self.assertEqual(
                 'Connection not alive after connect, maybe the credentials '
                 'are wrong.', str(err.exception))
+
+
+class ParametersTest(unittest.TestCase):
+    """Testing ..connection.Parameters."""
+
+    def test_bails_on_unknown_keyword_argument(self):
+        from ..connection import Parameters
+        with self.assertRaises(TypeError) as err:
+            Parameters(virtualhost='vhost3')
+        self.assertEqual(
+            "__init__() got an unexpected keyword argument 'virtualhost'",
+            str(err.exception))
