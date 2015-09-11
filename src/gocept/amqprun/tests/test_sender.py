@@ -28,14 +28,14 @@ class MessageSenderTest(
 
     def test_message_is_not_sent_before_commit(self):
         self.send()
-        with self.assertRaises(AssertionError) as err:
+        with self.assertRaises(RuntimeError) as err:
             self.wait_for_message(2)
         self.assertEqual('No message received', str(err.exception))
 
     def test_message_is_not_sent_on_abort(self):
         self.send()
         transaction.abort()
-        with self.assertRaises(AssertionError) as err:
+        with self.assertRaises(RuntimeError) as err:
             self.wait_for_message(2)
         self.assertEqual('No message received', str(err.exception))
 
