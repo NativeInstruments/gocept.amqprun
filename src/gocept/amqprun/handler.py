@@ -3,6 +3,7 @@ import logging
 import sys
 import traceback
 import transaction
+import zope.component
 import zope.interface
 
 
@@ -22,6 +23,10 @@ class Handler(object):
         self.handler_function = handler_function
         self.arguments = arguments
         self.principal = principal
+
+    @property
+    def settings(self):
+        return zope.component.queryUtility(gocept.amqprun.interfaces.ISettings)
 
     def __call__(self, message):
         return self.handler_function(message) or []
@@ -55,6 +60,10 @@ class ErrorHandlingHandler(object):
     def __init__(self, message=None):
         self.message = message
         self.responses = []
+
+    @property
+    def settings(self):
+        return zope.component.queryUtility(gocept.amqprun.interfaces.ISettings)
 
     def __call__(self, message):
         handler = self.__class__(message)

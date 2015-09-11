@@ -6,6 +6,7 @@ CHANGES
 
 - Add `py.test` as test runner.
 
+- Add `settings` attribute to `IHandler` to ease accessing `ISettings`.
 
 1.1 (2015-09-01)
 ----------------

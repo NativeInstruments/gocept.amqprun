@@ -21,6 +21,9 @@ class IHandler(zope.interface.Interface):
         'If set, message is handled inside a zope.security interaction with '
         'the given principal_id.')
 
+    settings = zope.interface.Attribute(
+        'Dictionary of configuration settings (ISettings utility)')
+
     def __call__(message):
         """Handle message.
 
