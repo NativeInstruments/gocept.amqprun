@@ -1,4 +1,8 @@
-gocept gmbh & co. kg
-Christian Zagrodnick
-Wolfgang Schnerring
-Michael Howitz
+(c) by gocept gmbh & co. kg 2010 - 2015
+
+Contributors:
+
+* Christian Zagrodnick
+* Wolfgang Schnerring
+* Michael Howitz
+* Thomas Lotze
