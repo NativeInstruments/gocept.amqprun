@@ -157,7 +157,7 @@ class QueueTestCase(unittest.TestCase):
                 break
             time.sleep(1)
         else:
-            self.fail('No message received')
+            raise RuntimeError('No message received')
         return message
 
     # BBB
