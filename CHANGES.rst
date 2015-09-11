@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-1.2 (unreleased)
+1.2 (2015-09-11)
 ----------------
 
 - Add `py.test` as test runner.
