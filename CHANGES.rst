@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-1.3 (unreleased)
+1.3 (2015-09-11)
 ----------------
 
 - Update the test infrastructure to be able to run with newer RabbitMQ versions
