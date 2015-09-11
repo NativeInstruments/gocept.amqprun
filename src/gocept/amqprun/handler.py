@@ -2,8 +2,8 @@ import gocept.amqprun.interfaces
 import logging
 import sys
 import traceback
-import zope.interface
 import transaction
+import zope.interface
 
 
 log = logging.getLogger(__name__)
