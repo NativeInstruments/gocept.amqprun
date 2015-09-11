@@ -7,6 +7,9 @@ CHANGES
 - Add a ``testing`` extra which can be used to reuse the test infrastructure of
   this package to develop tests on top of it.
 
+- Update the test infrastructure to be able to run with newer RabbitMQ versions
+  than 3.1.5.
+
 
 0.16.0 (2015-03-25)
 -------------------

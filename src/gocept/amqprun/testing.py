@@ -92,7 +92,7 @@ class QueueLayer(plone.testing.Layer):
         command = '%s %s' % (self.RABBITMQCTL_COMMAND, parameter)
         stdout = subprocess.check_output(
             'LANG=C %s' % command, stderr=subprocess.STDOUT, shell=True)
-        if 'done' not in stdout:
+        if 'Error' in stdout:
             raise RuntimeError('%s failed:\n%s' % (command, stdout))
 
 QUEUE_LAYER = QueueLayer()
