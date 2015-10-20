@@ -68,6 +68,12 @@ class IMessage(zope.interface.Interface):
           in its directory (using the current timestamp)
         """
 
+    def acknowledge():
+        """Acknowledge handling of a received message to the queue.
+
+        Raises `RuntimeError` if message was not recived.
+        """
+
 
 class ISession(zope.interface.Interface):
     """AMQP session."""

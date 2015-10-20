@@ -54,8 +54,7 @@ class Session(object):
     def ack_received_message(self):
         if self.received_message is None:
             return
-        log.debug("Ack'ing message %s.", self.received_message.delivery_tag)
-        self.channel.basic_ack(self.received_message.delivery_tag)
+        self.received_message.acknowledge()
 
     def publish_response_messages(self):
         for message in self.messages:

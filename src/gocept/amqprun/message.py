@@ -1,11 +1,15 @@
 from datetime import datetime
 import email.utils
 import gocept.amqprun.interfaces
+import logging
 import pika.spec
 import string
 import time
 import types
 import zope.interface
+
+
+log = logging.getLogger(__name__)
 
 
 class Message(object):
@@ -15,7 +19,8 @@ class Message(object):
 
     exchange = 'amq.topic'
 
-    def __init__(self, header, body, delivery_tag=None, routing_key=None):
+    def __init__(self, header, body, delivery_tag=None, routing_key=None,
+                 channel=None):
         if not isinstance(header, pika.spec.BasicProperties):
             header = self.convert_header(header)
         self.header = header
@@ -26,6 +31,7 @@ class Message(object):
         self.delivery_tag = delivery_tag
         self.routing_key = (
             unicode(routing_key).encode('UTF-8') if routing_key else None)
+        self._channel = channel  # received message from this channel
 
     def convert_header(self, header):
         header = header.copy()
@@ -61,3 +67,10 @@ class Message(object):
             unique='%f' % time.time(),
         )
         return pattern.substitute(variables)
+
+    def acknowledge(self):
+        """Acknowledge handling of a received message to the queue."""
+        if self._channel is None:
+            raise RuntimeError('No channel set for acknowledge.')
+        log.debug("Ack'ing message %s.", self.delivery_tag)
+        self._channel.basic_ack(self.delivery_tag)
