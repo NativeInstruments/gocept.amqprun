@@ -82,7 +82,6 @@ class ErrorHandlingHandler(object):
             # writing any data e. g. to a relational database when committing
             # the error handling later on.
             transaction.abort()
-            transaction.begin()
             log.warning(
                 "Processing message %s caused an error. Sending '%s'",
                 self.message.delivery_tag, self.error_routing_key,
