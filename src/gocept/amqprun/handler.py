@@ -77,7 +77,7 @@ class ErrorHandlingHandler(object):
         except self.error_reraise:
             raise
         except:
-            # Solution for https://bitbucket.org/gocept/gocept.amqprun/issue/4
+            # Solution for https://bitbucket.org/gocept/gocept.amqprun/issue/4:
             # Abort the transaction which caused the error to prevent it from
             # writing any data e. g. to a relational database when committing
             # the error handling later on.
