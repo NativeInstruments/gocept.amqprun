@@ -4,7 +4,9 @@ CHANGES
 1.4 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Acknowledge message in ``ErrorHandlingHandler`` on non recoverable error.
+  This got lost in 0.17.0.
+  Fixes: https://bitbucket.org/gocept/gocept.amqprun/issue/5
 
 
 1.3 (2015-09-11)

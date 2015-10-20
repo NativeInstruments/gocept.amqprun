@@ -82,6 +82,11 @@ class ErrorHandlingHandler(object):
             # writing any data e. g. to a relational database when committing
             # the error handling later on.
             transaction.abort()
+            # Solution for https://bitbucket.org/gocept/gocept.amqprun/issue/5:
+            # `transaction.abort()` above removed the message from the session,
+            # too, so we have to acknowledge it manually as otherwise we have
+            # to process it over and over again.
+            self.message.acknowledge()
             log.warning(
                 "Processing message %s caused an error. Sending '%s'",
                 self.message.delivery_tag, self.error_routing_key,

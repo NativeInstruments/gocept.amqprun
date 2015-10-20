@@ -33,7 +33,8 @@ class DataManagerTest(unittest.TestCase):
 
     def get_message(self):
         import gocept.amqprun.message
-        return gocept.amqprun.message.Message({}, '', 'mytag')
+        return gocept.amqprun.message.Message(
+            {}, '', 'mytag', channel=self.channel)
 
     def get_dm(self):
         import gocept.amqprun.session

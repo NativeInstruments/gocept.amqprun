@@ -146,6 +146,16 @@ class ErrorHandlingHandlerTest(
             handler.handle()
         abort.assert_called_once_with()
 
+    def test_acknowledges_message_on_non_recoverable_error(self):
+        handler = self.get_handler()
+
+        def run(self):
+            self.send('foo', 'success')
+            raise RuntimeError('asdf')
+        handler.run = run.__get__(handler)
+        handler.handle()
+        self.message.acknowledge.assert_called_once_with()
+
     def test_raises_exceptions_defined_in_error_reraise(self):
         handler = self.get_handler()
         handler.run.side_effect = RuntimeError('asdf')
