@@ -1,6 +1,3 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 from datetime import datetime
 import email.utils
 import gocept.amqprun.interfaces
@@ -12,6 +9,7 @@ import zope.interface
 
 
 class Message(object):
+    """A message received from or sent to the queue."""
 
     zope.interface.implements(gocept.amqprun.interfaces.IMessage)
 
