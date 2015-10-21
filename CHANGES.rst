@@ -9,6 +9,12 @@ CHANGES
   Fixes: https://bitbucket.org/gocept/gocept.amqprun/issue/5
 
 
+- The error message of ``ErrorHandlingHandler`` on a non recoverable error
+  references the original message using its correlation_id again.
+  This got lost in 0.17.0.
+  Fixes: https://bitbucket.org/gocept/gocept.amqprun/issue/6
+
+
 1.3 (2015-09-11)
 ----------------
 

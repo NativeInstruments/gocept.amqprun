@@ -85,9 +85,9 @@ class ErrorHandlingHandlerTest(
         unittest.TestCase, gocept.testing.assertion.String):
 
     def setUp(self):
-        import gocept.amqprun.interfaces
-        self.message = mock.Mock(list(gocept.amqprun.interfaces.IMessage))
-        self.message.body = 'foo'
+        import gocept.amqprun.message
+        self.message = gocept.amqprun.message.Message(
+            {}, 'foo', channel=mock.Mock())
 
     def get_declaration(self):
         import gocept.amqprun.handler
@@ -153,8 +153,20 @@ class ErrorHandlingHandlerTest(
             self.send('foo', 'success')
             raise RuntimeError('asdf')
         handler.run = run.__get__(handler)
+        with mock.patch.object(self.message, 'acknowledge') as acknowledge:
+            handler.handle()
+        acknowledge.assert_called_once_with()
+
+    def test_error_message_references_message_on_non_recoverable_error(self):
+        self.message.header.message_id = 'orig message id'
+        self.message.header.headers = {'references': 'a\nb'}
+        handler = self.get_handler()
+        handler.run.side_effect = RuntimeError('asdf')
         handler.handle()
-        self.message.acknowledge.assert_called_once_with()
+        error_msg = handler.responses[0]
+        self.assertEqual('orig message id', error_msg.header.correlation_id)
+        self.assertEqual(
+            'a\nb\norig message id', error_msg.header.headers['references'])
 
     def test_raises_exceptions_defined_in_error_reraise(self):
         handler = self.get_handler()
