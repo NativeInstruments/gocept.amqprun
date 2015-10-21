@@ -68,6 +68,25 @@ class Message(object):
         )
         return pattern.substitute(variables)
 
+    def reference(self, message):
+        """Make the current message referencing `message`."""
+        if not gocept.amqprun.interfaces.IMessage.providedBy(message):
+            return
+        if not message.header.message_id:
+            return
+        if not self.header.correlation_id:
+            self.header.correlation_id = message.header.message_id
+        if self.header.headers is None:
+            self.header.headers = {}
+        if 'references' not in self.header.headers:
+            if (message.header.headers and
+                    message.header.headers.get('references')):
+                parent_references = message.header.headers['references'] + '\n'
+            else:
+                parent_references = ''
+            self.header.headers['references'] = (
+                parent_references + message.header.message_id)
+
     def acknowledge(self):
         """Acknowledge handling of a received message to the queue."""
         if self._channel is None:

@@ -68,6 +68,12 @@ class IMessage(zope.interface.Interface):
           in its directory (using the current timestamp)
         """
 
+    def reference(message):
+        """Make the current message referencing `message`.
+
+        Sets `correlation_id` and a `references` list.
+        """
+
     def acknowledge():
         """Acknowledge handling of a received message to the queue.
 

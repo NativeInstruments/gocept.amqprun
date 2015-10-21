@@ -60,32 +60,10 @@ class Session(object):
         for message in self.messages:
             log.debug("Publishing message to %s in response to %s.",
                       message.routing_key, self.received_tag)
-            self._set_references(message)
+            message.reference(self.received_message)
             self.channel.basic_publish(
                 message.exchange, message.routing_key,
                 message.body, message.header)
-
-    def _set_references(self, message):
-        if self.received_message is None:
-            # no reply
-            return
-        received_header = self.received_message.header
-        if not received_header.message_id:
-            return
-        if not message.header.correlation_id:
-            message.header.correlation_id = received_header.message_id
-        if message.header.headers is None:
-            message.header.headers = {}
-        if 'references' not in message.header.headers:
-            if (received_header.headers and
-                received_header.headers.get('references')):
-                parent_references = (
-                    received_header.headers['references'] + '\n')
-            else:
-                parent_references = ''
-            message.header.headers['references'] = (
-                parent_references +
-                received_header.message_id)
 
     def __repr__(self):
         return '<gocept.amqprun.session.Session %s>' % self.received_tag

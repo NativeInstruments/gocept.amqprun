@@ -138,9 +138,7 @@ class DataManagerTest(unittest.TestCase):
     def test_messages_should_be_sent_with_correlation_id(self):
         dm = self.get_dm()
         dm.session.received_message.header.message_id = 'message id'
-        msg = mock.Mock()
-        msg.header.correlation_id = None
-        msg.header.headers = None
+        msg = self.get_message()
         self.session.send(msg)
         dm.commit(None)
         self.assertEqual('message id', msg.header.correlation_id)
@@ -159,8 +157,7 @@ class DataManagerTest(unittest.TestCase):
     def test_messages_should_be_sent_with_references_header(self):
         dm = self.get_dm()
         dm.session.received_message.header.message_id = 'message id'
-        msg = mock.Mock()
-        msg.header.headers = None
+        msg = self.get_message()
         self.session.send(msg)
         dm.commit(None)
         ((_, _, _, header), _) = self.channel.basic_publish.call_args
@@ -172,8 +169,7 @@ class DataManagerTest(unittest.TestCase):
         dm.session.received_message.header.message_id = 'message id'
         dm.session.received_message.header.headers = {
             'references': 'parent id'}
-        msg = mock.Mock()
-        msg.header.headers = None
+        msg = self.get_message()
         self.session.send(msg)
         dm.commit(None)
         ((_, _, _, header), _) = self.channel.basic_publish.call_args
@@ -184,8 +180,7 @@ class DataManagerTest(unittest.TestCase):
         dm = self.get_dm()
         dm.session.received_message.header.message_id = 'message id'
         dm.session.received_message.header.headers = {'X-Foo': 'bar'}
-        msg = mock.Mock()
-        msg.header.headers = None
+        msg = self.get_message()
         self.session.send(msg)
         dm.commit(None)
         ((_, _, _, header), _) = self.channel.basic_publish.call_args

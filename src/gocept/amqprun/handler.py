@@ -113,7 +113,9 @@ class ErrorHandlingHandler(object):
 
     def _create_error_message(self):
         content = '%s\n%s' % self._format_traceback()
-        return self._create_message(content, self.error_routing_key)
+        message = self._create_message(content, self.error_routing_key)
+        message.reference(self.message)
+        return message
 
     def _format_traceback(self):
         class_, exc, tb = sys.exc_info()
