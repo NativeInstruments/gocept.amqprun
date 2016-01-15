@@ -28,14 +28,17 @@ security_require = [
     'zope.security>=4.0.0dev',
 ]
 
-tests_require = writefiles_require + readfiles_require + security_require + [
-    'amqplib',
-    'gocept.testing',
-    'mock>=0.8.0',
-    'plone.testing',
-    'tcpwatch',
-    'zope.testing',
-]
+tests_require = (
+    writefiles_require +
+    readfiles_require +
+    security_require + [
+        'amqplib',
+        'gocept.testing',
+        'mock>=0.8.0',
+        'plone.testing',
+        'tcpwatch',
+        'zope.testing',
+    ])
 
 
 setup(
