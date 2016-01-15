@@ -4,8 +4,8 @@ CHANGES
 1.5 (unreleased)
 ----------------
 
-- Nothing changed yet.
-
+- Add a ``testing`` extra which can be used to reuse the test infrastructure of
+  this package to develop tests on top of it.
 
 1.4 (2015-11-20)
 ----------------
