@@ -1,6 +1,3 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 from setuptools import setup, find_packages
 
 
@@ -28,11 +25,15 @@ security_require = [
     'zope.security>=4.0.0dev',
 ]
 
+testing_require = [
+    'amqplib',
+]
+
 tests_require = (
+    testing_require +
     writefiles_require +
     readfiles_require +
     security_require + [
-        'amqplib',
         'gocept.testing',
         'mock>=0.8.0',
         'plone.testing',
@@ -82,6 +83,7 @@ Kit (ZTK) so you can use adapters, utilities and all the buzz.
     install_requires=install_requires,
     extras_require=dict(
         test=tests_require,
+        testing=testing_require,  # use it to use amqprun's test infrastructure
         writefiles=writefiles_require,
         readfiles=readfiles_require,
         security=security_require,
