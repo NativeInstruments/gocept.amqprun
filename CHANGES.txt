@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.16.1 (unreleased)
+0.16.1 (2016-02-01)
 -------------------
 
 - Add a ``testing`` extra which can be used to reuse the test infrastructure of
