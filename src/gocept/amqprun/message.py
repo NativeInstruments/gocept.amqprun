@@ -57,8 +57,8 @@ class Message(object):
         variables = dict(
             date=timestamp.strftime('%Y-%m-%d'),
             msgid=self.header.message_id,
-            xfilename=(self.header.headers
-                       and self.header.headers.get('X-Filename')),
+            xfilename=(self.header.headers and
+                       self.header.headers.get('X-Filename')),
             routing_key=self.routing_key,
             # since CPython doesn't use OS-level threads, there won't be actual
             # concurrency, so we can get away with using the current time to

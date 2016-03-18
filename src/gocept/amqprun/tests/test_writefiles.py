@@ -95,8 +95,8 @@ class AMQPWriteDirectiveTest(unittest.TestCase):
         zope.component.testing.tearDown()
 
     def run_directive(
-        self, routing_key=None, queue_name=None,
-        directory=None, pattern=None, arguments=None):
+            self, routing_key=None, queue_name=None,
+            directory=None, pattern=None, arguments=None):
         import gocept.amqprun.interfaces
         config = string.Template(unicode(
             pkg_resources.resource_string(__name__, 'writefiles.zcml'),

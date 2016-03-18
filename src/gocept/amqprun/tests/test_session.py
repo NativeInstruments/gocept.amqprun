@@ -104,7 +104,11 @@ class DataManagerTest(unittest.TestCase):
         dm.abort(None)
         self.assertFalse(self.channel.basic_reject.called)
 
-    def test_tpc_abort_should_not_tx_rollback_nor_release_lock_if_tpc_begin_was_not_called(self):
+    def test_tpc_abort__2(self):
+        """It should not tx_rollback nor release the lock if ...
+
+        ... tpc begin was not called.
+        """
         dm = self.get_dm()
         dm.tpc_abort(None)
         self.assertFalse(self.channel.tx_rollback.called)
