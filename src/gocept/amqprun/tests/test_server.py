@@ -22,8 +22,8 @@ import zope.interface
 
 
 class MessageReaderTest(
-    gocept.amqprun.testing.LoopTestCase,
-    gocept.amqprun.testing.QueueTestCase):
+        gocept.amqprun.testing.LoopTestCase,
+        gocept.amqprun.testing.QueueTestCase):
 
     def start_server(self, **kw):
         self.server = self.create_server(**kw)
@@ -339,8 +339,8 @@ class TestChannelSwitch(unittest.TestCase):
 
 
 class DyingRabbitTest(
-    gocept.amqprun.testing.LoopTestCase,
-    gocept.amqprun.testing.QueueTestCase):
+        gocept.amqprun.testing.LoopTestCase,
+        gocept.amqprun.testing.QueueTestCase):
 
     pid = None
 
