@@ -130,11 +130,12 @@ class QueueTestCase(unittest.TestCase):
         self._queues.append(queue_name)
         return queue_name
 
-    def send_message(self, body, routing_key='', headers=None):
+    def send_message(self, body, routing_key='', headers=None, **kw):
         self.channel.basic_publish(
             amqp.Message(body, timestamp=datetime.datetime.now(),
                          application_headers=headers or {},
-                         msgid=email.utils.make_msgid('gocept.amqprun.test')),
+                         msgid=email.utils.make_msgid('gocept.amqprun.test'),
+                         **kw),
             'amq.topic', routing_key=routing_key)
         time.sleep(0.1)
 
