@@ -4,8 +4,8 @@ CHANGES
 1.6 (unreleased)
 ----------------
 
-- Nothing changed yet.
-
+- Allow arbitrary keywords in ``.testing.QueueTestCase.send_message()`` to be
+  passed to generated message.
 
 1.5 (2016-02-01)
 ----------------
