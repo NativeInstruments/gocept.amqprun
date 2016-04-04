@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-1.6 (unreleased)
+1.6 (2016-04-04)
 ----------------
 
 - Allow arbitrary keywords in ``.testing.QueueTestCase.send_message()`` to be
