@@ -26,7 +26,7 @@ security_require = [
 ]
 
 testing_require = [
-    'amqplib',
+    'amqp',
 ]
 
 tests_require = (

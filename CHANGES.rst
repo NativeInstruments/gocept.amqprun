@@ -1,10 +1,10 @@
 CHANGES
 =======
 
-1.7 (unreleased)
+2.0 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Replace ``amqplib`` with ``ampq`` in tests.
 
 
 1.6 (2016-04-04)
