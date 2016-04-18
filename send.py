@@ -1,4 +1,4 @@
-import amqplib.client_0_8 as amqp
+import amqp
 import sys
 
 with amqp.Connection(host='localhost') as connection:

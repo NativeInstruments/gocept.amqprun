@@ -3,7 +3,7 @@ import gocept.amqprun.channel
 import logging
 import os
 import pika
-import pika.asyncore_adapter
+import pika.adapters.asyncore_connection
 import pika.channel
 import socket
 import threading
@@ -33,7 +33,11 @@ class WriteDispatcher(asyncore.file_dispatcher):
         os.read(self.fileno(), 1)
 
 
-class RabbitDispatcher(pika.asyncore_adapter.RabbitDispatcher):
+class RabbitDispatcher(pika.adapters.asyncore_connection.PikaDispatcher):
+    """Support more than one Server in a single process
+
+    by using a separate socket_map per Connection.
+    """
 
     def __init__(self, connection):
         asyncore.dispatcher.__init__(self, map=connection.socket_map)
@@ -44,39 +48,47 @@ class Connection(pika.AsyncoreConnection):
 
     _close_now = False
 
-    def __init__(self, parameters, reconnection_strategy=None):
+    def __init__(self, parameters, on_open_callback=None,
+                 on_close_callback=None):
         self.lock = threading.Lock()
         self._main_thread_lock = threading.RLock()
         self._main_thread_lock.acquire()
         self.socket_map = {}
         self.notifier_dispatcher = None
+        self.on_open_callback = on_open_callback
+        self.on_close_callback = on_close_callback
+
         credentials = None
         if parameters.username and parameters.password:
             credentials = pika.PlainCredentials(
                 parameters.username, parameters.password)
         self._pika_parameters = pika.ConnectionParameters(
             host=parameters.hostname,
-            port=parameters.port,
+            port=int(parameters.port),
             virtual_host=parameters.virtual_host,
             credentials=credentials,
-            heartbeat=parameters.heartbeat_interval)
-        self._reconnection_strategy = reconnection_strategy
+            heartbeat_interval=int(parameters.heartbeat_interval))
 
     def finish_init(self):
         pika.AsyncoreConnection.__init__(
-            self, self._pika_parameters, wait_for_open=True,
-            reconnection_strategy=self._reconnection_strategy)
-        if not self.is_alive():
+            self,
+            self._pika_parameters,
+            on_open_callback=self.on_open_callback,
+            on_close_callback=self.on_close_callback,
+        )
+        if not self.is_open:
             raise RuntimeError(
                 'Connection not alive after connect, maybe the credentials '
                 'are wrong.')
 
-    def connect(self, host, port):
+    def connect(self):
         if not self.notifier_dispatcher:
             self.notifier_r, self.notifier_w = os.pipe()
             self.notifier_dispatcher = WriteDispatcher(
                 self.notifier_r, map=self.socket_map)
 
+        host = self._pika_parameters.host
+        port = self._pika_parameters.port
         # not calling super since we need to use our subclassed
         # RabbitDispatcher
         self.dispatcher = RabbitDispatcher(self)
@@ -115,7 +127,7 @@ class Connection(pika.AsyncoreConnection):
         return self._main_thread_lock.acquire(False)
 
     def close(self, *args, **kw):
-        if not self.connection_open:
+        if not self.is_open:
             return
         if self.is_main_thread:
             pika.AsyncoreConnection.close(self, *args, **kw)

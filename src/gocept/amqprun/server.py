@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import Queue
 import gocept.amqprun.connection
 import gocept.amqprun.interfaces
@@ -34,7 +31,7 @@ class Consumer(object):
         gocept.amqprun.interfaces.IChannelManager(channel).acquire()
 
 
-class Server(object, pika.connection.NullReconnectionStrategy):
+class Server(object):
 
     zope.interface.implements(
         gocept.amqprun.interfaces.ILoop,
@@ -72,7 +69,9 @@ class Server(object, pika.connection.NullReconnectionStrategy):
     def start(self):
         log.info('Starting message reader.')
         self.connection = gocept.amqprun.connection.Connection(
-            self.connection_parameters, self)
+            self.connection_parameters,
+            on_open_callback=self.on_connection_open,
+            on_close_callback=self.on_connection_closed)
         self.connection.finish_init()
         self.running = True
         while self.running:
@@ -90,7 +89,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
                 "Select error")
             self.channel = self._old_channel = None
             return
-        if self.connection.is_alive():
+        if self.connection.is_open:
             if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
                 self.switch_channel()
             self.close_old_channel()
@@ -209,7 +208,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
 
     def on_connection_open(self, connection):
         assert connection == self.connection
-        assert connection.is_alive()
+        assert connection.is_open
         log.info('AMQP connection opened.')
         with self.connection.lock:
             self.open_channel()
