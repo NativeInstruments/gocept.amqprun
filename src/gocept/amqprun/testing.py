@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2011 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import amqp
 import datetime
 import email.utils
@@ -64,6 +61,7 @@ class QueueLayer(plone.testing.Layer):
         self['amqp-hostname'] = os.environ.get('AMQP_HOSTNAME', 'localhost')
         self['amqp-username'] = os.environ.get('AMQP_USERNAME', 'guest')
         self['amqp-password'] = os.environ.get('AMQP_PASSWORD', 'guest')
+        self['amqp-port'] = os.environ.get('AMQP_PORT', '15672')
         self['amqp-virtualhost'] = os.environ.get('AMQP_VIRTUALHOST', None)
         if self['amqp-virtualhost'] is None:
             self['amqp-virtualhost'] = '/test.%f' % time.time()
@@ -169,6 +167,7 @@ class QueueTestCase(unittest.TestCase):
         params = dict(hostname=self.layer['amqp-hostname'],
                       username=self.layer['amqp-username'],
                       password=self.layer['amqp-password'],
+                      port=self.layer['amqp-port'],
                       virtual_host=self.layer['amqp-virtualhost'])
         # XXX not DRY, the default value is declared in Server.__init__()
         setup_handlers = kw.pop('setup_handlers', True)

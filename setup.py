@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 install_requires = [
     'ZConfig',
-    'pika < 0.9',
+    'pika >= 0.9.7, < 0.10',
     'setuptools',
     'transaction',
     'zope.component[zcml]',

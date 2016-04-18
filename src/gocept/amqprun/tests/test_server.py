@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import Queue
 import collections
 import gocept.amqprun.channel
@@ -349,21 +346,21 @@ class DyingRabbitTest(
         if self.pid:
             os.kill(self.pid, signal.SIGINT)
 
-    def start_server(self, port=None):
-        self.server = super(DyingRabbitTest, self).create_server(port=port)
+    def start_server(self, **kw):
+        self.server = super(DyingRabbitTest, self).create_server(**kw)
         self.start_thread(self.server)
 
     def test_socket_close_should_not_stop_main_loop_and_open_connection(self):
         # This hopefully simulates local errors
         self.start_server()
-        self.assertTrue(self.server.connection.is_alive())
+        self.assertTrue(self.server.connection.is_open)
         time.sleep(0.5)
         self.server.connection.dispatcher.socket.close()
         self.server.connection.notify()
         time.sleep(3)
 
         self.assertTrue(self.thread.is_alive())
-        self.assertTrue(self.server.connection.is_alive())
+        self.assertTrue(self.server.connection.is_open)
         self.assertEqual(self.server.connection.channels[1],
                          self.server.channel.handler)
         # Do something with the channel
@@ -374,14 +371,14 @@ class DyingRabbitTest(
         pid = self.tcpwatch(port)
         self.start_server(port)
         old_channel = self.server.channel
-        self.assertTrue(self.server.connection.is_alive())
+        self.assertTrue(self.server.connection.is_open)
 
         os.kill(pid, signal.SIGINT)
         self.pid = self.tcpwatch(port)
         time.sleep(1)
 
         self.assertTrue(self.thread.is_alive())
-        self.assertTrue(self.server.connection.is_alive())
+        self.assertTrue(self.server.connection.is_open)
         self.assertEqual(self.server.connection.channels[1],
                          self.server.channel.handler)
         self.assertNotEqual(old_channel, self.server.channel)
@@ -392,7 +389,7 @@ class DyingRabbitTest(
         port = random.randint(30000, 40000)
         pid = self.tcpwatch(port)
         self.start_server(port)
-        self.assertTrue(self.server.connection.is_alive())
+        self.assertTrue(self.server.connection.is_open)
 
         os.kill(pid, signal.SIGINT)
         self.server.switch_channel()
@@ -400,7 +397,7 @@ class DyingRabbitTest(
         time.sleep(1)
 
         self.assertTrue(self.thread.is_alive())
-        self.assertTrue(self.server.connection.is_alive())
+        self.assertTrue(self.server.connection.is_open)
         # Do something with the channel
         self.server.channel.tx_select()
 
