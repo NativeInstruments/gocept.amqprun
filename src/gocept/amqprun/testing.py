@@ -61,7 +61,7 @@ class QueueLayer(plone.testing.Layer):
         self['amqp-hostname'] = os.environ.get('AMQP_HOSTNAME', 'localhost')
         self['amqp-username'] = os.environ.get('AMQP_USERNAME', 'guest')
         self['amqp-password'] = os.environ.get('AMQP_PASSWORD', 'guest')
-        self['amqp-port'] = os.environ.get('AMQP_PORT', '15672')
+        self['amqp-port'] = os.environ.get('AMQP_PORT', '5672')
         self['amqp-virtualhost'] = os.environ.get('AMQP_VIRTUALHOST', None)
         if self['amqp-virtualhost'] is None:
             self['amqp-virtualhost'] = '/test.%f' % time.time()
@@ -292,12 +292,12 @@ gocept.amqprun.main.main('%(config)s')
         self.zcml = tempfile.NamedTemporaryFile()
         self.zcml.write(zcml_base.substitute(mapping).encode('utf8'))
         self.zcml.flush()
-
         sub = dict(
             site_zcml=self.zcml.name,
             amqp_hostname=self.layer['amqp-hostname'],
             amqp_username=self.layer['amqp-username'],
             amqp_password=self.layer['amqp-password'],
+            amqp_port=self.layer['amqp-port'],
             amqp_virtualhost=self.layer['amqp-virtualhost'],
         )
         if mapping:
