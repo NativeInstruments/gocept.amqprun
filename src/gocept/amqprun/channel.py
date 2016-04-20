@@ -16,8 +16,9 @@ class Channel(pika.channel.Channel):
 
     zope.interface.implements(gocept.amqprun.interfaces.IChannelManager)
 
-    def __init__(self, handler):
-        pika.channel.Channel.__init__(self, handler)
+    def __init__(self, connection, channel_number, on_open_callback):
+        super(Channel, self).__init__(
+            connection, channel_number, on_open_callback)
         self._gocept_amqprun_refcount = ThreadSafeCounter()
 
     def acquire(self):

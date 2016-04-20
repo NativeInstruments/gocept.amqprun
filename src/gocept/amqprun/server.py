@@ -113,7 +113,7 @@ class Server(object):
         assert self.channel is None
         log.debug('Opening new channel')
         try:
-            self.channel = self.connection.channel()
+            self.channel = self.connection.channel(lambda channel: None)
         except pika.exceptions.ChannelClosed:
             log.debug('Opening new channel aborted due to closed connection,'
                       ' since a reconnect should happen soon anyway.')
@@ -187,9 +187,9 @@ class Server(object):
             log.info(
                 "Channel[%s]: Handling routing key(s) '%s' on queue '%s'"
                 " via '%s'",
-                self.channel.handler.channel_number,
+                self.channel.channel_number,
                 handler.routing_key, queue_name, name)
-            self.channel.queue_declare(
+            self.channel.queue_declare(None,
                 queue=queue_name, durable=True,
                 exclusive=False, auto_delete=False,
                 arguments=arguments)
@@ -212,7 +212,7 @@ class Server(object):
         log.info('AMQP connection opened.')
         with self.connection.lock:
             self.open_channel()
-        self.send_channel = self.connection.channel()
+        self.send_channel = self.connection.channel(None)
         log.info('Finished connection initialization')
 
     def on_connection_closed(self, connection):
