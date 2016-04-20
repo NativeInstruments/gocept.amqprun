@@ -44,7 +44,7 @@ class RabbitDispatcher(pika.adapters.asyncore_connection.PikaDispatcher):
         self.connection = connection
 
 
-class Connection(pika.AsyncoreConnection):
+class Connection(pika.SelectConnection):
 
     _close_now = False
 
@@ -70,13 +70,13 @@ class Connection(pika.AsyncoreConnection):
             heartbeat_interval=int(parameters.heartbeat_interval))
 
     def finish_init(self):
-        pika.AsyncoreConnection.__init__(
+        pika.SelectConnection.__init__(
             self,
             self._pika_parameters,
             on_open_callback=self.on_open_callback,
             on_close_callback=self.on_close_callback,
         )
-        if not self.is_open:
+        if self.connection_state != self.CONNECTION_PROTOCOL:
             raise RuntimeError(
                 'Connection not alive after connect, maybe the credentials '
                 'are wrong.')
@@ -91,9 +91,10 @@ class Connection(pika.AsyncoreConnection):
         port = self._pika_parameters.port
         # not calling super since we need to use our subclassed
         # RabbitDispatcher
-        self.dispatcher = RabbitDispatcher(self)
-        self.dispatcher.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.dispatcher.connect((host, port or pika.spec.PORT))
+        # self.dispatcher = RabbitDispatcher(self)
+        # self.dispatcher.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        # self.dispatcher.connect((host, port or pika.spec.PORT))
+        super(Connection, self).connect()
 
     def reconnect(self):
         pika.AsyncoreConnection.reconnect(self)
@@ -107,7 +108,7 @@ class Connection(pika.AsyncoreConnection):
         # another thread detects that there is data to be written, it notifies
         # the main thread about it using the notifier pipe.
         if self.is_main_thread:
-            pika.asyncore_loop(self.socket_map, count=1, timeout=timeout)
+            self.ioloop.start()
             if self._close_now:
                 self.close()
         else:
@@ -117,10 +118,6 @@ class Connection(pika.AsyncoreConnection):
             if self.outbound_buffer:
                 self.notify()
                 time.sleep(0.05)
-
-    def channel(self):
-        return gocept.amqprun.channel.Channel(
-            pika.channel.ChannelHandler(self))
 
     @property
     def is_main_thread(self):
@@ -136,3 +133,16 @@ class Connection(pika.AsyncoreConnection):
         else:
             self._close_now = True
             self.notify()
+
+    #  taken from pika 0.9.14 core
+    def _create_channel(self, channel_number, on_open_callback):
+        """Create a new channel using the specified channel number and calling
+        back the method specified by on_open_callback
+
+        :param int channel_number: The channel number to use
+        :param method on_open_callback: The callback when the channel is opened
+
+        """
+        return gocept.amqprun.channel.Channel(
+            self, channel_number, on_open_callback)
+
