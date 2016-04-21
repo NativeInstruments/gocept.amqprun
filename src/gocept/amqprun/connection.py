@@ -4,7 +4,6 @@ import logging
 import os
 import pika
 import pika.adapters.asyncore_connection
-import pika.channel
 import socket
 import threading
 import time
@@ -59,21 +58,19 @@ class Connection(pika.SelectConnection):
         self.on_close_callback = on_close_callback
 
         if isinstance(parameters, pika.connection.Parameters):
-                pika_parameters = parameters
+            self._pika_parameters = parameters
         else:
             credentials = None
             if parameters.username and parameters.password:
                 credentials = pika.PlainCredentials(
                     parameters.username, parameters.password)
-                pika_parameters = pika.ConnectionParameters(
-                            host=parameters.hostname,
-                            port=int(parameters.port),
-                            virtual_host=parameters.virtual_host,
-                            credentials=credentials,
-                            heartbeat_interval=int(
-                                parameters.heartbeat_interval))
-
-        self._pika_parameters = pika_parameters
+            self._pika_parameters = pika.ConnectionParameters(
+                        host=parameters.hostname,
+                        port=int(parameters.port),
+                        virtual_host=parameters.virtual_host,
+                        credentials=credentials,
+                        heartbeat_interval=int(
+                            parameters.heartbeat_interval))
 
     def finish_init(self):
         pika.SelectConnection.__init__(
@@ -103,7 +100,7 @@ class Connection(pika.SelectConnection):
         super(Connection, self).connect()
 
     def reconnect(self):
-        pika.AsyncoreConnection.reconnect(self)
+        pika.SelectConnection.reconnect(self)
         self.notify()
 
     def notify(self):
@@ -132,8 +129,8 @@ class Connection(pika.SelectConnection):
     def close(self, *args, **kw):
         if not self.is_open:
             return
+        super(Connection, self).close(*args, **kw)
         if self.is_main_thread:
-            super(Connection, self).close(*args, **kw)
             self.notifier_dispatcher.close()
             self._main_thread_lock.release()
         else:

@@ -17,40 +17,30 @@ class ConnectionTest(unittest.TestCase):
 
     def test_parameters_should_be_converted_to_pika(self):
         from gocept.amqprun.connection import Connection
-        with mock.patch('pika.AsyncoreConnection.__init__') as init, \
-                mock.patch.object(Connection, 'is_open', return_value=True,
-                                  new_callable=mock.PropertyMock):
-            conn = Connection(self.get_parameters())
-            conn.finish_init()
-            params = init.call_args[0][1]
-            assert 'amqp.gocept.com' == params.host
-            assert 2342 == params.port
-            assert 'vhost_1' == params.virtual_host
-            assert 23 == params.heartbeat
-            assert 'amq_user' == params.credentials.username
-            assert 'secret' == params.credentials.password
+        params = Connection(self.get_parameters())._pika_parameters
+        assert 'amqp.gocept.com' == params.host
+        assert 2342 == params.port
+        assert 'vhost_1' == params.virtual_host
+        assert 23 == params.heartbeat
+        assert 'amq_user' == params.credentials.username
+        assert 'secret' == params.credentials.password
 
     def test_no_username_and_password_should_yield_default_credentials(self):
         from gocept.amqprun.connection import Connection
-        with mock.patch('pika.AsyncoreConnection.__init__') as init, \
-                mock.patch.object(Connection, 'is_open', return_value=True,
-                                  new_callable=mock.PropertyMock):
-            parameters = self.get_parameters()
-            parameters.username = None
-            parameters.password = None
-            conn = Connection(parameters)
-            conn.finish_init()
-            params = init.call_args[0][1]
-            assert 'guest' == params.credentials.username
-            assert 'guest' == params.credentials.password
+        parameters = self.get_parameters()
+        parameters.username = None
+        parameters.password = None
+        params = Connection(parameters)._pika_parameters
+        assert 'guest' == params.credentials.username
+        assert 'guest' == params.credentials.password
 
     def test_finish_init_raises_RuntimeError_when_connection_cannot_be_opened(
             self):
         from gocept.amqprun.connection import Connection
-        with mock.patch('pika.AsyncoreConnection.__init__'), \
-                mock.patch.object(Connection, 'is_open', return_value=False,
-                                  new_callable=mock.PropertyMock):
+        with mock.patch('pika.SelectConnection.__init__'):
             conn = Connection(self.get_parameters())
+            NOT_OPEN = None
+            conn.connection_state = NOT_OPEN
             with self.assertRaises(RuntimeError) as err:
                 conn.finish_init()
             self.assertEqual(
