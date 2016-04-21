@@ -215,7 +215,7 @@ class Server(object):
         self.send_channel = self.connection.channel(None)
         log.info('Finished connection initialization')
 
-    def on_connection_closed(self, connection):
+    def on_connection_closed(self, connection, reply_code, reply_text):
         assert connection == self.connection
         if self.connection.connection_close:
             message = self.connection.connection_close.reply_text

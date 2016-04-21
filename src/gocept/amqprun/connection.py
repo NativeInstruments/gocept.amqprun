@@ -133,7 +133,7 @@ class Connection(pika.SelectConnection):
         if not self.is_open:
             return
         if self.is_main_thread:
-            pika.AsyncoreConnection.close(self, *args, **kw)
+            super(Connection, self).close(*args, **kw)
             self.notifier_dispatcher.close()
             self._main_thread_lock.release()
         else:
