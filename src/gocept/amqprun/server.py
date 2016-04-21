@@ -113,7 +113,7 @@ class Server(object):
         assert self.channel is None
         log.debug('Opening new channel')
         try:
-            self.channel = self.connection.channel(lambda channel: None)
+            self.channel = self.connection.channel(None)
         except pika.exceptions.ChannelClosed:
             log.debug('Opening new channel aborted due to closed connection,'
                       ' since a reconnect should happen soon anyway.')
