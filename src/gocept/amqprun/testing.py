@@ -117,7 +117,7 @@ class QueueTestCase(unittest.TestCase):
                 # NOTE: we seem to need a new channel for each delete;
                 # trying to use self.channel for all queues results in its
                 # closing after the first delete
-                with self.connection.channel(lambda channel: None) as channel:
+                with self.connection.channel(None) as channel:
                     channel.queue_delete(queue_name)
             except amqp.ChannelError:
                 pass
