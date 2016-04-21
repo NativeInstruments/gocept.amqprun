@@ -1,4 +1,5 @@
 import gocept.amqprun.channel
+import gocept.amqprun.interfaces
 import gocept.testing.assertion
 import mock
 import unittest
@@ -25,6 +26,16 @@ class TestChannel(unittest.TestCase):
     def test_interface(self):
         from gocept.amqprun.interfaces import IChannelManager
         zope.interface.verify.verifyObject(IChannelManager, self.channel)
+
+
+class ThreadSafeCounterTests(unittest.TestCase):
+    """Testing ..channel.ThreadSafeCounter."""
+
+    def test_channel__ThreadSafeCounter__dec__1(self):
+        """It raises an exception if the value falls below zero."""
+        counter = gocept.amqprun.channel.ThreadSafeCounter()
+        with self.assertRaises(gocept.amqprun.interfaces.CounterBelowZero):
+            counter.dec()
 
 
 class CallerName(unittest.TestCase,

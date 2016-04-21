@@ -142,6 +142,10 @@ class IChannelManager(zope.interface.Interface):
         """Close the channel if it is no longer used by anyone."""
 
 
+class CounterBelowZero(Exception):
+    """The counter has fallen below zero."""
+
+
 class IConfigFinished(zope.interface.Interface):
     """Event indicating that the configuration of gocept.amqprun was loaded."""
 
