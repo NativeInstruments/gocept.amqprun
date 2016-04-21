@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2011 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import mock
 import unittest
 
@@ -34,8 +31,6 @@ class ConnectionTest(unittest.TestCase):
             parameters.username = None
             parameters.password = None
             conn = Connection(parameters)
-            # The following calll is normally done by the mocked method:
-            conn._reset_per_connection_state()
             conn.finish_init()
             params = init.call_args[0][1]
             self.assertIsNone(params.credentials)
