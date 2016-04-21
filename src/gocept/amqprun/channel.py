@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import gocept.amqprun.interfaces
 import logging
 import pika.channel
@@ -16,6 +13,8 @@ class Channel(pika.channel.Channel):
 
     zope.interface.implements(gocept.amqprun.interfaces.IChannelManager)
 
+    channel_number = None
+
     def __init__(self, connection, channel_number, on_open_callback):
         super(Channel, self).__init__(
             connection, channel_number, on_open_callback)
@@ -25,20 +24,20 @@ class Channel(pika.channel.Channel):
         self._gocept_amqprun_refcount.inc()
         log.debug(
             'Channel[%s] acquired by %s, refcount %s',
-            self.handler.channel_number, caller_name(),
+            self.channel_number, caller_name(),
             self._gocept_amqprun_refcount)
 
     def release(self):
         self._gocept_amqprun_refcount.dec()
         log.debug(
             'Channel[%s] released by %s, refcount %s',
-            self.handler.channel_number, caller_name(),
+            self.channel_number, caller_name(),
             self._gocept_amqprun_refcount)
 
     def close_if_possible(self):
         if self._gocept_amqprun_refcount:
             return False
-        log.info('Closing channel %s', self.handler.channel_number)
+        log.info('Closing channel %s', self.channel_number)
         self.close()
         return True
 
