@@ -115,6 +115,8 @@ class AMQPDataManager(object):
         # is closed. At this point the message is re-queued and re-submitted to
         # us.
         if self._tpc_begin:
+            # On errors in savepoints tpc_abort is called without a prior
+            # tpc_begin().
             log.debug('tx_rollback')
             self._channel.tx_rollback()
             self.connection_lock.release()
