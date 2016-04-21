@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import gocept.amqprun.channel
 import gocept.testing.assertion
 import mock

@@ -1,7 +1,4 @@
 # coding: utf8
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import gocept.amqprun.interfaces
 import gocept.amqprun.message
 import gocept.amqprun.session
