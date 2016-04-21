@@ -9,6 +9,9 @@ CHANGES
   prevents switching channels. The counter is no longer bound to the
   transaction but to the message handling.
 
+- Acquire the channel before putting a task to the worker queue to prevent a
+  possible race condition.
+
 
 1.6 (2016-04-04)
 ----------------
