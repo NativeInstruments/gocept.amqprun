@@ -58,16 +58,22 @@ class Connection(pika.SelectConnection):
         self.on_open_callback = on_open_callback
         self.on_close_callback = on_close_callback
 
-        credentials = None
-        if parameters.username and parameters.password:
-            credentials = pika.PlainCredentials(
-                parameters.username, parameters.password)
-        self._pika_parameters = pika.ConnectionParameters(
-            host=parameters.hostname,
-            port=int(parameters.port),
-            virtual_host=parameters.virtual_host,
-            credentials=credentials,
-            heartbeat_interval=int(parameters.heartbeat_interval))
+        if isinstance(parameters, pika.connection.Parameters):
+                pika_parameters = parameters
+        else:
+            credentials = None
+            if parameters.username and parameters.password:
+                credentials = pika.PlainCredentials(
+                    parameters.username, parameters.password)
+                pika_parameters = pika.ConnectionParameters(
+                            host=parameters.hostname,
+                            port=int(parameters.port),
+                            virtual_host=parameters.virtual_host,
+                            credentials=credentials,
+                            heartbeat_interval=int(
+                                parameters.heartbeat_interval))
+
+        self._pika_parameters = pika_parameters
 
     def finish_init(self):
         pika.SelectConnection.__init__(
