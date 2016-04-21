@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import Queue
 import gocept.amqprun.connection
 import gocept.amqprun.interfaces
@@ -30,8 +27,8 @@ class Consumer(object):
         log.debug("Received message %s via routing key '%s'",
                   message.delivery_tag, method.routing_key)
         session = gocept.amqprun.session.Session(channel, message)
-        self.tasks.put((session, self.handler))
         gocept.amqprun.interfaces.IChannelManager(channel).acquire()
+        self.tasks.put((session, self.handler))
 
 
 class Server(object, pika.connection.NullReconnectionStrategy):
