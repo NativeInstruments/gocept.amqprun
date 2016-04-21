@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import gocept.amqprun.interfaces
 import logging
 import time
@@ -79,13 +76,7 @@ class AMQPDataManager(object):
         self.session = session
         self.connection_lock = session.channel.connection_lock
         self._channel = session.channel
-        self._channel_released = False
         self._tpc_begin = False
-
-    def _release_channel(self):
-        if not self._channel_released:
-            self._channel_released = True
-            gocept.amqprun.interfaces.IChannelManager(self._channel).release()
 
     def abort(self, transaction):
         # Called on
@@ -97,7 +88,6 @@ class AMQPDataManager(object):
         #   of abort.
         # - during afterCommitHooks, regardless of transaction outcome
         self.session.reset()
-        self._release_channel()
 
     def tpc_begin(self, transaction):
         log.debug("Acquire commit lock by %s", self)
@@ -121,7 +111,6 @@ class AMQPDataManager(object):
             self._channel.tx_rollback()
             self.connection_lock.release()
         self.session.reset()
-        self._release_channel()
 
     def tpc_vote(self, transaction):
         log.debug("tx_commit")
@@ -130,7 +119,6 @@ class AMQPDataManager(object):
     def tpc_finish(self, transaction):
         log.debug("Release commit lock by %s", self)
         self.connection_lock.release()
-        self._release_channel()
 
     def sortKey(self):
         # Try to sort last, so that we vote last.
