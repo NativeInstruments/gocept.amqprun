@@ -9,6 +9,9 @@ CHANGES
   prevents switching channels. The counter is no longer bound to the
   transaction but to the message handling.
 
+- Add a save guard which kills the whole process if the reference counter on
+  the channel falls below zero.
+
 - Acquire the channel before putting a task to the worker queue to prevent a
   possible race condition.
 

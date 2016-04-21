@@ -14,5 +14,9 @@
     component="gocept.amqprun.tests.integration.handler_iresponse"
     name="response"
     />
+  <utility
+    component="gocept.amqprun.tests.integration.handler_CounterBelowZero"
+    name="counterbelowzero"
+    />
 
 </configure>

@@ -1,6 +1,8 @@
-from gocept.amqprun.interfaces import IResponse
+from gocept.amqprun.interfaces import IResponse, CounterBelowZero
 import Queue
 import logging
+import os
+import signal
 import threading
 import transaction
 
@@ -99,7 +101,11 @@ class Worker(threading.Thread):
                         'Unhandled exception, prevent thread from crashing',
                         exc_info=True)
                 finally:
-                    session.channel.release()  # It is a IChannelManager.
+                    try:
+                        session.channel.release()  # It is a IChannelManager.
+                    except CounterBelowZero:
+                        # Reached an undefined state -> kill the whole process.
+                        os.kill(os.getpid(), signal.SIGUSR1)
                     end_interaction()
 
     def _send_response(self, session, message, response):

@@ -44,6 +44,7 @@ class Channel(pika.channel.Channel):
 
 
 class ThreadSafeCounter(object):
+    """Counter which is thread-safe and cannot fall below zero."""
 
     def __init__(self):
         self.lock = threading.Lock()
@@ -59,6 +60,8 @@ class ThreadSafeCounter(object):
     def dec(self):
         with self.lock:
             self.value -= 1
+            if self.value < 0:
+                raise gocept.amqprun.interfaces.CounterBelowZero()
 
     def __str__(self):
         return str(self.value)
