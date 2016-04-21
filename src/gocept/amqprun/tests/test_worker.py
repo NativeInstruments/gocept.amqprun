@@ -89,6 +89,7 @@ class WorkerTest(unittest.TestCase):
         time.sleep(0.1)
         self.assertEqual(0, self.queue.qsize())
         self.assertTrue(transaction_commit.called)
+        assert self.session.channel.release.called
 
     @mock.patch('transaction.commit')
     @mock.patch('transaction.abort')
@@ -101,6 +102,7 @@ class WorkerTest(unittest.TestCase):
         self.assertTrue(provoke_error.called)
         self.assertFalse(transaction.commit.called)
         self.assertTrue(transaction.abort.called)
+        assert self.session.channel.release.called
 
     @mock.patch('transaction.commit')
     @mock.patch('transaction.abort')
@@ -129,6 +131,7 @@ class WorkerTest(unittest.TestCase):
         self.assertEqual(0, self.queue.qsize())
         self.assertTrue(response.exception.called)
         self.assertEqual(['abort', 'commit'], calls)
+        assert self.session.channel.release.called
 
     @mock.patch('transaction.commit')
     @mock.patch('transaction.abort')
@@ -140,6 +143,7 @@ class WorkerTest(unittest.TestCase):
         self.assertEqual(0, self.queue.qsize())
         self.assertTrue(transaction.commit.called)
         self.assertTrue(transaction.abort.called)
+        assert self.session.channel.release.called
 
     @mock.patch('transaction.abort')
     def test_error_on_abort_should_not_crash_thread(self, mock1):
@@ -151,6 +155,7 @@ class WorkerTest(unittest.TestCase):
         self.assertEqual(0, self.queue.qsize())
         self.assertTrue(transaction.abort.called)
         self.assertTrue(self.worker.is_alive())
+        assert self.session.channel.release.called
 
     def test_handler_with_principal_should_create_interaction(self):
         import zope.security.management

@@ -234,35 +234,6 @@ class DataManagerTest(unittest.TestCase):
         dm.abort(None)
         self.assertFalse(self.channel.basic_reject.called)
 
-    def test_tpc_finish_should_release_channel(self):
-        dm = self.get_dm()
-        self.connection.lock.acquire()
-        dm.tpc_finish(None)
-        self.assertTrue(self.channel_manager.release.called)
-
-    def test_tpc_abort_should_release_channel(self):
-        dm = self.get_dm()
-        self.connection.lock.acquire()
-        dm.tpc_abort(None)
-        self.assertTrue(self.channel_manager.release.called)
-
-    def test_abort_should_release_channel(self):
-        dm = self.get_dm()
-        dm.abort(None)
-        self.assertTrue(self.channel_manager.release.called)
-
-    def test_multiple_abort_should_release_channel_only_once(self):
-        dm = self.get_dm()
-        dm.abort(None)
-        dm.abort(None)
-        self.assertEqual(1, self.channel_manager.release.call_count)
-
-    def test_abort_and_tpc_abort_should_release_channel_only_once(self):
-        dm = self.get_dm()
-        dm.abort(None)
-        dm.tpc_abort(None)
-        self.assertEqual(1, self.channel_manager.release.call_count)
-
     def test_supports_savepoint_protocol(self):
         # Since our implementation is a no-op this whole test is basically
         # assertNothingRaised().

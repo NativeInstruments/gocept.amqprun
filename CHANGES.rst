@@ -4,7 +4,10 @@ CHANGES
 1.7 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Fix possible unresponsiveness of message handlers which occurred after an
+  exception in the worker. The exception caused a counter under-run which
+  prevents switching channels. The counter is no longer bound to the
+  transaction but to the message handling.
 
 
 1.6 (2016-04-04)

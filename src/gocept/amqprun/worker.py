@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 from gocept.amqprun.interfaces import IResponse
 import Queue
 import logging
@@ -102,6 +99,7 @@ class Worker(threading.Thread):
                         'Unhandled exception, prevent thread from crashing',
                         exc_info=True)
                 finally:
+                    session.channel.release()  # It is a IChannelManager.
                     end_interaction()
 
     def _send_response(self, session, message, response):
