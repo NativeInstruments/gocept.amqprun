@@ -24,7 +24,8 @@ class Consumer(object):
     def __call__(self, channel, method, header, body):
         message = gocept.amqprun.message.Message(
             header, body, method.delivery_tag, method.routing_key, channel)
-        log.debug("Received message %s via routing key '%s'",
+        log.debug("Channel[%s] received message %s via routing key '%s'",
+                  channel.handler.channel_number,
                   message.delivery_tag, method.routing_key)
         session = gocept.amqprun.session.Session(channel, message)
         gocept.amqprun.interfaces.IChannelManager(channel).acquire()
