@@ -108,8 +108,14 @@ class AMQPDataManager(object):
             # On errors in savepoints tpc_abort is called without a prior
             # tpc_begin().
             log.debug('tx_rollback')
-            self._channel.tx_rollback()
-            self.connection_lock.release()
+            try:
+                # XXX The following should not fail. But if it raises an
+                # exception nevertheless we release the lock as otherwise the
+                # next `tpc_begin()` will block forever when acquiring the
+                # lock. Maybe there is a better solution.
+                self._channel.tx_rollback()
+            finally:
+                self.connection_lock.release()
         self.session.reset()
 
     def tpc_vote(self, transaction):

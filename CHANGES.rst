@@ -15,6 +15,9 @@ CHANGES
 - Acquire the channel before putting a task to the worker queue to prevent a
   possible race condition.
 
+- Release the commit lock if ``tpc_abort()`` fails. So the next ``tpc_begin()``
+  does not wait forever while trying to acquire the lock and thus blocking the
+  whole process.
 
 1.6 (2016-04-04)
 ----------------
