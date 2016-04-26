@@ -43,7 +43,7 @@ class Channel(pika.channel.Channel):
 
     @property
     def connection_lock(self):
-        return self.handler.connection.lock
+        return self.connection.lock
 
 
 class ThreadSafeCounter(object):
