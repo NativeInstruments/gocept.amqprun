@@ -45,11 +45,15 @@ class Server(object):
         self.tasks = Queue.Queue()
         self.local = threading.local()
         self._running = threading.Event()
+        self._ready_to_consume = threading.Event()
         self.connection = None
         self.channel = None
         self._old_channel = None
         self._switching_channels = False
         self.setup_handlers = setup_handlers
+
+    def wait_until_ready_to_consume(self, timeout=None):
+        return self._ready_to_consume.wait(timeout)
 
     @property
     def running(self):
@@ -202,6 +206,7 @@ class Server(object):
                     routing_key=routing_key)
             channel.basic_consume(
                 Consumer(handler, self.tasks), queue=queue_name)
+        self._ready_to_consume.set()
 
     # Connection Strategy Interface
 
