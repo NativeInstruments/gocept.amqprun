@@ -110,16 +110,16 @@ class Server(object):
         return self.local.session
 
     def open_channel(self):
-        assert self.channel is None
         log.debug('Opening new channel')
         try:
-            self.channel = self.connection.channel(None)
+            channel = self.connection.channel(self._declare_and_bind_queues)
         except pika.exceptions.ChannelClosed:
             log.debug('Opening new channel aborted due to closed connection,'
                       ' since a reconnect should happen soon anyway.')
-            return
-        self._declare_and_bind_queues()
-        self._channel_opened = time.time()
+            channel = None
+        else:
+            self._channel_opened = time.time()
+        return channel
 
     def switch_channel(self):
         if not zope.component.getUtilitiesFor(
@@ -147,8 +147,7 @@ class Server(object):
                     gocept.amqprun.interfaces.IChannelManager(
                         self.channel).release()
             self._old_channel = self.channel
-            self.channel = None
-            self.open_channel()
+            self.channel = self.open_channel()
         finally:
             self.connection.lock.release()
 
@@ -170,7 +169,7 @@ class Server(object):
     def _declare_and_bind_queues(self, channel):
         if not self.setup_handlers:
             return
-        assert self.channel is not None
+        assert channel is not None
         bound_queues = {}
         for name, handler in zope.component.getUtilitiesFor(
                 gocept.amqprun.interfaces.IHandler):
@@ -187,9 +186,9 @@ class Server(object):
             log.info(
                 "Channel[%s]: Handling routing key(s) '%s' on queue '%s'"
                 " via '%s'",
-                self.channel.channel_number,
+                channel.channel_number,
                 handler.routing_key, queue_name, name)
-            self.channel.queue_declare(None,
+            channel.queue_declare(None,
                 queue=queue_name, durable=True,
                 exclusive=False, auto_delete=False,
                 arguments=arguments)
@@ -198,10 +197,10 @@ class Server(object):
                 routing_keys = [routing_keys]
             for routing_key in routing_keys:
                 routing_key = unicode(routing_key).encode('UTF-8')
-                self.channel.queue_bind(
+                channel.queue_bind(None,
                     queue=queue_name, exchange='amq.topic',
                     routing_key=routing_key)
-            self.channel.basic_consume(
+            channel.basic_consume(
                 Consumer(handler, self.tasks), queue=queue_name)
 
     # Connection Strategy Interface
@@ -211,7 +210,7 @@ class Server(object):
         assert connection.is_open
         log.info('AMQP connection opened.')
         with self.connection.lock:
-            self.open_channel()
+            self.channel = self.open_channel()
         self.send_channel = self.connection.channel(None)
         log.info('Finished connection initialization')
 
