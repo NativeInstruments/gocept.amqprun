@@ -223,7 +223,7 @@ class TestChannelSwitch(unittest.TestCase):
         # IChannelManager. (That's actually two bugs in ZCA in one go...)
         channel_spec = [x for x in dir(gocept.amqprun.channel.Channel)
                         if not x.startswith('__')]
-        server.channel = mock.Mock(channel_spec)
+        server.channel = mock.MagicMock(channel_spec)
         zope.interface.alsoProvides(
             server.channel, gocept.amqprun.interfaces.IChannelManager)
         server.channel.callbacks = collections.OrderedDict()
@@ -350,28 +350,14 @@ class DyingRabbitTest(
     def start_server(self, **kw):
         self.server = super(DyingRabbitTest, self).create_server(**kw)
         self.start_thread(self.server)
-
-    def test_socket_close_should_not_stop_main_loop_and_open_connection(self):
-        # This hopefully simulates local errors
-        self.start_server()
-        self.assertTrue(self.server.connection.is_open)
-        time.sleep(0.5)
-        self.server.connection.dispatcher.socket.close()
-        self.server.connection.notify()
-        time.sleep(3)
-
-        self.assertTrue(self.thread.is_alive())
-        self.assertTrue(self.server.connection.is_open)
-        self.assertEqual(self.server.connection.channels[1],
-                         self.server.channel.handler)
-        # Do something with the channel
-        self.server.channel.tx_select()
+        assert self.server.wait_until_running(timeout=5)
 
     def test_remote_close_should_reopen_connection(self):
         port = random.randint(30000, 40000)
         pid = self.tcpwatch(port)
         self.start_server(port=port)
         old_channel = self.server.channel
+        time.sleep(1)
         self.assertTrue(self.server.connection.is_open)
 
         os.kill(pid, signal.SIGINT)
