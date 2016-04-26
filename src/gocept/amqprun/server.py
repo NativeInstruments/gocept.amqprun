@@ -67,8 +67,7 @@ class Server(object):
             self._running.clear()
 
     def wait_until_running(self, timeout=None):
-        self._running.wait(timeout)
-        return self.running
+        return self._running.wait(timeout)
 
     def start(self):
         log.info('Starting message reader.')
