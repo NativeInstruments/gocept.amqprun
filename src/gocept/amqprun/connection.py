@@ -100,7 +100,7 @@ class Connection(pika.SelectConnection):
         super(Connection, self).connect()
 
     def reconnect(self):
-        pika.SelectConnection.reconnect(self)
+        self.connect()
         self.notify()
 
     def notify(self):

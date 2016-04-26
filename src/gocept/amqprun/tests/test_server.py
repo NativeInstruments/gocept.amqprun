@@ -179,7 +179,7 @@ class MessageReaderTest(
         zope.component.provideUtility(handler, name='queue')
         self.start_server()
         self.send_message('foo', routing_key='test.messageformat.1')
-        self.assertEqual(1, self.server.tasks.qsize())
+        self.server.tasks.get(timeout=5)
         self.assertFalse(self.server.channel.close_if_possible())
 
 
@@ -369,7 +369,7 @@ class DyingRabbitTest(
     def test_remote_close_should_reopen_connection(self):
         port = random.randint(30000, 40000)
         pid = self.tcpwatch(port)
-        self.start_server(port)
+        self.start_server(port=port)
         old_channel = self.server.channel
         self.assertTrue(self.server.connection.is_open)
 
@@ -379,8 +379,8 @@ class DyingRabbitTest(
 
         self.assertTrue(self.thread.is_alive())
         self.assertTrue(self.server.connection.is_open)
-        self.assertEqual(self.server.connection.channels[1],
-                         self.server.channel.handler)
+        self.assertEqual(self.server.connection._channels[1],
+                         self.server.channel)
         self.assertNotEqual(old_channel, self.server.channel)
         # Do something with the channel
         self.server.channel.tx_select()
@@ -388,7 +388,8 @@ class DyingRabbitTest(
     def test_remote_close_should_not_break_switch_channel(self):
         port = random.randint(30000, 40000)
         pid = self.tcpwatch(port)
-        self.start_server(port)
+        self.start_server(port=port)
+        time.sleep(1)
         self.assertTrue(self.server.connection.is_open)
 
         os.kill(pid, signal.SIGINT)

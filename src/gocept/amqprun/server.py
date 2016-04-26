@@ -77,7 +77,7 @@ class Server(object):
         while self.running:
             self.run_once()
         # closing
-        self.connection.ensure_closed()
+        self.connection._ensure_closed()
         self.connection = None
 
     def run_once(self):
@@ -136,8 +136,8 @@ class Server(object):
         try:
             self._switching_channels = True
             log.info('Switching to a new channel')
-            for consumer_tag in self.channel.callbacks.keys():
-                self.channel.basic_cancel(consumer_tag)
+            for consumer_tag in self.channel.consumer_tags:
+                self.channel.basic_cancel(None, consumer_tag)
             while True:
                 try:
                     self.tasks.get(block=False)
@@ -167,7 +167,7 @@ class Server(object):
         finally:
             self.connection.lock.release()
 
-    def _declare_and_bind_queues(self):
+    def _declare_and_bind_queues(self, channel):
         if not self.setup_handlers:
             return
         assert self.channel is not None
@@ -217,12 +217,12 @@ class Server(object):
 
     def on_connection_closed(self, connection, reply_code, reply_text):
         assert connection == self.connection
-        if self.connection.connection_close:
-            message = self.connection.connection_close.reply_text
+        if self.connection.is_closed:
+            message = reply_text
         else:
             message = 'no detail available'
         log.info('AMQP connection closed (%s)', message)
         self._old_channel = self.channel = None
         if self.running:
             log.info('Reconnecting in 1s')
-            self.connection.delayed_call(1, self.connection.reconnect)
+            self.connection.add_timeout(1, self.connection.reconnect)
