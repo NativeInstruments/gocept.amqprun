@@ -209,6 +209,41 @@ class MultipleServerTest(gocept.amqprun.testing.MainTestCase):
             thread.join()
 
 
+class TestChannelSwitchServer(
+        gocept.amqprun.testing.LoopTestCase,
+        gocept.amqprun.testing.QueueTestCase):
+
+    def start_server(self, **kw):
+        self.server = self.create_server(**kw)
+        self.start_thread(self.server)
+        assert self.server.wait_until_ready_to_consume(timeout=5)
+
+    def test_server__Server__switch_channel__1(self):
+        """It calls basic_consume on the new channel after switching."""
+        from gocept.amqprun.handler import Handler
+        self.start_server()
+        handler = Handler('queue_name', 'routing_key', lambda x: None)
+        zope.component.provideUtility(handler, name='handler')
+        with mock.patch('gocept.amqprun.channel.Channel.basic_consume'):
+            self.server.switch_channel()
+            time.sleep(1)
+            self.assertTrue(self.server.channel.basic_consume.called)
+
+    def test_server__Server__switch_channel__2(self):
+        """It calls basic_cancel on the old channel for all consumer tags."""
+        self.start_server()
+        channel = self.server.channel
+        channel._consumers[mock.sentinel.ct1] = mock.sentinel.callback1
+        channel._consumers[mock.sentinel.ct2] = mock.sentinel.callback2
+        with mock.patch('gocept.amqprun.channel.Channel.basic_cancel'):
+            self.server.switch_channel()
+            self.assertEqual(2, channel.basic_cancel.call_count)
+            channel.basic_cancel.assert_any_call(None, mock.sentinel.ct1)
+            channel.basic_cancel.assert_any_call(None, mock.sentinel.ct2)
+        del channel._consumers[mock.sentinel.ct1]
+        del channel._consumers[mock.sentinel.ct2]
+
+
 class TestChannelSwitch(unittest.TestCase):
 
     def create_server(self):
@@ -233,15 +268,6 @@ class TestChannelSwitch(unittest.TestCase):
         server.connection.channel.return_value = new_channel
         return server
 
-    def test_switch_channel_should_cancel_consume_on_old_channel(self):
-        server = self.create_server()
-        channel = server.channel
-        channel.callbacks[mock.sentinel.ct1] = mock.sentinel.callback1
-        channel.callbacks[mock.sentinel.ct2] = mock.sentinel.callback2
-        server.switch_channel()
-        self.assertEqual(2, channel.basic_cancel.call_count)
-        channel.basic_cancel.assert_called_with(mock.sentinel.ct2)
-
     def test_switch_channel_should_empty_tasks_and_release_channel(self):
         server = self.create_server()
         channel = server.channel
@@ -257,14 +283,6 @@ class TestChannelSwitch(unittest.TestCase):
         self.assertTrue(server.connection.channel.called)
         new_channel = server.connection.channel()
         self.assertEqual(new_channel, server.channel)
-
-    def test_switch_channel_calls_consume_on_new_channel(self):
-        from gocept.amqprun.handler import Handler
-        server = self.create_server()
-        handler = Handler('queue_name', 'routing_key', lambda x: None)
-        zope.component.provideUtility(handler, name='handler')
-        server.switch_channel()
-        self.assertTrue(server.channel.basic_consume.called)
 
     def test_switch_channel_should_acquire_and_release_connection_lock(self):
         server = self.create_server()
