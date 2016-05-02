@@ -199,14 +199,18 @@ class MultipleServerTest(gocept.amqprun.testing.MainTestCase):
         self.expect_message_on('test.response')
         self.start_server()
 
+        server = None
+        thread = None
         try:
             server = self.create_server(setup_handlers=False)
             thread = self._start_thread(server)
             self.send_message('foo', routing_key='test.routing')
             self.wait_for_message(5)
         finally:
-            server.stop()
-            thread.join()
+            if server is not None:
+                server.stop()
+            if thread is not None:
+                thread.join()
 
 
 class TestChannelSwitchServer(
