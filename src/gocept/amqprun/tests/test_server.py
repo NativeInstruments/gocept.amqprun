@@ -25,7 +25,7 @@ class MessageReaderTest(
     def start_server(self, **kw):
         self.server = self.create_server(**kw)
         self.start_thread(self.server)
-        assert self.server.wait_until_ready_to_consume(timeout=5)
+        assert self.server.wait_until_running(timeout=5)
 
     def test_loop_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
@@ -216,7 +216,7 @@ class TestChannelSwitchServer(
     def start_server(self, **kw):
         self.server = self.create_server(**kw)
         self.start_thread(self.server)
-        assert self.server.wait_until_ready_to_consume(timeout=5)
+        assert self.server.wait_until_running(timeout=5)
 
     def test_server__Server__switch_channel__1(self):
         """It calls basic_consume on the new channel after switching."""

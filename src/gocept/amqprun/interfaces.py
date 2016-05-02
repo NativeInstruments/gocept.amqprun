@@ -106,8 +106,6 @@ class ISettings(zope.interface.common.mapping.IReadMapping):
 
 class ILoop(zope.interface.Interface):
 
-    running = zope.interface.Attribute('bool: is the loop running?')
-
     def wait_until_running(timeout=None):
         """Block until the loop is running.
 

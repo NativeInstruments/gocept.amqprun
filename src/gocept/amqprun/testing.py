@@ -249,11 +249,12 @@ class MainTestCase(LoopTestCase, QueueTestCase):
             target=gocept.amqprun.main.main, args=(self.config.name,))
         self.thread.start()
         for i in range(200):
-            if (gocept.amqprun.main.main_server is not None and
-                    gocept.amqprun.main.main_server.running):
+            if gocept.amqprun.main.main_server is not None:
                 break
             time.sleep(0.025)
         else:
+            self.fail('Main thread did not start up.')
+        if not gocept.amqprun.main.main_server.wait_until_running(5):
             self.fail('Server did not start up.')
         self.loop = gocept.amqprun.main.main_server
         self.server_started.wait()

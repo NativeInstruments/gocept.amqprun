@@ -22,7 +22,7 @@ class FileStoreReader(threading.Thread):
     zope.interface.implements(gocept.amqprun.interfaces.ILoop)
 
     def __init__(self, path, routing_key):
-        self.running = False
+        self.keep_running = False
         self.routing_key = routing_key
         self.filestore = gocept.filestore.FileStore(path)
         self.filestore.prepare()
@@ -32,14 +32,14 @@ class FileStoreReader(threading.Thread):
 
     def wait_until_running(self, timeout=None):
         deadline = time.time() + timeout
-        while not self.running or time.time() > deadline:
+        while not(self.keep_running or time.time() > deadline):
             time.sleep(0.025)
-        return self.running
+        return self.keep_running
 
     def run(self):
         log.info('starting to watch %s', self.filestore.path)
-        self.running = True
-        while self.running:
+        self.keep_running = True
+        while self.keep_running:
             try:
                 self.scan()
                 time.sleep(1)
@@ -49,7 +49,7 @@ class FileStoreReader(threading.Thread):
 
     def stop(self):
         log.info('stopping')
-        self.running = False
+        self.keep_running = False
         self.join()
 
     def scan(self):
