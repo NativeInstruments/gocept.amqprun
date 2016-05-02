@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import Queue
 import gocept.amqprun.handler
 import gocept.amqprun.interfaces
@@ -33,7 +30,7 @@ class WorkerTest(unittest.TestCase):
         # wait for thread to start
         for i in range(10):
             time.sleep(0.025)
-            if self.worker.running:
+            if self.worker.keep_running:
                 break
 
     def _create_task(self, handler):

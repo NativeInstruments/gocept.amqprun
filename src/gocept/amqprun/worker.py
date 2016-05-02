@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 from gocept.amqprun.interfaces import IResponse
 import Queue
 import logging
@@ -43,7 +40,7 @@ class Worker(threading.Thread):
 
     def __init__(self, queue):
         self.queue = queue
-        self.running = False
+        self.keep_running = False
         super(Worker, self).__init__()
         self.daemon = True
         # just in case we want to log something while not running
@@ -52,8 +49,8 @@ class Worker(threading.Thread):
     def run(self):
         self.log = PrefixingLogger(log, 'Worker[%s] ' % self.ident)
         self.log.info('starting')
-        self.running = True
-        while self.running:
+        self.keep_running = True
+        while self.keep_running:
             try:
                 session, handler = self.queue.get(timeout=self.timeout)
             except Queue.Empty:
@@ -113,5 +110,5 @@ class Worker(threading.Thread):
 
     def stop(self):
         self.log.info('stopping')
-        self.running = False
+        self.keep_running = False
         self.join()

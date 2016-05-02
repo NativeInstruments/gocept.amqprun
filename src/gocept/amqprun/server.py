@@ -40,11 +40,13 @@ class Server(object):
     CHANNEL_LIFE_TIME = 360
     exit_status = 0
 
+    keep_running = False
+
     def __init__(self, connection_parameters, setup_handlers=True):
         self.connection_parameters = connection_parameters
         self.tasks = Queue.Queue()
         self.local = threading.local()
-        self._running = threading.Event()
+        self._send_channel_initialized = threading.Event()
         self._ready_to_consume = threading.Event()
         self.connection = None
         self.channel = None
@@ -52,22 +54,10 @@ class Server(object):
         self._switching_channels = False
         self.setup_handlers = setup_handlers
 
-    def wait_until_ready_to_consume(self, timeout=None):
-        return self._ready_to_consume.wait(timeout)
-
-    @property
-    def running(self):
-        return self._running.is_set()
-
-    @running.setter
-    def running(self, value):
-        if value:
-            self._running.set()
-        else:
-            self._running.clear()
-
     def wait_until_running(self, timeout=None):
-        return self._running.wait(timeout)
+        return (self._send_channel_initialized.wait(timeout) and
+                (not self.setup_handlers or
+                 self._ready_to_consume.wait(timeout)))
 
     def start(self):
         log.info('Starting message reader.')
@@ -76,8 +66,8 @@ class Server(object):
             on_open_callback=self.on_connection_open,
             on_close_callback=self.on_connection_closed)
         self.connection.finish_init()
-        self.running = True
-        while self.running:
+        self.keep_running = True
+        while self.keep_running:
             self.run_once()
         # closing
         self.connection._ensure_closed()
@@ -99,7 +89,7 @@ class Server(object):
 
     def stop(self):
         log.info('Stopping message reader.')
-        self.running = False
+        self.keep_running = False
         self.connection.close()
 
     def send(self, message):
@@ -217,7 +207,8 @@ class Server(object):
         log.info('AMQP connection opened.')
         with self.connection.lock:
             self.channel = self.open_channel()
-        self.send_channel = self.connection.channel(None)
+        self.send_channel = self.connection.channel(
+            lambda *args: self._send_channel_initialized.set())
         log.info('Finished connection initialization')
 
     def on_connection_closed(self, connection, reply_code, reply_text):
@@ -228,6 +219,6 @@ class Server(object):
             message = 'no detail available'
         log.info('AMQP connection closed (%s)', message)
         self._old_channel = self.channel = None
-        if self.running:
+        if self.keep_running:
             log.info('Reconnecting in 1s')
             self.connection.add_timeout(1, self.connection.reconnect)
