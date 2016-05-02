@@ -4,7 +4,7 @@ import logging
 import os
 import pika
 import pika.adapters.asyncore_connection
-import socket
+# import socket
 import threading
 import time
 
@@ -90,8 +90,8 @@ class Connection(pika.SelectConnection):
             self.notifier_dispatcher = WriteDispatcher(
                 self.notifier_r, map=self.socket_map)
 
-        host = self._pika_parameters.host
-        port = self._pika_parameters.port
+        # host = self._pika_parameters.host
+        # port = self._pika_parameters.port
         # not calling super since we need to use our subclassed
         # RabbitDispatcher
         # self.dispatcher = RabbitDispatcher(self)
@@ -148,4 +148,3 @@ class Connection(pika.SelectConnection):
         """
         return gocept.amqprun.channel.Channel(
             self, channel_number, on_open_callback)
-

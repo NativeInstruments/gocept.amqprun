@@ -191,7 +191,8 @@ class Server(object):
                 " via '%s'",
                 channel.channel_number,
                 handler.routing_key, queue_name, name)
-            channel.queue_declare(None,
+            channel.queue_declare(
+                None,
                 queue=queue_name, durable=True,
                 exclusive=False, auto_delete=False,
                 arguments=arguments)
@@ -200,7 +201,8 @@ class Server(object):
                 routing_keys = [routing_keys]
             for routing_key in routing_keys:
                 routing_key = unicode(routing_key).encode('UTF-8')
-                channel.queue_bind(None,
+                channel.queue_bind(
+                    None,
                     queue=queue_name, exchange='amq.topic',
                     routing_key=routing_key)
             channel.basic_consume(
