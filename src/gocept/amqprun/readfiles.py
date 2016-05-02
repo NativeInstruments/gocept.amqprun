@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2014 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import gocept.amqprun.interfaces
 import gocept.filestore
 import logging
@@ -22,7 +19,7 @@ log = logging.getLogger(__name__)
 
 class FileStoreReader(threading.Thread):
 
-    zope.interface.Interface(gocept.amqprun.interfaces.ILoop)
+    zope.interface.implements(gocept.amqprun.interfaces.ILoop)
 
     def __init__(self, path, routing_key):
         self.running = False
