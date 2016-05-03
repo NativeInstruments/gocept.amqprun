@@ -1,6 +1,4 @@
 # coding: utf8
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
 
 import gocept.amqprun.interfaces
 import gocept.amqprun.message
@@ -27,7 +25,13 @@ class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
         self.make_config(__name__, 'integration')
         self._queues.append('test.queue')
         self._queues.append('test.queue.error')
-        self.start_server()
+        try:
+            self.start_server()
+        except Exception:
+            # Make sure all tear-down is run in correct order to avoid trouble
+            # wrt. the ZCA stacking.
+            self.tearDown()
+            raise
 
     def tearDown(self):
         gocept.amqprun.tests.integration.messages_received = None
