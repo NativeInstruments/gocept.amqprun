@@ -175,9 +175,9 @@ class Server(object):
 
         @callback_factory
         def _on_bind_ok_set(handler, queue_name, wait_until_bind_ok):
-                    channel.basic_consume(
-                        Consumer(handler, self.tasks), queue=queue_name)
-                    wait_until_bind_ok.set()
+            channel.basic_consume(
+                Consumer(handler, self.tasks), queue=queue_name)
+            wait_until_bind_ok.set()
 
         @callback_factory
         def _on_declare_ok(handler, queue_name):
