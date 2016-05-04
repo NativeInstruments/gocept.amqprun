@@ -19,6 +19,7 @@ class Channel(pika.channel.Channel):
         super(Channel, self).__init__(
             connection, channel_number, on_open_callback)
         self._gocept_amqprun_refcount = ThreadSafeCounter()
+        self.consume_ok_events = {}
 
     def acquire(self):
         self._gocept_amqprun_refcount.inc()
@@ -44,6 +45,15 @@ class Channel(pika.channel.Channel):
     @property
     def connection_lock(self):
         return self.connection.lock
+
+    def basic_consume(self, *args, **kw):
+        consumer_tag = super(Channel, self).basic_consume(*args, **kw)
+        self.consume_ok_events[consumer_tag] = threading.Event()
+        return consumer_tag
+
+    def _on_eventok(self, method_frame):
+        super(Channel, self)._on_eventok(method_frame)
+        self.consume_ok_events[method_frame.method.consumer_tag].set()
 
 
 class ThreadSafeCounter(object):
