@@ -87,19 +87,25 @@ class Server(object):
         self.connection._ensure_closed()
         self.connection = None
 
+    def initiate_channel_switch(self):
+        if self.connection.is_open:
+            if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
+                self.switch_channel()
+            self.close_old_channel()
+
     def run_once(self):
+        delta = 0.2
         try:
-            self.connection.drain_events()
+            self.connection.drain_events(
+                number_of_timeouts=int(self.CHANNEL_LIFE_TIME / delta + 2),
+                on_timeout=self.initiate_channel_switch, delta=delta)
         except select.error:
             log.error("Error while draining events", exc_info=True)
             self.connection._disconnect_transport(
                 "Select error")
             self.channel = self._old_channel = None
             return
-        if self.connection.is_open:
-            if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
-                self.switch_channel()
-            self.close_old_channel()
+        self.initiate_channel_switch()
 
     def stop(self):
         log.info('Stopping message reader.')
@@ -170,6 +176,8 @@ class Server(object):
             if closed:
                 self._old_channel = None
                 self._switching_channels = False
+        except pika.exceptions.ChannelClosed:
+            pass
         finally:
             self.connection.lock.release()
 

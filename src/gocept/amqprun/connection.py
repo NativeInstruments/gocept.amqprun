@@ -106,11 +106,16 @@ class Connection(pika.SelectConnection):
     def notify(self):
         os.write(self.notifier_w, 'R')
 
-    def drain_events(self, timeout=None):
+    def drain_events(self, number_of_timeouts=0, on_timeout=None, delta=0.1):
         # The actual communication takes *only* place in the main thread. If
         # another thread detects that there is data to be written, it notifies
         # the main thread about it using the notifier pipe.
         if self.is_main_thread:
+
+            if on_timeout is not None:
+                for n in range(1, number_of_timeouts):
+                    self.ioloop.add_timeout(delta * n, on_timeout)
+
             self.ioloop.start()
             if self._close_now:
                 self.close()
