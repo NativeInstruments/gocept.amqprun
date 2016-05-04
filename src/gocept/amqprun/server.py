@@ -54,17 +54,24 @@ class Server(object):
         self.tasks = Queue.Queue()
         self.local = threading.local()
         self._send_channel_initialized = threading.Event()
-        self._ready_to_consume = threading.Event()
+        self.channel_open_ok = threading.Event()
         self.connection = None
         self.channel = None
         self._old_channel = None
         self._switching_channels = False
         self.setup_handlers = setup_handlers
 
+        # A sequence of events to wait for. The idea is to chain OK callbacks
+        # in such a way that each of them appends further events to the
+        # sequence if it initiates other interactions that need an OK response
+        # in return. Only after all such further events have been appended may
+        # the callback set the event that represents its own OK.
+        self._ready_to_consume = [self.channel_open_ok]
+
     def wait_until_running(self, timeout=None):
         return (self._send_channel_initialized.wait(timeout) and
                 (not self.setup_handlers or
-                 self._ready_to_consume.wait(timeout)))
+                 all(event.wait(timeout) for event in self._ready_to_consume)))
 
     def start(self):
         log.info('Starting message reader.')
@@ -171,28 +178,31 @@ class Server(object):
             return
         assert channel is not None
         bound_queues = {}
-        bind_ok_events = set()
 
         @callback_factory
         def _on_bind_ok_set(handler, queue_name, wait_until_bind_ok):
-            channel.basic_consume(
+            consumer_tag = channel.basic_consume(
                 Consumer(handler, self.tasks), queue=queue_name)
+            self._ready_to_consume.append(
+                channel.consume_ok_events[consumer_tag])
             wait_until_bind_ok.set()
 
         @callback_factory
-        def _on_declare_ok(handler, queue_name):
+        def _on_declare_ok(handler, queue_name, wait_until_declare_ok):
             routing_keys = handler.routing_key
             if not isinstance(routing_keys, list):
                 routing_keys = [routing_keys]
             for routing_key in routing_keys:
                 routing_key = unicode(routing_key).encode('UTF-8')
                 wait_until_bind_ok = threading.Event()
-                bind_ok_events.add(wait_until_bind_ok)
+                self._ready_to_consume.append(wait_until_bind_ok)
 
                 channel.queue_bind(
                     _on_bind_ok_set(handler, queue_name, wait_until_bind_ok),
                     queue=queue_name, exchange='amq.topic',
                     routing_key=routing_key)
+
+            wait_until_declare_ok.set()
 
         for name, handler in zope.component.getUtilitiesFor(
                 gocept.amqprun.interfaces.IHandler):
@@ -212,15 +222,15 @@ class Server(object):
                 channel.channel_number,
                 handler.routing_key, queue_name, name)
 
+            wait_until_declare_ok = threading.Event()
+            self._ready_to_consume.append(wait_until_declare_ok)
             channel.queue_declare(
-                _on_declare_ok(handler, queue_name),
+                _on_declare_ok(handler, queue_name, wait_until_declare_ok),
                 queue=queue_name, durable=True,
                 exclusive=False, auto_delete=False,
                 arguments=arguments)
 
-        for event in bind_ok_events:
-            event.wait()
-        self._ready_to_consume.set()
+        self.channel_open_ok.set()
 
     # Connection Strategy Interface
 

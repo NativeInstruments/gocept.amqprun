@@ -228,10 +228,10 @@ class TestChannelSwitchServer(
         self.start_server()
         handler = Handler('queue_name', 'routing_key', lambda x: None)
         zope.component.provideUtility(handler, name='handler')
-        with mock.patch('gocept.amqprun.channel.Channel.basic_consume'):
+        with mock.patch('pika.channel.Channel.basic_consume') as basic_consume:
             self.server.switch_channel()
             time.sleep(1)
-            self.assertTrue(self.server.channel.basic_consume.called)
+            self.assertTrue(basic_consume.called)
 
     def test_server__Server__switch_channel__2(self):
         """It calls basic_cancel on the old channel for all consumer tags."""
