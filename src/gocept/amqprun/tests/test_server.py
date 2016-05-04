@@ -228,8 +228,13 @@ class TestChannelSwitchServer(
         self.start_server()
         handler = Handler('queue_name', 'routing_key', lambda x: None)
         zope.component.provideUtility(handler, name='handler')
-        with mock.patch('pika.channel.Channel.basic_consume') as basic_consume:
+        old_consume = pika.channel.Channel.basic_consume
+        with mock.patch('pika.channel.Channel.basic_consume',
+                        side_effect=lambda *args, **kw:
+                        old_consume(self.server.channel, *args, **kw)
+                        ) as basic_consume:
             self.server.switch_channel()
+            assert self.server.wait_until_running(timeout=10)
             time.sleep(1)
             self.assertTrue(basic_consume.called)
 
