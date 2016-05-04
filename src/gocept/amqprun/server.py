@@ -31,6 +31,13 @@ class Consumer(object):
         gocept.amqprun.interfaces.IChannelManager(channel).acquire()
 
 
+def callback_factory(func):
+    """Decorator to generate callback functions in a loop."""
+    def callback_factory(*closure_variables):
+        return lambda *args: func(*closure_variables)
+    return callback_factory
+
+
 class Server(object):
 
     zope.interface.implements(
@@ -164,6 +171,29 @@ class Server(object):
             return
         assert channel is not None
         bound_queues = {}
+        bind_ok_events = set()
+
+        @callback_factory
+        def _on_bind_ok_set(handler, queue_name, wait_until_bind_ok):
+                    channel.basic_consume(
+                        Consumer(handler, self.tasks), queue=queue_name)
+                    wait_until_bind_ok.set()
+
+        @callback_factory
+        def _on_declare_ok(handler, queue_name):
+            routing_keys = handler.routing_key
+            if not isinstance(routing_keys, list):
+                routing_keys = [routing_keys]
+            for routing_key in routing_keys:
+                routing_key = unicode(routing_key).encode('UTF-8')
+                wait_until_bind_ok = threading.Event()
+                bind_ok_events.add(wait_until_bind_ok)
+
+                channel.queue_bind(
+                    _on_bind_ok_set(handler, queue_name, wait_until_bind_ok),
+                    queue=queue_name, exchange='amq.topic',
+                    routing_key=routing_key)
+
         for name, handler in zope.component.getUtilitiesFor(
                 gocept.amqprun.interfaces.IHandler):
             queue_name = unicode(handler.queue_name).encode('UTF-8')
@@ -181,22 +211,15 @@ class Server(object):
                 " via '%s'",
                 channel.channel_number,
                 handler.routing_key, queue_name, name)
+
             channel.queue_declare(
-                None,
+                _on_declare_ok(handler, queue_name),
                 queue=queue_name, durable=True,
                 exclusive=False, auto_delete=False,
                 arguments=arguments)
-            routing_keys = handler.routing_key
-            if not isinstance(routing_keys, list):
-                routing_keys = [routing_keys]
-            for routing_key in routing_keys:
-                routing_key = unicode(routing_key).encode('UTF-8')
-                channel.queue_bind(
-                    None,
-                    queue=queue_name, exchange='amq.topic',
-                    routing_key=routing_key)
-            channel.basic_consume(
-                Consumer(handler, self.tasks), queue=queue_name)
+
+        for event in bind_ok_events:
+            event.wait()
         self._ready_to_consume.set()
 
     # Connection Strategy Interface
