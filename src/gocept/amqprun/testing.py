@@ -255,10 +255,9 @@ class MainTestCase(LoopTestCase, QueueTestCase):
             time.sleep(0.025)
         else:
             self.fail('Main thread did not start up.')
-        if not gocept.amqprun.main.main_server.wait_until_running(5):
-            self.fail('Server did not start up.')
         self.loop = gocept.amqprun.main.main_server
-        self.server_started.wait()
+        if not self.server_started.wait(5):
+            self.fail('Server did not start up.')
 
     def start_server_in_subprocess(self):
         script = tempfile.NamedTemporaryFile(suffix='.py')
