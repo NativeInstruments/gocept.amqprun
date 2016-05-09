@@ -3,8 +3,6 @@ import gocept.amqprun.channel
 import logging
 import os
 import pika
-import pika.adapters.asyncore_connection
-# import socket
 import threading
 import time
 
@@ -30,17 +28,6 @@ class WriteDispatcher(asyncore.file_dispatcher):
     def handle_read(self):
         # Read and discard byte.
         os.read(self.fileno(), 1)
-
-
-class RabbitDispatcher(pika.adapters.asyncore_connection.PikaDispatcher):
-    """Support more than one Server in a single process
-
-    by using a separate socket_map per Connection.
-    """
-
-    def __init__(self, connection):
-        asyncore.dispatcher.__init__(self, map=connection.socket_map)
-        self.connection = connection
 
 
 class Connection(pika.SelectConnection):
@@ -90,13 +77,6 @@ class Connection(pika.SelectConnection):
             self.notifier_dispatcher = WriteDispatcher(
                 self.notifier_r, map=self.socket_map)
 
-        # host = self._pika_parameters.host
-        # port = self._pika_parameters.port
-        # not calling super since we need to use our subclassed
-        # RabbitDispatcher
-        # self.dispatcher = RabbitDispatcher(self)
-        # self.dispatcher.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.dispatcher.connect((host, port or pika.spec.PORT))
         super(Connection, self).connect()
 
     def reconnect(self):
