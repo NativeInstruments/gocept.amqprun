@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-1.7 (unreleased)
+1.7 (2016-05-31)
 ----------------
 
 - Fix possible unresponsiveness of message handlers which occurred after an
