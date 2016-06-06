@@ -9,9 +9,8 @@ import zope.interface.verify
 class TestChannel(unittest.TestCase):
 
     def setUp(self):
-        handler = mock.Mock()
-        handler.async_map = {}
-        self.channel = gocept.amqprun.channel.Channel(handler)
+        connection = mock.Mock()
+        self.channel = gocept.amqprun.channel.Channel(connection, 1, None)
 
     def test_close_should_close_if_no_user(self):
         channel = self.channel

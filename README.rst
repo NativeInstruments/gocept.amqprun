@@ -3,8 +3,9 @@ gocept.amqprun
 ==============
 
 gocept.amqprun helps you writing and running AMQP consumers, and sending AMQP
-messages. It currently only supports AMQP 0-8 and integrates with the Zope Tool
-Kit (ZTK) so you can use adapters, utilities and all the buzz.
+messages. The current version only supports AMQP 0-9-1 and integrates with the
+Zope Tool Kit (ZTK) so you can use adapters, utilities and all the buzz.
+AMQP 0-8 can be used with the 1.X branch.
 
 .. contents:: :depth: 1
 
@@ -112,6 +113,7 @@ the component configuration and uses ZDaemon to daemonize the process::
     amqp-username = guest
     amqp-password = guest
     amqp-virtualhost = /
+    amqp-port = 5672
 
     eventlog =
         <eventlog>
@@ -126,6 +128,7 @@ the component configuration and uses ZDaemon to daemonize the process::
           hostname ${:amqp-hostname}
           username ${:amqp-username}
           password ${:amqp-password}
+          port ${:amqp-port}
           virtual_host ${:amqp-virtualhost}
         </amqp-server>
 
@@ -334,6 +337,9 @@ variables:
 :AMQP_VIRTUALHOST:
     default: None, so a vhost with a temporary name is created and
     deleted automatically (using ``AMQP_RABBITMQCTL`` command)
+
+:AMQP_PORT:
+    default: 5672
 
 :AMQP_RABBITMQCTL:
    default: 'sudo rabbitmqctl'

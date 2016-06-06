@@ -13,34 +13,47 @@ class Channel(pika.channel.Channel):
 
     zope.interface.implements(gocept.amqprun.interfaces.IChannelManager)
 
-    def __init__(self, handler):
-        pika.channel.Channel.__init__(self, handler)
+    channel_number = None
+
+    def __init__(self, connection, channel_number, on_open_callback):
+        super(Channel, self).__init__(
+            connection, channel_number, on_open_callback)
         self._gocept_amqprun_refcount = ThreadSafeCounter()
+        self.consume_ok_events = {}
 
     def acquire(self):
         self._gocept_amqprun_refcount.inc()
         log.debug(
             'Channel[%s] acquired by %s, refcount %s',
-            self.handler.channel_number, caller_name(),
+            self.channel_number, caller_name(),
             self._gocept_amqprun_refcount)
 
     def release(self):
         self._gocept_amqprun_refcount.dec()
         log.debug(
             'Channel[%s] released by %s, refcount %s',
-            self.handler.channel_number, caller_name(),
+            self.channel_number, caller_name(),
             self._gocept_amqprun_refcount)
 
     def close_if_possible(self):
         if self._gocept_amqprun_refcount:
             return False
-        log.info('Closing channel %s', self.handler.channel_number)
+        log.info('Closing channel %s', self.channel_number)
         self.close()
         return True
 
     @property
     def connection_lock(self):
-        return self.handler.connection.lock
+        return self.connection.lock
+
+    def basic_consume(self, *args, **kw):
+        consumer_tag = super(Channel, self).basic_consume(*args, **kw)
+        self.consume_ok_events[consumer_tag] = threading.Event()
+        return consumer_tag
+
+    def _on_eventok(self, method_frame):
+        super(Channel, self)._on_eventok(method_frame)
+        self.consume_ok_events[method_frame.method.consumer_tag].set()
 
 
 class ThreadSafeCounter(object):
