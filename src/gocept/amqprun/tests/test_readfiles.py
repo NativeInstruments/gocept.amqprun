@@ -93,8 +93,8 @@ class ReaderIntegrationTest(gocept.amqprun.testing.MainTestCase):
         os.mkdir(os.path.join(self.tmpdir, 'cur'))
 
     def tearDown(self):
-        super(ReaderIntegrationTest, self).tearDown()
         shutil.rmtree(self.tmpdir)
+        super(ReaderIntegrationTest, self).tearDown()
 
     def test_should_send_message_and_move_file(self):
         self.make_config(

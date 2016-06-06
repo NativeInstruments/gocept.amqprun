@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 install_requires = [
     'ZConfig',
-    'pika < 0.9',
+    'pika >= 0.9.7',
     'setuptools',
     'transaction',
     'zope.component[zcml]',
@@ -26,7 +26,7 @@ security_require = [
 ]
 
 testing_require = [
-    'amqplib',
+    'amqp',
 ]
 
 tests_require = (
@@ -44,14 +44,15 @@ tests_require = (
 
 setup(
     name='gocept.amqprun',
-    version='1.8.dev0',
+    version='2.0.dev0',
     author='gocept <mail at gocept dot com>',
     author_email='mail@gocept.com',
     url='https://bitbucket.org/gocept/gocept.amqprun',
     description="""\
 gocept.amqprun helps you writing and running AMQP consumers, and sending AMQP
-messages. It currently only supports AMQP 0-8 and integrates with the Zope Tool
-Kit (ZTK) so you can use adapters, utilities and all the buzz.
+messages. The current version only supports AMQP 0-9-1 and integrates with the
+Zope Tool Kit (ZTK) so you can use adapters, utilities and all the buzz.
+AMQP 0-8 can be used with the 1.X branch.
 """,
     long_description=(
         open('README.rst').read()

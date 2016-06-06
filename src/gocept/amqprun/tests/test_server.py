@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import Queue
 import collections
 import gocept.amqprun.channel
@@ -28,6 +25,7 @@ class MessageReaderTest(
     def start_server(self, **kw):
         self.server = self.create_server(**kw)
         self.start_thread(self.server)
+        assert self.server.wait_until_running(timeout=5)
 
     def test_loop_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
@@ -182,7 +180,7 @@ class MessageReaderTest(
         zope.component.provideUtility(handler, name='queue')
         self.start_server()
         self.send_message('foo', routing_key='test.messageformat.1')
-        self.assertEqual(1, self.server.tasks.qsize())
+        self.server.tasks.get(timeout=5)
         self.assertFalse(self.server.channel.close_if_possible())
 
 
@@ -201,14 +199,58 @@ class MultipleServerTest(gocept.amqprun.testing.MainTestCase):
         self.expect_message_on('test.response')
         self.start_server()
 
+        server = None
+        thread = None
         try:
             server = self.create_server(setup_handlers=False)
             thread = self._start_thread(server)
             self.send_message('foo', routing_key='test.routing')
             self.wait_for_message(5)
         finally:
-            server.stop()
-            thread.join()
+            if server is not None:
+                server.stop()
+            if thread is not None:
+                thread.join()
+
+
+class TestChannelSwitchServer(
+        gocept.amqprun.testing.LoopTestCase,
+        gocept.amqprun.testing.QueueTestCase):
+
+    def start_server(self, **kw):
+        self.server = self.create_server(**kw)
+        self.start_thread(self.server)
+        assert self.server.wait_until_running(timeout=5)
+
+    def test_server__Server__switch_channel__1(self):
+        """It calls basic_consume on the new channel after switching."""
+        from gocept.amqprun.handler import Handler
+        self.start_server()
+        handler = Handler('queue_name', 'routing_key', lambda x: None)
+        zope.component.provideUtility(handler, name='handler')
+        old_consume = pika.channel.Channel.basic_consume
+        with mock.patch('pika.channel.Channel.basic_consume',
+                        side_effect=lambda *args, **kw:
+                        old_consume(self.server.channel, *args, **kw)
+                        ) as basic_consume:
+            self.server.switch_channel()
+            assert self.server.wait_until_running(timeout=10)
+            time.sleep(1)
+            self.assertTrue(basic_consume.called)
+
+    def test_server__Server__switch_channel__2(self):
+        """It calls basic_cancel on the old channel for all consumer tags."""
+        self.start_server()
+        channel = self.server.channel
+        channel._consumers[mock.sentinel.ct1] = mock.sentinel.callback1
+        channel._consumers[mock.sentinel.ct2] = mock.sentinel.callback2
+        with mock.patch('gocept.amqprun.channel.Channel.basic_cancel'):
+            self.server.switch_channel()
+            self.assertEqual(2, channel.basic_cancel.call_count)
+            channel.basic_cancel.assert_any_call(None, mock.sentinel.ct1)
+            channel.basic_cancel.assert_any_call(None, mock.sentinel.ct2)
+        del channel._consumers[mock.sentinel.ct1]
+        del channel._consumers[mock.sentinel.ct2]
 
 
 class TestChannelSwitch(unittest.TestCase):
@@ -225,7 +267,7 @@ class TestChannelSwitch(unittest.TestCase):
         # IChannelManager. (That's actually two bugs in ZCA in one go...)
         channel_spec = [x for x in dir(gocept.amqprun.channel.Channel)
                         if not x.startswith('__')]
-        server.channel = mock.Mock(channel_spec)
+        server.channel = mock.MagicMock(channel_spec)
         zope.interface.alsoProvides(
             server.channel, gocept.amqprun.interfaces.IChannelManager)
         server.channel.callbacks = collections.OrderedDict()
@@ -234,15 +276,6 @@ class TestChannelSwitch(unittest.TestCase):
         new_channel.handler = mock.Mock()
         server.connection.channel.return_value = new_channel
         return server
-
-    def test_switch_channel_should_cancel_consume_on_old_channel(self):
-        server = self.create_server()
-        channel = server.channel
-        channel.callbacks[mock.sentinel.ct1] = mock.sentinel.callback1
-        channel.callbacks[mock.sentinel.ct2] = mock.sentinel.callback2
-        server.switch_channel()
-        self.assertEqual(2, channel.basic_cancel.call_count)
-        channel.basic_cancel.assert_called_with(mock.sentinel.ct2)
 
     def test_switch_channel_should_empty_tasks_and_release_channel(self):
         server = self.create_server()
@@ -259,14 +292,6 @@ class TestChannelSwitch(unittest.TestCase):
         self.assertTrue(server.connection.channel.called)
         new_channel = server.connection.channel()
         self.assertEqual(new_channel, server.channel)
-
-    def test_switch_channel_calls_consume_on_new_channel(self):
-        from gocept.amqprun.handler import Handler
-        server = self.create_server()
-        handler = Handler('queue_name', 'routing_key', lambda x: None)
-        zope.component.provideUtility(handler, name='handler')
-        server.switch_channel()
-        self.assertTrue(server.channel.basic_consume.called)
 
     def test_switch_channel_should_acquire_and_release_connection_lock(self):
         server = self.create_server()
@@ -349,41 +374,27 @@ class DyingRabbitTest(
         if self.pid:
             os.kill(self.pid, signal.SIGINT)
 
-    def start_server(self, port=None):
-        self.server = super(DyingRabbitTest, self).create_server(port=port)
+    def start_server(self, **kw):
+        self.server = super(DyingRabbitTest, self).create_server(**kw)
         self.start_thread(self.server)
-
-    def test_socket_close_should_not_stop_main_loop_and_open_connection(self):
-        # This hopefully simulates local errors
-        self.start_server()
-        self.assertTrue(self.server.connection.is_alive())
-        time.sleep(0.5)
-        self.server.connection.dispatcher.socket.close()
-        self.server.connection.notify()
-        time.sleep(3)
-
-        self.assertTrue(self.thread.is_alive())
-        self.assertTrue(self.server.connection.is_alive())
-        self.assertEqual(self.server.connection.channels[1],
-                         self.server.channel.handler)
-        # Do something with the channel
-        self.server.channel.tx_select()
+        assert self.server.wait_until_running(timeout=5)
 
     def test_remote_close_should_reopen_connection(self):
         port = random.randint(30000, 40000)
         pid = self.tcpwatch(port)
-        self.start_server(port)
+        self.start_server(port=port)
         old_channel = self.server.channel
-        self.assertTrue(self.server.connection.is_alive())
+        time.sleep(1)
+        self.assertTrue(self.server.connection.is_open)
 
         os.kill(pid, signal.SIGINT)
         self.pid = self.tcpwatch(port)
         time.sleep(1)
 
         self.assertTrue(self.thread.is_alive())
-        self.assertTrue(self.server.connection.is_alive())
-        self.assertEqual(self.server.connection.channels[1],
-                         self.server.channel.handler)
+        self.assertTrue(self.server.connection.is_open)
+        self.assertEqual(self.server.connection._channels[1],
+                         self.server.channel)
         self.assertNotEqual(old_channel, self.server.channel)
         # Do something with the channel
         self.server.channel.tx_select()
@@ -391,8 +402,9 @@ class DyingRabbitTest(
     def test_remote_close_should_not_break_switch_channel(self):
         port = random.randint(30000, 40000)
         pid = self.tcpwatch(port)
-        self.start_server(port)
-        self.assertTrue(self.server.connection.is_alive())
+        self.start_server(port=port)
+        time.sleep(1)
+        self.assertTrue(self.server.connection.is_open)
 
         os.kill(pid, signal.SIGINT)
         self.server.switch_channel()
@@ -400,7 +412,7 @@ class DyingRabbitTest(
         time.sleep(1)
 
         self.assertTrue(self.thread.is_alive())
-        self.assertTrue(self.server.connection.is_alive())
+        self.assertTrue(self.server.connection.is_open)
         # Do something with the channel
         self.server.channel.tx_select()
 

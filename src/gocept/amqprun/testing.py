@@ -1,7 +1,4 @@
-# Copyright (c) 2010-2011 gocept gmbh & co. kg
-# See also LICENSE.txt
-
-import amqplib.client_0_8 as amqp
+import amqp
 import datetime
 import email.utils
 import gocept.amqprun
@@ -64,6 +61,7 @@ class QueueLayer(plone.testing.Layer):
         self['amqp-hostname'] = os.environ.get('AMQP_HOSTNAME', 'localhost')
         self['amqp-username'] = os.environ.get('AMQP_USERNAME', 'guest')
         self['amqp-password'] = os.environ.get('AMQP_PASSWORD', 'guest')
+        self['amqp-port'] = os.environ.get('AMQP_PORT', '5672')
         self['amqp-virtualhost'] = os.environ.get('AMQP_VIRTUALHOST', None)
         if self['amqp-virtualhost'] is None:
             self['amqp-virtualhost'] = '/test.%f' % time.time()
@@ -119,9 +117,9 @@ class QueueTestCase(unittest.TestCase):
                 # NOTE: we seem to need a new channel for each delete;
                 # trying to use self.channel for all queues results in its
                 # closing after the first delete
-                with self.connection.channel() as channel:
+                with self.connection.channel(None) as channel:
                     channel.queue_delete(queue_name)
-            except amqp.AMQPChannelException:
+            except amqp.ChannelError:
                 pass
         super(QueueTestCase, self).tearDown()
 
@@ -169,6 +167,7 @@ class QueueTestCase(unittest.TestCase):
         params = dict(hostname=self.layer['amqp-hostname'],
                       username=self.layer['amqp-username'],
                       password=self.layer['amqp-password'],
+                      port=self.layer['amqp-port'],
                       virtual_host=self.layer['amqp-virtualhost'])
         # XXX not DRY, the default value is declared in Server.__init__()
         setup_handlers = kw.pop('setup_handlers', True)
@@ -248,16 +247,17 @@ class MainTestCase(LoopTestCase, QueueTestCase):
 
         self.thread = threading.Thread(
             target=gocept.amqprun.main.main, args=(self.config.name,))
+        self.thread.daemon = True
         self.thread.start()
         for i in range(200):
-            if (gocept.amqprun.main.main_server is not None and
-                    gocept.amqprun.main.main_server.running):
+            if gocept.amqprun.main.main_server is not None:
                 break
             time.sleep(0.025)
         else:
-            self.fail('Server did not start up.')
+            self.fail('Main thread did not start up.')
         self.loop = gocept.amqprun.main.main_server
-        self.server_started.wait()
+        if not self.server_started.wait(5):
+            self.fail('Server did not start up.')
 
     def start_server_in_subprocess(self):
         script = tempfile.NamedTemporaryFile(suffix='.py')
@@ -293,12 +293,12 @@ gocept.amqprun.main.main('%(config)s')
         self.zcml = tempfile.NamedTemporaryFile()
         self.zcml.write(zcml_base.substitute(mapping).encode('utf8'))
         self.zcml.flush()
-
         sub = dict(
             site_zcml=self.zcml.name,
             amqp_hostname=self.layer['amqp-hostname'],
             amqp_username=self.layer['amqp-username'],
             amqp_password=self.layer['amqp-password'],
+            amqp_port=self.layer['amqp-port'],
             amqp_virtualhost=self.layer['amqp-virtualhost'],
         )
         if mapping:

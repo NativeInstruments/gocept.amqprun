@@ -1,10 +1,13 @@
 CHANGES
 =======
 
-1.8 (unreleased)
+2.0 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Speak AMQP-0-9-1 now instead of AMQP-0-8. For the support of the old
+  version use 1.X branch.
+
+- Replace ``amqplib`` with ``ampq`` in tests.
 
 
 1.7 (2016-05-31)

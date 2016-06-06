@@ -30,7 +30,7 @@ class WorkerTest(unittest.TestCase):
         # wait for thread to start
         for i in range(10):
             time.sleep(0.025)
-            if self.worker.running:
+            if self.worker.keep_running:
                 break
 
     def _create_task(self, handler):
