@@ -134,7 +134,7 @@ class AMQPDataManager(object):
         return NoOpSavepoint()
 
     def __repr__(self):
-        return '<gocept.amqprun.session.DataManager for %s, %s>' % (
+        return '<gocept.amqprun.session.AMQPDataManager for %s, %s>' % (
             transaction.get(), self.session)
 
 
