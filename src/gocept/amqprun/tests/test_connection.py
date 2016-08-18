@@ -59,3 +59,9 @@ class ParametersTest(unittest.TestCase):
         self.assertEqual(
             "__init__() got an unexpected keyword argument 'virtualhost'",
             str(err.exception))
+
+    def test_connection__Parameters__1(self):
+        """It converts a strings to an integer as port number if necessary."""
+        from ..connection import Parameters
+        params = Parameters(port='1234')
+        self.assertEqual(1234, params.port)

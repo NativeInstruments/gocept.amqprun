@@ -349,7 +349,7 @@ class DyingRabbitTest(
         if self.pid:
             os.kill(self.pid, signal.SIGINT)
 
-    def start_server(self, port=None):
+    def start_server(self, port=pika.spec.PORT):
         self.server = super(DyingRabbitTest, self).create_server(port=port)
         self.start_thread(self.server)
 
