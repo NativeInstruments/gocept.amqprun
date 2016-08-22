@@ -4,7 +4,8 @@ CHANGES
 1.8 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Fix bug, when a string is passed as a port number to
+  ``gocept.amqprun.connection.Parameters``.
 
 
 1.7 (2016-05-31)

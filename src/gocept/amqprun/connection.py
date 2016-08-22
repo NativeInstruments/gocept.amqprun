@@ -17,11 +17,12 @@ class Parameters(object):
     """Connection parameters with sensible defaults."""
 
     def __init__(self, heartbeat_interval=0, hostname=NotImplemented,
-                 password=None, port=None, username=None, virtual_host="/"):
+                 password=None, port=pika.spec.PORT, username=None,
+                 virtual_host="/"):
         self.heartbeat_interval = heartbeat_interval
         self.hostname = hostname
         self.password = password
-        self.port = port
+        self.port = int(port)
         self.username = username
         self.virtual_host = virtual_host
 
@@ -81,7 +82,7 @@ class Connection(pika.AsyncoreConnection):
         # RabbitDispatcher
         self.dispatcher = RabbitDispatcher(self)
         self.dispatcher.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.dispatcher.connect((host, port or pika.spec.PORT))
+        self.dispatcher.connect((host, port))
 
     def reconnect(self):
         pika.AsyncoreConnection.reconnect(self)
