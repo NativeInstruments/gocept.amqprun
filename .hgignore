@@ -5,6 +5,7 @@ syntax: glob
 .Python
 .cache
 .installed.cfg
+.pytest_cache
 bin
 develop-eggs
 include
