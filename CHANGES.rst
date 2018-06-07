@@ -4,7 +4,7 @@ CHANGES
 1.8 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Update to current bootstrap.py
 
 
 1.7.1 (2016-08-22)
