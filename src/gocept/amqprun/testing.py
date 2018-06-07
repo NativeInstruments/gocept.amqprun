@@ -39,6 +39,7 @@ class SettingsLayer(plone.testing.Layer):
     def tearDown(self):
         plone.testing.zca.popGlobalRegistry()
 
+
 SETTINGS_LAYER = SettingsLayer()
 
 
@@ -49,6 +50,7 @@ class ZCMLSandbox(plone.testing.zca.ZCMLSandbox):
 
     def testTearDown(self):
         plone.testing.zca.popGlobalRegistry()
+
 
 ZCML_LAYER = ZCMLSandbox(
     filename='configure.zcml', package=gocept.amqprun, module=__name__)
@@ -94,6 +96,7 @@ class QueueLayer(plone.testing.Layer):
             'LANG=C %s' % command, stderr=subprocess.STDOUT, shell=True)
         if 'Error' in stdout:
             raise RuntimeError('%s failed:\n%s' % (command, stdout))
+
 
 QUEUE_LAYER = QueueLayer()
 
