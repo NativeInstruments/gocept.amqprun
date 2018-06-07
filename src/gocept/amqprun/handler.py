@@ -36,6 +36,7 @@ def declare(queue_name, routing_key, arguments=None, principal=None):
     return lambda handler_function: Handler(
         queue_name, routing_key, handler_function, arguments, principal)
 
+
 # BBB
 handle = declare
 
