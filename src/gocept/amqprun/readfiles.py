@@ -46,7 +46,7 @@ class FileStoreReader(threading.Thread):
             try:
                 self.scan()
                 time.sleep(1)
-            except:
+            except Exception:
                 log.error('Unhandled exception, terminating.', exc_info=True)
                 os.kill(os.getpid(), signal.SIGUSR1)
 
@@ -62,7 +62,7 @@ class FileStoreReader(threading.Thread):
             try:
                 self.send(filename)
                 self.session.mark_done(filename)
-            except:
+            except Exception:
                 log.error('Sending message failed', exc_info=True)
                 transaction.abort()
             else:
