@@ -6,6 +6,8 @@ CHANGES
 
 - Update to current bootstrap.py
 
+- Improve forward compatibility with Python 3.
+
 
 1.7.1 (2016-08-22)
 ------------------

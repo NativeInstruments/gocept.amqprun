@@ -91,12 +91,12 @@ class Worker(threading.Thread):
                                 self._send_response(
                                     session, message, error_messages)
                                 transaction.commit()
-                            except:
+                            except Exception:
                                 self.log.error(
                                     'Error during exception handling',
                                     exc_info=True)
                                 transaction.abort()
-                except:
+                except Exception:
                     self.log.error(
                         'Unhandled exception, prevent thread from crashing',
                         exc_info=True)
