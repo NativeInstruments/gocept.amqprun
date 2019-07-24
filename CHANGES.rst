@@ -8,6 +8,8 @@ CHANGES
 
 - Improve forward compatibility with Python 3.
 
+- Prevent using pytest >= 5 to keep Python 2 compatibility.
+
 
 1.7.1 (2016-08-22)
 ------------------
