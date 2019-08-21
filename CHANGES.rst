@@ -10,6 +10,8 @@ CHANGES
 
 - Prevent using pytest >= 5 to keep Python 2 compatibility.
 
+- Migrate repository to github.
+
 
 1.7.1 (2016-08-22)
 ------------------
