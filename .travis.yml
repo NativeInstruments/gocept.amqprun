@@ -1,12 +1,16 @@
 language: python
-dist: xenial
 python:
-- 2.7
+  - 2.7
 install: 
+  - bin/pip install -U setuptools zc.buildout setuptools-scm
+  - bin/buildout -n
 script: 
+  - bin/test --cache-clear --cov-report term-missing --cov src
 after_success: 
 cache:
   pip: true
+  directories: 
+    - eggs/
 notifications:
   webhooks:
     secure: N/u7cKJnPgSzfiWgjnpwt8ta4C2ndxOjxAfnaAC61oy3eRX7dUIwTcD5Q7H4ylxrctaHd7Cg72AEvGstDrG8M2KHxjLsoyoLI0VOFg0DtOPKAiMr6APEi7ISZNq+L/2MLBg5SSr7ODmdNC9utWzdVEmUWcOgGZ2o2OaZh+ZcLGWyLbtFqZfMq3iusNO5+Nf7Go4UbZVXvm+0bW4HQ+0f6wHnuO7/jTnwGcIuzzg9u9tn8DAmIHbVRR8idn7I9pa9lvvtetHSMSDfa84cjAq94ue3jQJSa0axWZq5xsSTXJ2FBjmXxlS2EsZJubxf4vXSSTXNceB9ORMSL0Dd7r8ufPJNRxQCDh1nkkOp1w36mJ03OogsdAkHnijWhRs8+YaWHjm+wSFeyaBIgtRsxHFp4//Fc/undK8ZGXurQDxzx60G8BjDvfaInrSeoWl+rS7eeQdzzgBuB5765J0jebRzV6Ft5d6hqb8qOCx1Sgnu3DPukXAcDlpx3aquwxr8wV3CXyoy9wcKahMuy76TsFxNYQmb8hnXJ1z0HO+2Anr7XTVx7fb/TzrjAuiEJ6qF70Uxasfx8aNBek9/9fOM1QIdNJjiBDYJYNm2DO8uTrEZBpbn2oH1OSzA8C4Hc3W52uAPft+Pk0lPR03Q48qJ1cpoG71hFKH2yM9MVYrjFPia1rM=
