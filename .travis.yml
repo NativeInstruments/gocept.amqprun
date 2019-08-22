@@ -2,8 +2,8 @@ language: python
 python:
   - 2.7
 install: 
-  - bin/pip install -U setuptools zc.buildout setuptools-scm
-  - bin/buildout -n
+  - pip install -U setuptools zc.buildout setuptools-scm
+  - buildout -n
 script: 
   - bin/test --cache-clear --cov-report term-missing --cov src
 after_success: 
