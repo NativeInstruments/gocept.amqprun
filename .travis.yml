@@ -1,4 +1,10 @@
 language: python
+services:
+  - rabbitmq
+addons:
+  apt:
+    packages:
+    - rabbitmq-server 
 python:
   - 2.7
 install: 
