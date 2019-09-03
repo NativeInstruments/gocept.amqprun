@@ -8,6 +8,8 @@ CHANGES
 
 - Improve forward compatibility with Python 3.
 
+- Fix deprecation warning.
+
 - Prevent using pytest >= 5 to keep Python 2 compatibility.
 
 - Migrate repository to github.

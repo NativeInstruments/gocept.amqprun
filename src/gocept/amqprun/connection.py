@@ -31,7 +31,7 @@ class WriteDispatcher(asyncore.file_dispatcher):
 
     def handle_read(self):
         # Read and discard byte.
-        os.read(self.fileno(), 1)
+        os.read(self.socket.fileno(), 1)
 
 
 class RabbitDispatcher(pika.asyncore_adapter.RabbitDispatcher):
