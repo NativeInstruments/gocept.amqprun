@@ -1,0 +1,11 @@
+include *.conf
+include *.py
+include *.rst
+include *.txt
+include *.zcml
+include .coveragerc
+include buildout.cfg
+include pytest.ini
+recursive-include src *.conf
+recursive-include src *.xml
+recursive-include src *.zcml
