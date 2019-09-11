@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-1.8 (unreleased)
+1.8 (2019-09-11)
 ----------------
 
 - Update to current bootstrap.py
