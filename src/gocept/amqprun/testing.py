@@ -1,7 +1,7 @@
 # Copyright (c) 2010-2011 gocept gmbh & co. kg
 # See also LICENSE.txt
 
-import amqplib.client_0_8 as amqp
+import amqp
 import datetime
 import email.utils
 import gocept.amqprun
@@ -79,6 +79,7 @@ class QueueLayer(plone.testing.Layer):
             userid=self['amqp-username'],
             password=self['amqp-password'],
             virtual_host=self['amqp-virtualhost'])
+        self['amqp-connection'].connect()
         self['amqp-channel'] = self['amqp-connection'].channel()
 
     def tearDown(self):
