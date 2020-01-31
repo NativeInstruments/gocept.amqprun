@@ -1,9 +1,10 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
+# Copyright (c) 2010-2012, 2020 gocept gmbh & co. kg
 # See also LICENSE.txt
 
 import Queue
 import collections
 import gocept.amqprun.channel
+import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import gocept.amqprun.testing
 import mock
@@ -20,13 +21,21 @@ import zope.component
 import zope.interface
 
 
+class MessageStoringHandler:
+    """A handler which only stores the message."""
+
+    message = None
+
+    def __call__(self, message):
+        self.message = message
+
+
 class MessageReaderTest(
         gocept.amqprun.testing.LoopTestCase,
         gocept.amqprun.testing.QueueTestCase):
 
     def start_server(self, **kw):
-        self.server = self.create_server(**kw)
-        self.start_thread(self.server)
+        return self.create_server(**kw)
 
     def test_loop_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
@@ -38,7 +47,6 @@ class MessageReaderTest(
         self.assertEqual(0, self.server.tasks.qsize())
 
     def test_messages_with_handler_should_arrive_in_task_queue(self):
-        import gocept.amqprun.handler
         # Provide a handler
         handle_message = mock.Mock()
         handler = gocept.amqprun.handler.Handler(
@@ -61,7 +69,6 @@ class MessageReaderTest(
         self.assertEquals('foo', message.body)
 
     def test_different_handlers_should_be_handled_separately(self):
-        import gocept.amqprun.handler
         # Provide two handlers
         handle_message_1 = mock.Mock()
         handle_message_2 = mock.Mock()
@@ -85,7 +92,6 @@ class MessageReaderTest(
         self.assertTrue(handle_message_1.called)
 
     def test_handlers_disabled_should_not_handle_messages(self):
-        import gocept.amqprun.handler
         # Provide a handler
         handle_message = mock.Mock()
         handler = gocept.amqprun.handler.Handler(
@@ -159,7 +165,6 @@ class MessageReaderTest(
         transaction.commit()
 
     def test_multiple_routing_keys_should_recieve_messages_for_all(self):
-        import gocept.amqprun.handler
         handle_message = mock.Mock()
         handler = gocept.amqprun.handler.Handler(
             self.get_queue_name('test.routing'),
@@ -172,17 +177,18 @@ class MessageReaderTest(
         self.send_message('bar', routing_key='route.2')
         self.assertEqual(2, self.server.tasks.qsize())
 
-    def test_channel_of_any_task_in_the_queue_is_open(self):
-        import gocept.amqprun.handler
-        handle_message = mock.Mock()
+    def test_channel_of_any_task_in_the_queue_is_open(self):  # XXX wronly named
+        handle_message = MessageStoringHandler()
         handler = gocept.amqprun.handler.Handler(
             self.get_queue_name('test.case.1'),
             'test.messageformat.1', handle_message)
         zope.component.provideUtility(handler, name='queue')
-        self.start_server()
+        server = self.start_server()
+        server.connect()
         self.send_message('foo', routing_key='test.messageformat.1')
-        self.assertEqual(1, self.server.tasks.qsize())
-        self.assertFalse(self.server.channel.close_if_possible())
+        server.run_once(timeout=5)
+        assert handle_message.message.body == 'foo'
+        assert handle_message.message.routing_key == 'test.messageformat.1'
 
 
 class MultipleServerTest(gocept.amqprun.testing.MainTestCase):

@@ -42,17 +42,15 @@ class Message(object):
     def convert_header(self, header):
         header = header.copy()
         result = AttributeDict()  # pika.spec.BasicProperties()
-        result.timestamp = time.time()
+        result.timestamp = int(time.time())
         result.delivery_mode = 2  # persistent
         result.message_id = email.utils.make_msgid('gocept.amqprun')
-        # for key in dir(result):
-        #     value = header.pop(key, self)
-        #     if isinstance(value, unicode):
-        #         value = value.encode('UTF-8')
-        #     if value is not self:
-        #         setattr(result, key, value)
-        # result.headers = header
-        assert not header, "Unknown keys %r" % header
+        for key, value in header.items():
+            if isinstance(value, unicode):
+                value = value.encode('UTF-8')
+            if key not in result:
+                setattr(result, key, value)
+        result.headers = header
         return result
 
     def as_amqp_message(self):

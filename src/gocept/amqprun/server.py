@@ -3,6 +3,7 @@ import gocept.amqprun.connection
 import gocept.amqprun.interfaces
 import gocept.amqprun.message
 import gocept.amqprun.session
+import gocept.amqprun.worker
 import logging
 import select
 import threading
@@ -16,19 +17,22 @@ log = logging.getLogger(__name__)
 
 class Consumer(object):
 
-    def __init__(self, handler, tasks):
+    def __init__(self, handler):
         self.handler = handler
-        self.tasks = tasks
 
-    def __call__(self, channel, method, header, body):
-        message = gocept.amqprun.message.Message(
-            header, body, method.delivery_tag, method.routing_key, channel)
+    def __call__(self, message):
+        channel = message.channel
+        delivery_tag = message.delivery_info['delivery_tag']
+        routing_key = message.delivery_info['routing_key']
+        amqprun_message = gocept.amqprun.message.Message(
+            message.properties, message.body,
+            delivery_tag, routing_key, channel)
         log.debug("Channel[%s] received message %s via routing key '%s'",
-                  channel.handler.channel_number,
-                  message.delivery_tag, method.routing_key)
-        session = gocept.amqprun.session.Session(channel, message)
-        gocept.amqprun.interfaces.IChannelManager(channel).acquire()
-        self.tasks.put((session, self.handler))
+                  channel.channel_id, delivery_tag, routing_key)
+        session = gocept.amqprun.session.Session(channel, amqprun_message)
+        # gocept.amqprun.interfaces.IChannelManager(channel).acquire()
+        worker = gocept.amqprun.worker.Worker(session, self.handler)
+        return worker()
 
 
 class Server(object):  # pika.connection.NullReconnectionStrategy
@@ -42,48 +46,51 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
 
     def __init__(self, connection_parameters, setup_handlers=True):
         self.connection_parameters = connection_parameters
-        self.tasks = Queue.Queue()
-        self.local = threading.local()
-        self._running = threading.Event()
+        # # self.tasks = Queue.Queue()
+        # self.local = threading.local()
+        # self._running = threading.Event()
         self.connection = None
         self.channel = None
         self._old_channel = None
         self._switching_channels = False
         self.setup_handlers = setup_handlers
 
-    @property
-    def running(self):
-        return self._running.is_set()
+    # @property
+    # def running(self):
+    #     return self._running.is_set()
 
-    @running.setter
-    def running(self, value):
-        if value:
-            self._running.set()
-        else:
-            self._running.clear()
+    # @running.setter
+    # def running(self, value):
+    #     if value:
+    #         self._running.set()
+    #     else:
+    #         self._running.clear()
 
-    def wait_until_running(self, timeout=None):
-        self._running.wait(timeout)
-        return self.running
+    # def wait_until_running(self, timeout=None):
+    #     self._running.wait(timeout)
+    #     return self.running
 
-    def start(self):
+    def connect(self):
         log.info('Starting message reader.')
         self.connection = gocept.amqprun.connection.Connection(
             **self.connection_parameters.as_dict())
         self.connection.finish_init()
         self.on_connection_open(self.connection)
-        self.running = True
-        while self.running:
-            self.run_once()
-        # closing
-        # XXX self.connection.ensure_closed()
-        self.connection = None
 
-    def run_once(self):
+    def start(self):
+        self.connect()
         try:
-            import time
-            time.sleep(0.5)
-            self.connection.drain_events(timeout=0.5)  # XXX
+            while True:
+                self.run_once()
+        except:
+            # closing
+            self.connection.close()
+            # XXX self.connection.ensure_closed()
+            self.connection = None
+
+    def run_once(self, timeout):
+        try:
+            self.connection.drain_events(timeout=timeout)  # XXX
         except select.error:
             log.error("Error while draining events", exc_info=True)
             self.connection._disconnect_transport(
@@ -95,20 +102,19 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
         #         self.switch_channel()
         #     self.close_old_channel()
 
-    def stop(self):
-        log.info('Stopping message reader.')
-        self.running = False
-        self.connection.close()
+    # def stop(self):
+    #     log.info('Stopping message reader.')
+    #     self.running = False
+    #     self.connection.close()
 
     def send(self, message):
         self._send_session.send(message)
 
     @property
     def _send_session(self):
-        if not hasattr(self.local, 'session'):
-            self.local.session = gocept.amqprun.session.Session(
-                self.send_channel)
-        return self.local.session
+        if not hasattr(self, 'session'):
+            self.session = gocept.amqprun.session.Session(self.send_channel)
+        return self.session
 
     def open_channel(self):
         assert self.channel is None
@@ -188,8 +194,7 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
             log.info(
                 "Channel[%s]: Handling routing key(s) '%s' on queue '%s'"
                 " via '%s'",
-                self.channel.handler.channel_number,
-                handler.routing_key, queue_name, name)
+                self.channel.channel_id, handler.routing_key, queue_name, name)
             self.channel.queue_declare(
                 queue=queue_name, durable=True,
                 exclusive=False, auto_delete=False,
@@ -203,7 +208,7 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
                     queue=queue_name, exchange='amq.topic',
                     routing_key=routing_key)
             self.channel.basic_consume(
-                Consumer(handler, self.tasks), queue=queue_name)
+                callback=Consumer(handler), queue=queue_name)
 
     # Connection Strategy Interface
 

@@ -36,28 +36,22 @@ class PrefixingLogger(object):
         return write
 
 
-class Worker(threading.Thread):
+# class Worker(threading.Thread):
+class Worker(object):
 
     timeout = 5
 
-    def __init__(self, queue):
-        self.queue = queue
-        self.running = False
-        super(Worker, self).__init__()
-        self.daemon = True
-        # just in case we want to log something while not running
-        self.log = log
+    def __init__(self, session, handler):
+        self.session = session
+        self.handler = handler
 
-    def run(self):
-        self.log = PrefixingLogger(log, 'Worker[%s] ' % self.ident)
+    def __call__(self):
+        session = self.session
+        handler = self.handler
+        self.log = PrefixingLogger(log, 'Worker ')
         self.log.info('starting')
-        self.running = True
-        while self.running:
-            try:
-                session, handler = self.queue.get(timeout=self.timeout)
-            except Queue.Empty:
-                pass
-            else:
+        if True:
+            if True:
                 try:
                     message = session.received_message
                     self.log.info('Processing message %s %s (%s)',
@@ -101,11 +95,11 @@ class Worker(threading.Thread):
                         'Unhandled exception, prevent thread from crashing',
                         exc_info=True)
                 finally:
-                    try:
-                        session.channel.release()  # It is a IChannelManager.
-                    except CounterBelowZero:
-                        # Reached an undefined state -> kill the whole process.
-                        os.kill(os.getpid(), signal.SIGUSR1)
+                    # try:
+                    #     session.channel.release()  # It is a IChannelManager.
+                    # except CounterBelowZero:
+                    #     # Reached an undefined state -> kill the whole process.
+                    #     os.kill(os.getpid(), signal.SIGUSR1)
                     end_interaction()
 
     def _send_response(self, session, message, response):
@@ -115,7 +109,7 @@ class Worker(threading.Thread):
                 msg.routing_key, message.delivery_tag)
             session.send(msg)
 
-    def stop(self):
-        self.log.info('stopping')
-        self.running = False
-        self.join()
+    # def stop(self):
+    #     self.log.info('stopping')
+    #     self.running = False
+    #     self.join()
