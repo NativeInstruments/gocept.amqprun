@@ -193,8 +193,8 @@ class LoopTestCase(unittest.TestCase):
             self.loop.stop()
             self.thread.join()
         super(LoopTestCase, self).tearDown()
-        if self.loop is not None and getattr(self.loop, 'connection', None):
-            self.assertEqual({}, self.loop.connection.socket_map)
+        # if self.loop is not None and getattr(self.loop, 'connection', None):
+        #     self.assertEqual({}, self.loop.connection.socket_map)
 
     def start_thread(self, loop):
         self.loop = loop

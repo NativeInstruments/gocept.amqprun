@@ -1,6 +1,5 @@
 import gocept.amqprun.interfaces
 import logging
-import pika.channel
 import sys
 import threading
 import zope.interface
@@ -9,12 +8,12 @@ import zope.interface
 log = logging.getLogger(__name__)
 
 
-class Channel(pika.channel.Channel):
+class Channel(object):  # pika.channel.Channel
 
     zope.interface.implements(gocept.amqprun.interfaces.IChannelManager)
 
     def __init__(self, handler):
-        pika.channel.Channel.__init__(self, handler)
+        # pika.channel.Channel.__init__(self, handler)
         self._gocept_amqprun_refcount = ThreadSafeCounter()
 
     def acquire(self):

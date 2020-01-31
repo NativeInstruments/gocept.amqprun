@@ -4,7 +4,6 @@ import gocept.amqprun.interfaces
 import gocept.amqprun.message
 import gocept.amqprun.session
 import logging
-import pika
 import select
 import threading
 import time
@@ -32,7 +31,7 @@ class Consumer(object):
         self.tasks.put((session, self.handler))
 
 
-class Server(object, pika.connection.NullReconnectionStrategy):
+class Server(object):  # pika.connection.NullReconnectionStrategy
 
     zope.interface.implements(
         gocept.amqprun.interfaces.ILoop,
@@ -70,28 +69,31 @@ class Server(object, pika.connection.NullReconnectionStrategy):
     def start(self):
         log.info('Starting message reader.')
         self.connection = gocept.amqprun.connection.Connection(
-            self.connection_parameters, self)
+            **self.connection_parameters.as_dict())
         self.connection.finish_init()
+        self.on_connection_open(self.connection)
         self.running = True
         while self.running:
             self.run_once()
         # closing
-        self.connection.ensure_closed()
+        # XXX self.connection.ensure_closed()
         self.connection = None
 
     def run_once(self):
         try:
-            self.connection.drain_events()
+            import time
+            time.sleep(0.5)
+            self.connection.drain_events(timeout=0.5)  # XXX
         except select.error:
             log.error("Error while draining events", exc_info=True)
             self.connection._disconnect_transport(
                 "Select error")
             self.channel = self._old_channel = None
             return
-        if self.connection.is_alive():
-            if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
-                self.switch_channel()
-            self.close_old_channel()
+        # if self.connection.is_alive():
+        #     if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
+        #         self.switch_channel()
+        #     self.close_old_channel()
 
     def stop(self):
         log.info('Stopping message reader.')
@@ -113,7 +115,7 @@ class Server(object, pika.connection.NullReconnectionStrategy):
         log.debug('Opening new channel')
         try:
             self.channel = self.connection.channel()
-        except pika.exceptions.ChannelClosed:
+        except Exception:  # pika.exceptions.ChannelClosed
             log.debug('Opening new channel aborted due to closed connection,'
                       ' since a reconnect should happen soon anyway.')
             return
@@ -207,10 +209,10 @@ class Server(object, pika.connection.NullReconnectionStrategy):
 
     def on_connection_open(self, connection):
         assert connection == self.connection
-        assert connection.is_alive()
+        assert connection.ensure_connection(max_retries=1)
         log.info('AMQP connection opened.')
-        with self.connection.lock:
-            self.open_channel()
+        # with self.connection.lock:
+        self.open_channel()
         self.send_channel = self.connection.channel()
         log.info('Finished connection initialization')
 

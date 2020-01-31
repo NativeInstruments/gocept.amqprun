@@ -8,7 +8,6 @@ import gocept.amqprun.interfaces
 import gocept.amqprun.testing
 import mock
 import os
-import pika.spec
 import random
 import signal
 import subprocess
@@ -349,7 +348,7 @@ class DyingRabbitTest(
         if self.pid:
             os.kill(self.pid, signal.SIGINT)
 
-    def start_server(self, port=pika.spec.PORT):
+    def start_server(self, port=5672):  # pika.spec.PORT
         self.server = super(DyingRabbitTest, self).create_server(port=port)
         self.start_thread(self.server)
 
@@ -411,7 +410,7 @@ import sys
 sys.path[:] = %(path)r
 import tcpwatch
 tcpwatch.main(['-L', '%(src)s:%(dest)s', '-s'])
-        """ % dict(path=sys.path, src=port, dest=pika.spec.PORT))
+        """ % dict(path=sys.path, src=port, dest=5672))  # pika.spec.PORT
         script.flush()
         process = subprocess.Popen(
             [sys.executable, script.name],

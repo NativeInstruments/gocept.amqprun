@@ -59,8 +59,9 @@ class Session(object):
                       message.routing_key, self.received_tag)
             message.reference(self.received_message)
             self.channel.basic_publish(
-                message.exchange, message.routing_key,
-                message.body, message.header)
+                message.as_amqp_message(),
+                exchange=message.exchange,
+                routing_key=message.routing_key)
 
     def __repr__(self):
         return '<gocept.amqprun.session.Session %s>' % self.received_tag
@@ -74,7 +75,7 @@ class AMQPDataManager(object):
 
     def __init__(self, session):
         self.session = session
-        self.connection_lock = session.channel.connection_lock
+        # self.connection_lock = session.channel.connection_lock
         self._channel = session.channel
         self._tpc_begin = False
 
@@ -92,7 +93,7 @@ class AMQPDataManager(object):
     def tpc_begin(self, transaction):
         log.debug("Acquire commit lock by %s", self)
         self._tpc_begin = True
-        self.connection_lock.acquire()
+        # self.connection_lock.acquire()
         self._channel.tx_select()
 
     def commit(self, transaction):
@@ -115,7 +116,8 @@ class AMQPDataManager(object):
                 # lock. Maybe there is a better solution.
                 self._channel.tx_rollback()
             finally:
-                self.connection_lock.release()
+                # self.connection_lock.release()
+                pass
         self.session.reset()
 
     def tpc_vote(self, transaction):
@@ -124,7 +126,7 @@ class AMQPDataManager(object):
 
     def tpc_finish(self, transaction):
         log.debug("Release commit lock by %s", self)
-        self.connection_lock.release()
+        # self.connection_lock.release()
 
     def sortKey(self):
         # Try to sort last, so that we vote last.

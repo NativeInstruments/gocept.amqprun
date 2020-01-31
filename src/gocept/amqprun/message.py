@@ -1,8 +1,8 @@
 from datetime import datetime
+import amqp
 import email.utils
 import gocept.amqprun.interfaces
 import logging
-import pika.spec
 import string
 import time
 import types
@@ -10,6 +10,12 @@ import zope.interface
 
 
 log = logging.getLogger(__name__)
+
+
+class AttributeDict(dict):
+    """Implementation taken from https://stackoverflow.com/a/5021467."""
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
 
 
 class Message(object):
@@ -21,7 +27,7 @@ class Message(object):
 
     def __init__(self, header, body, delivery_tag=None, routing_key=None,
                  channel=None):
-        if not isinstance(header, pika.spec.BasicProperties):
+        if not isinstance(header, AttributeDict):  # pika.spec.BasicProperties
             header = self.convert_header(header)
         self.header = header
         if not isinstance(body, (basestring, types.NoneType)):
@@ -35,38 +41,43 @@ class Message(object):
 
     def convert_header(self, header):
         header = header.copy()
-        result = pika.spec.BasicProperties()
+        result = AttributeDict()  # pika.spec.BasicProperties()
         result.timestamp = time.time()
         result.delivery_mode = 2  # persistent
         result.message_id = email.utils.make_msgid('gocept.amqprun')
-        for key in dir(result):
-            value = header.pop(key, self)
-            if isinstance(value, unicode):
-                value = value.encode('UTF-8')
-            if value is not self:
-                setattr(result, key, value)
-        result.headers = header
+        # for key in dir(result):
+        #     value = header.pop(key, self)
+        #     if isinstance(value, unicode):
+        #         value = value.encode('UTF-8')
+        #     if value is not self:
+        #         setattr(result, key, value)
+        # result.headers = header
+        assert not header, "Unknown keys %r" % header
         return result
 
-    def generate_filename(self, pattern):
-        pattern = string.Template(pattern)
-        if self.header.timestamp is not None:
-            timestamp = datetime.fromtimestamp(self.header.timestamp)
-        else:
-            timestamp = datetime.now()
-        variables = dict(
-            date=timestamp.strftime('%Y-%m-%d'),
-            msgid=self.header.message_id,
-            xfilename=(self.header.headers and
-                       self.header.headers.get('X-Filename')),
-            routing_key=self.routing_key,
-            # since CPython doesn't use OS-level threads, there won't be actual
-            # concurrency, so we can get away with using the current time to
-            # uniquify the filename -- we have to take care about the
-            # precision, though: '%s' loses digits, but '%f' doesn't.
-            unique='%f' % time.time(),
-        )
-        return pattern.substitute(variables)
+    def as_amqp_message(self):
+        """Return an amqp.Message from our data."""
+        return amqp.Message(self.body, **self.header)
+
+    # def generate_filename(self, pattern):
+    #     pattern = string.Template(pattern)
+    #     if self.header.timestamp is not None:
+    #         timestamp = datetime.fromtimestamp(self.header.timestamp)
+    #     else:
+    #         timestamp = datetime.now()
+    #     variables = dict(
+    #         date=timestamp.strftime('%Y-%m-%d'),
+    #         msgid=self.header.message_id,
+    #         xfilename=(self.header.headers and
+    #                    self.header.headers.get('X-Filename')),
+    #         routing_key=self.routing_key,
+    #         # since CPython doesn't use OS-level threads, there won't be actual
+    #         # concurrency, so we can get away with using the current time to
+    #         # uniquify the filename -- we have to take care about the
+    #         # precision, though: '%s' loses digits, but '%f' doesn't.
+    #         unique='%f' % time.time(),
+    #     )
+    #     return pattern.substitute(variables)
 
     def reference(self, message):
         """Make the current message referencing `message`."""
@@ -87,9 +98,9 @@ class Message(object):
             self.header.headers['references'] = (
                 parent_references + message.header.message_id)
 
-    def acknowledge(self):
-        """Acknowledge handling of a received message to the queue."""
-        if self._channel is None:
-            raise RuntimeError('No channel set for acknowledge.')
-        log.debug("Ack'ing message %s.", self.delivery_tag)
-        self._channel.basic_ack(self.delivery_tag)
+    # def acknowledge(self):
+    #     """Acknowledge handling of a received message to the queue."""
+    #     if self._channel is None:
+    #         raise RuntimeError('No channel set for acknowledge.')
+    #     log.debug("Ack'ing message %s.", self.delivery_tag)
+    #     self._channel.basic_ack(self.delivery_tag)
