@@ -91,7 +91,6 @@ class AMQPDataManager(object):
         self.session.reset()
 
     def tpc_begin(self, transaction):
-        log.debug("Acquire commit lock by %s", self)
         self._tpc_begin = True
         # self.connection_lock.acquire()
         self._channel.tx_select()
@@ -125,7 +124,7 @@ class AMQPDataManager(object):
         self._channel.tx_commit()
 
     def tpc_finish(self, transaction):
-        log.debug("Release commit lock by %s", self)
+        pass
         # self.connection_lock.release()
 
     def sortKey(self):

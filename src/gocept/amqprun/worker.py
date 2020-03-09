@@ -1,9 +1,5 @@
-from gocept.amqprun.interfaces import IResponse, CounterBelowZero
-import Queue
+from gocept.amqprun.interfaces import IResponse
 import logging
-import os
-import signal
-import threading
 import transaction
 
 try:
@@ -94,6 +90,7 @@ class Worker(object):
                     self.log.error(
                         'Unhandled exception, prevent thread from crashing',
                         exc_info=True)
+                    raise
                 finally:
                     # try:
                     #     session.channel.release()  # It is a IChannelManager.

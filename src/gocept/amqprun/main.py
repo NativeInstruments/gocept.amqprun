@@ -7,25 +7,15 @@ import gocept.amqprun.settings
 import gocept.amqprun.worker
 import logging
 import pkg_resources
-import signal
-import sys
-import threading
-import time
 import zope.component
 import zope.configuration.xmlconfig
 import zope.event
 
+
 log = logging.getLogger(__name__)
 
 
-# Holds a reference to the server started by main(). This is to make testing
-# easier where main() is started in a thread.
-main_server = None
-
-
-def main(config_file):
-    global main_server
-
+def get_configured_server(config_file):
     schema = ZConfig.loadSchemaFile(pkg_resources.resource_stream(
         __name__, 'schema.xml'))
     conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
@@ -47,45 +37,12 @@ def main(config_file):
 
     server = gocept.amqprun.server.Server(conf.amqp_server)
     zope.component.provideUtility(server, gocept.amqprun.interfaces.ISender)
-    main_server = server
 
     zope.event.notify(gocept.amqprun.interfaces.ConfigFinished())
 
-    def stop_server(signum, frame):
-        log.info("Received signal %s, terminating." % signum)
-        zope.event.notify(gocept.amqprun.interfaces.ProcessStopping())
-        for worker in workers:
-            worker.stop()
-        server.stop()
+    return server
 
-    def stop_server_on_error(signum, frame):
-        stop_server(signum, frame)
-        server.exit_status = 1
 
-    signal.signal(signal.SIGINT, stop_server)
-    signal.signal(signal.SIGTERM, stop_server)
-    signal.signal(signal.SIGUSR1, stop_server_on_error)
-
-    workers = []
-    for i in range(conf.worker.amount):
-        worker = gocept.amqprun.worker.Worker(server.tasks)
-        workers.append(worker)
-        worker.start()
-
-    # Start the server in a separate thread. When we receive a signal
-    # (INT/TERM) the main thread is busy handling the signal (stop_server()
-    # above). If the server was running in the main thread it could not longer
-    # do the communication with the amqp server. This leads to frozen workers
-    # because they wait for a commit or abort which requires communication.
-    # Using a separate thread for the server allows the server to run until it
-    # is explicitly stopped by the signal handler.
-    server_thread = threading.Thread(target=server.start)
-    server_thread.start()
-    server.wait_until_running()
-    zope.event.notify(gocept.amqprun.interfaces.ProcessStarted())
-    while server_thread.is_alive():
-        time.sleep(1)
-    server_thread.join()
-    log.info('Exiting')
-    main_server = None
-    sys.exit(server.exit_status)
+def main(config_file):
+    server = get_configured_server(config_file)
+    server.start()

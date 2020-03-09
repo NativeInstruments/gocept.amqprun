@@ -6,9 +6,9 @@ import gocept.amqprun.session
 import gocept.amqprun.worker
 import logging
 import select
-import threading
 import time
 import zope.component
+import zope.event
 import zope.interface
 
 
@@ -54,6 +54,7 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
         self._old_channel = None
         self._switching_channels = False
         self.setup_handlers = setup_handlers
+        self.bound_consumers = {}
 
     # @property
     # def running(self):
@@ -72,25 +73,33 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
 
     def connect(self):
         log.info('Starting message reader.')
-        self.connection = gocept.amqprun.connection.Connection(
-            **self.connection_parameters.as_dict())
+        params = {
+            key: getattr(self.connection_parameters, key)
+            for key in self.connection_parameters.getSectionAttributes()
+        }
+        self.connection = gocept.amqprun.connection.Connection(**params)
         self.connection.finish_init()
         self.on_connection_open(self.connection)
 
     def start(self):
         self.connect()
+        zope.event.notify(gocept.amqprun.interfaces.ProcessStarted())
         try:
             while True:
                 self.run_once()
+                time.sleep(1)  # This might get a polling algorithm.
         except:
             # closing
             self.connection.close()
             # XXX self.connection.ensure_closed()
             self.connection = None
 
-    def run_once(self, timeout):
+    def run_once(self, timeout=None):
         try:
-            self.connection.drain_events(timeout=timeout)  # XXX
+            for queue, consumer in self.bound_consumers.items():
+                message = self.channel.basic_get(queue)
+                if message:
+                    consumer(message)
         except select.error:
             log.error("Error while draining events", exc_info=True)
             self.connection._disconnect_transport(
@@ -125,7 +134,7 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
             log.debug('Opening new channel aborted due to closed connection,'
                       ' since a reconnect should happen soon anyway.')
             return
-        self._declare_and_bind_queues()
+        self.bound_consumers = self._declare_and_bind_queues()
         self._channel_opened = time.time()
 
     def switch_channel(self):
@@ -179,6 +188,7 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
             return
         assert self.channel is not None
         bound_queues = {}
+        bound_consumers = {}
         for name, handler in zope.component.getUtilitiesFor(
                 gocept.amqprun.interfaces.IHandler):
             queue_name = unicode(handler.queue_name).encode('UTF-8')
@@ -207,8 +217,10 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
                 self.channel.queue_bind(
                     queue=queue_name, exchange='amq.topic',
                     routing_key=routing_key)
-            self.channel.basic_consume(
-                callback=Consumer(handler), queue=queue_name)
+            bound_consumers[queue_name] = Consumer(handler)
+
+        return bound_consumers
+
 
     # Connection Strategy Interface
 

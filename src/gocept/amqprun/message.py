@@ -1,9 +1,7 @@
-from datetime import datetime
 import amqp
 import email.utils
 import gocept.amqprun.interfaces
 import logging
-import string
 import time
 import types
 import zope.interface
@@ -96,9 +94,9 @@ class Message(object):
             self.header.headers['references'] = (
                 parent_references + message.header.message_id)
 
-    # def acknowledge(self):
-    #     """Acknowledge handling of a received message to the queue."""
-    #     if self._channel is None:
-    #         raise RuntimeError('No channel set for acknowledge.')
-    #     log.debug("Ack'ing message %s.", self.delivery_tag)
-    #     self._channel.basic_ack(self.delivery_tag)
+    def acknowledge(self):
+        """Acknowledge handling of a received message to the queue."""
+        if self._channel is None:
+            raise RuntimeError('No channel set for acknowledge.')
+        log.debug("Ack'ing message %s.", self.delivery_tag)
+        self._channel.basic_ack(self.delivery_tag)

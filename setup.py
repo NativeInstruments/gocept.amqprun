@@ -91,5 +91,6 @@ setup(
     ),
     entry_points=dict(console_scripts=[
         'server = gocept.amqprun.main:main',
+        'test_sender = gocept.amqprun.tests.basic:send_messages',
     ]),
 )

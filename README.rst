@@ -316,6 +316,17 @@ files have been published to the given routing key, they will be moved to
 ``input-directory/cur``.
 
 
+bin/test_sender and bin/test_server
+-----------------------------------
+
+``test_sender`` and ``test_server`` are scripts that provide basic sender and handler
+capabilities to smoke test the behaviour of our current implementation.
+When started ``test_sender`` emits 10 messages routed to ``test.routing``. 
+``test.server`` declares a ``test.queue`` which all messages
+from ``test.routing`` are sent to and a handler logging every incoming message
+from ``test.queue``.
+
+
 Development
 ===========
 
