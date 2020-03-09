@@ -176,7 +176,6 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         config = self.make_config(__name__, 'basic')
         gocept.amqprun.main.main(config)
         self.assertEquals(1, self.server.call_count)
-        self.assertEquals(2, self.worker.call_count)
         utilities = list(zope.component.getUtilitiesFor(
             gocept.amqprun.interfaces.IHandler))
         self.assertEquals(1, len(utilities))
@@ -188,7 +187,6 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         config = self.make_config(__name__, 'logging')
         gocept.amqprun.main.main(config)
         self.assertEquals(1, self.server.call_count)
-        self.assertEquals(2, self.worker.call_count)
         self.assertEqual(logging.CRITICAL, logging.getLogger().level)
         self.assertEqual(logging.INFO, logging.getLogger('foo').level)
         self.assertEqual(logging.DEBUG, logging.getLogger('foo.bar').level)
@@ -221,22 +219,6 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         settings = zope.component.getUtility(
             gocept.amqprun.interfaces.ISettings)
         self.assertEquals('qux', settings.get('test.SETTING.__default__'))
-
-    def test_main_should_send_processstart_event(self):
-        import gocept.amqprun.interfaces
-        import gocept.amqprun.main
-        import zope.component
-        config = self.make_config(__name__, 'basic')
-        self.handler_called = False
-
-        def handler(event):
-            self.handler_called = True
-            self.assertTrue(self.server().wait_until_running.called)
-
-        zope.component.provideHandler(
-            handler, (gocept.amqprun.interfaces.IProcessStarted,))
-        gocept.amqprun.main.main(config)
-        self.assertTrue(self.handler_called)
 
     def test_main_should_send_configfinished_event(self):
         from gocept.amqprun.interfaces import ISender, IConfigFinished

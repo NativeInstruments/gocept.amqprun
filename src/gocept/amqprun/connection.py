@@ -25,8 +25,8 @@ class Parameters(object):
         self.userid = username
         self.virtual_host = virtual_host
 
-    def as_dict(self):
-        return self.__dict__
+    def getSectionAttributes(self):
+        return self.__dict__.keys()
 
 
 # class WriteDispatcher(asyncore.file_dispatcher):

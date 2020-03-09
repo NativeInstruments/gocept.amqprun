@@ -201,20 +201,6 @@ class MultipleServerTest(gocept.amqprun.testing.MainTestCase):
         gocept.amqprun.tests.integration.messages_received = None
         super(MultipleServerTest, self).tearDown()
 
-    def test_two_servers_in_same_process_dont_crash(self):
-        self.make_config(__name__, 'integration')
-        self.expect_message_on('test.response')
-        self.start_server()
-
-        try:
-            server = self.create_server(setup_handlers=False)
-            thread = self._start_thread(server)
-            self.send_message('foo', routing_key='test.routing')
-            self.wait_for_message(5)
-        finally:
-            server.stop()
-            thread.join()
-
 
 class TestChannelSwitch(unittest.TestCase):
 
