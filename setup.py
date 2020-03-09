@@ -35,10 +35,11 @@ tests_require = (
     readfiles_require +
     security_require + [
         'gocept.testing',
-        'mock>=0.8.0',
+        'mock>=0.8.0, < 4',
         'plone.testing',
         'tcpwatch',
         'zope.testing',
+        'zipp < 2',
     ])
 
 
