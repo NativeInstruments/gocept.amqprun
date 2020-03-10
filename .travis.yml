@@ -11,8 +11,7 @@ install:
   - pip install -U setuptools zc.buildout setuptools-scm
   - buildout -n
 script: 
-  - bin/test --cache-clear --cov-report term-missing --cov src
-after_success: 
+  - bin/test --quarantine=quarantine.txt --cache-clear --cov-report term-missing --cov src
 cache:
   pip: true
   directories: 
