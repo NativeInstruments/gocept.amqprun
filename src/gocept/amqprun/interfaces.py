@@ -129,19 +129,6 @@ class ISender(zope.interface.Interface):
         """Send a message using AMQP."""
 
 
-class IChannelManager(zope.interface.Interface):
-    """Manage channel livecycle."""
-
-    def acquire():
-        """Use the channel."""
-
-    def release():
-        """Indicate channel is no longer being used."""
-
-    def close_if_possible():
-        """Close the channel if it is no longer used by anyone."""
-
-
 class CounterBelowZero(Exception):
     """The counter has fallen below zero."""
 

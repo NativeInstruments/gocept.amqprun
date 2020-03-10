@@ -1,6 +1,7 @@
 # Copyright (c) 2010-2012 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+import amqp.channel
 import mock
 import threading
 import time
@@ -14,14 +15,8 @@ import zope.interface.verify
 class DataManagerTest(unittest.TestCase):
 
     def setUp(self):
-        import gocept.amqprun.interfaces
         zope.component.testing.setUp()
-        self.channel_manager = mock.Mock(
-            spec=list(gocept.amqprun.interfaces.IChannelManager))
-        zope.component.provideAdapter(
-            mock.Mock(return_value=self.channel_manager),
-            adapts=(mock.Mock,),
-            provides=gocept.amqprun.interfaces.IChannelManager)
+        self.channel_manager = mock.Mock(spec=amqp.channel.Channel)
         self.connection = mock.Mock()
         self.connection.lock = threading.Lock()
         self.channel = mock.Mock()

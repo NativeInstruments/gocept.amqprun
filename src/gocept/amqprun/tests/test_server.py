@@ -1,9 +1,9 @@
 # Copyright (c) 2010-2012, 2020 gocept gmbh & co. kg
 # See also LICENSE.txt
 
+import amqp.channel
 import Queue
 import collections
-import gocept.amqprun.channel
 import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import gocept.amqprun.testing
@@ -177,7 +177,7 @@ class MessageReaderTest(
         self.send_message('bar', routing_key='route.2')
         self.assertEqual(2, self.server.tasks.qsize())
 
-    def test_channel_of_any_task_in_the_queue_is_open(self):  # XXX wronly named
+    def test_channel_of_any_task_in_the_queue_is_open(self):  # XXX wronly
         handle_message = MessageStoringHandler()
         handler = gocept.amqprun.handler.Handler(
             self.get_queue_name('test.case.1'),
@@ -209,18 +209,9 @@ class TestChannelSwitch(unittest.TestCase):
         server = Server(mock.sentinel.hostname)
         server.connection = mock.Mock()
         server.connection.lock = threading.Lock()
-        # XXX somehow the ZCA in test_channel_should_be_adaptable_to_manager
-        # manages to corrupt the Channel class with __providedBy__ and stuff
-        # which we can't get rid off otherwise, but which in turn leads
-        # the ZCA here to assume that the channel-mock already provides
-        # IChannelManager. (That's actually two bugs in ZCA in one go...)
-        channel_spec = [x for x in dir(gocept.amqprun.channel.Channel)
-                        if not x.startswith('__')]
-        server.channel = mock.Mock(channel_spec)
-        zope.interface.alsoProvides(
-            server.channel, gocept.amqprun.interfaces.IChannelManager)
+        server.channel = mock.Mock(spec=amqp.channel.Channel)
         server.channel.callbacks = collections.OrderedDict()
-        new_channel = mock.Mock(gocept.amqprun.channel.Channel)
+        new_channel = mock.Mock(amqp.channel.Channel)
         new_channel.callbacks = {}
         new_channel.handler = mock.Mock()
         server.connection.channel.return_value = new_channel
@@ -421,8 +412,6 @@ class ConsumerTest(unittest.TestCase):
         method = mock.Mock()
         method.routing_key = 'route'
         channel = mock.Mock()
-        zope.interface.alsoProvides(
-            channel, gocept.amqprun.interfaces.IChannelManager)
         consumer(channel, method, {}, '')
         session, handler = tasks.get()
         self.assertEqual('route', session.received_message.routing_key)

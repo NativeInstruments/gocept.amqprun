@@ -30,7 +30,6 @@ class Consumer(object):
         log.debug("Channel[%s] received message %s via routing key '%s'",
                   channel.channel_id, delivery_tag, routing_key)
         session = gocept.amqprun.session.Session(channel, amqprun_message)
-        # gocept.amqprun.interfaces.IChannelManager(channel).acquire()
         worker = gocept.amqprun.worker.Worker(session, self.handler)
         return worker()
 
@@ -88,7 +87,7 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
             while True:
                 self.run_once()
                 time.sleep(1)  # This might get a polling algorithm.
-        except:
+        except:  # noqa
             # closing
             self.connection.close()
             # XXX self.connection.ensure_closed()
@@ -159,9 +158,6 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
                     self.tasks.get(block=False)
                 except Queue.Empty:
                     break
-                else:
-                    gocept.amqprun.interfaces.IChannelManager(
-                        self.channel).release()
             self._old_channel = self.channel
             self.channel = None
             self.open_channel()
@@ -175,11 +171,9 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
         if not locked:
             return False
         try:
-            closed = gocept.amqprun.interfaces.IChannelManager(
-                self._old_channel).close_if_possible()
-            if closed:
-                self._old_channel = None
-                self._switching_channels = False
+            self._old_channel.close()
+            self._old_channel = None
+            self._switching_channels = False
         finally:
             self.connection.lock.release()
 
@@ -220,7 +214,6 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
             bound_consumers[queue_name] = Consumer(handler)
 
         return bound_consumers
-
 
     # Connection Strategy Interface
 
