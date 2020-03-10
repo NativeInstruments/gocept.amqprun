@@ -4,6 +4,7 @@ import gocept.amqprun.interfaces
 import gocept.amqprun.message
 import gocept.amqprun.session
 import gocept.amqprun.worker
+import kombu
 import logging
 import select
 import time
@@ -76,8 +77,8 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
             key: getattr(self.connection_parameters, key)
             for key in self.connection_parameters.getSectionAttributes()
         }
-        self.connection = gocept.amqprun.connection.Connection(**params)
-        self.connection.finish_init()
+        self.connection = kombu.Connection(**params)
+        self.connection.ensure_connection(max_retries=1)
         self.on_connection_open(self.connection)
 
     def start(self):

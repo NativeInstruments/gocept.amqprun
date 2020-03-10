@@ -1,6 +1,3 @@
-src/gocept/amqprun/tests/test_connection.py::ConnectionTest::test_finish_init_raises_RuntimeError_when_connection_cannot_be_opened
-src/gocept/amqprun/tests/test_connection.py::ConnectionTest::test_no_username_and_password_should_yield_default_credentials
-src/gocept/amqprun/tests/test_connection.py::ConnectionTest::test_parameters_should_be_converted_to_pika
 src/gocept/amqprun/tests/test_handler.py::ErrorHandlingHandlerTest::test_aborts_transaction_on_non_recoverable_error
 src/gocept/amqprun/tests/test_handler.py::ErrorHandlingHandlerTest::test_acknowledges_message_on_non_recoverable_error
 src/gocept/amqprun/tests/test_handler.py::ErrorHandlingHandlerTest::test_error_message_references_message_on_non_recoverable_error

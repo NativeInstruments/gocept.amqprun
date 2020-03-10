@@ -30,6 +30,16 @@ class MessageStoringHandler:
         self.message = message
 
 
+class ServerTests(gocept.amqprun.testing.QueueTestCase):
+    """Testing ..server.Server"""
+
+    def test_server__Server__connect__1(self):
+        with mock.patch('kombu.connection.Connection.ensure_connection') as fn:
+            self.create_server().connect()
+
+        assert fn.called
+
+
 class MessageReaderTest(
         gocept.amqprun.testing.LoopTestCase,
         gocept.amqprun.testing.QueueTestCase):
