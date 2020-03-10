@@ -1,14 +1,3 @@
-src/gocept/amqprun/tests/test_handler.py::ErrorHandlingHandlerTest::test_aborts_transaction_on_non_recoverable_error
-src/gocept/amqprun/tests/test_handler.py::ErrorHandlingHandlerTest::test_acknowledges_message_on_non_recoverable_error
-src/gocept/amqprun/tests/test_handler.py::ErrorHandlingHandlerTest::test_error_message_references_message_on_non_recoverable_error
-src/gocept/amqprun/tests/test_handler.py::ErrorHandlingHandlerTest::test_returns_error_response_on_exception
-src/gocept/amqprun/tests/test_handler.py::ErrorHandlingHandlerTest::test_wrapping_exceptions_should_not_fail_with_null_bytes
-src/gocept/amqprun/tests/test_message.py::TestMessage::test_given_message_id_should_not_be_overwritten
-src/gocept/amqprun/tests/test_message.py::TestMessage::test_header_should_be_converted_to_BasicProperties
-src/gocept/amqprun/tests/test_message.py::TestMessage::test_message_should_provide_IMessage
-src/gocept/amqprun/tests/test_message.py::GenerateFilename::test_filename_substitutes_pattern
-src/gocept/amqprun/tests/test_message.py::GenerateFilename::test_filename_uses_more_than_millisecond_precision
-src/gocept/amqprun/tests/test_message.py::GenerateFilename::test_no_timestamp_uses_now_as_date_placeholder
 src/gocept/amqprun/tests/test_readfiles.py::ReaderTest::test_loop_can_be_stopped_from_outside
 src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_close_old_channel_should_acquire_and_release_lock
 src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_old_channel_should_be_closed
@@ -22,7 +11,6 @@ src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_switch_channel_
 src/gocept/amqprun/tests/test_server.py::ConsumerTest::test_routing_key_should_be_transferred_to_message
 src/gocept/amqprun/tests/test_session.py::DataManagerTest::test_commit_should_send_queued_messages
 src/gocept/amqprun/tests/test_session.py::DataManagerTest::test_existing_references_header_should_not_be_overwritten
-src/gocept/amqprun/tests/test_session.py::DataManagerTest::test_messages_should_be_sent_with_correlation_id
 src/gocept/amqprun/tests/test_session.py::DataManagerTest::test_messages_should_be_sent_with_references_header
 src/gocept/amqprun/tests/test_session.py::DataManagerTest::test_no_references_should_be_created_when_parent_lacks_message_id
 src/gocept/amqprun/tests/test_session.py::DataManagerTest::test_no_references_when_parent_has_no_reference_header
@@ -40,10 +28,6 @@ src/gocept/amqprun/tests/test_worker.py::WorkerTest::test_transaction_should_com
 src/gocept/amqprun/tests/test_worker.py::WorkerTest::test_worker_can_be_stopped_from_outside
 src/gocept/amqprun/tests/test_worker.py::WorkerTest::test_worker_gets_messages_from_queue
 src/gocept/amqprun/tests/test_worker.py::WorkerTest::test_worker_should_be_daemon_thread
-src/gocept/amqprun/tests/test_writefiles.py::FileWriterTest::test_creates_intermediate_directories
-src/gocept/amqprun/tests/test_writefiles.py::FileWriterTest::test_sends_event
-src/gocept/amqprun/tests/test_writefiles.py::FileWriterTest::test_write_message_body
-src/gocept/amqprun/tests/test_writefiles.py::FileWriterTest::test_writes_message_headers
 src/gocept/amqprun/tests/test_main.py::ReceiveMessages::test_exception_handling_with_iresponse_acks_original_message
 src/gocept/amqprun/tests/test_main.py::ReceiveMessages::test_exception_handling_with_iresponse_acks_original_message
 src/gocept/amqprun/tests/test_main.py::ReceiveMessages::test_existing_messages_in_queue_should_not_crash_startup

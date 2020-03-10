@@ -1,7 +1,9 @@
+from datetime import datetime
 import amqp
 import email.utils
 import gocept.amqprun.interfaces
 import logging
+import string
 import time
 import types
 import zope.interface
@@ -10,10 +12,43 @@ import zope.interface
 log = logging.getLogger(__name__)
 
 
-class AttributeDict(dict):
-    """Implementation taken from https://stackoverflow.com/a/5021467."""
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
+class Properties(object):
+    """Header properties for our Message class.
+    Partly taken from pika.spec.BasicProperties."""
+
+    def __init__(
+            self,
+            content_type=None,
+            content_encoding=None,
+            headers=None,
+            delivery_mode=None,
+            priority=None,
+            correlation_id=None,
+            reply_to=None,
+            expiration=None,
+            message_id=None,
+            timestamp=None,
+            type=None,
+            user_id=None,
+            app_id=None,
+            cluster_id=None):
+        self.content_type = content_type
+        self.content_encoding = content_encoding
+        self.headers = headers
+        self.delivery_mode = delivery_mode
+        self.priority = priority
+        self.correlation_id = correlation_id
+        self.reply_to = reply_to
+        self.expiration = expiration
+        self.message_id = message_id
+        self.timestamp = timestamp
+        self.type = type
+        self.user_id = user_id
+        self.app_id = app_id
+        self.cluster_id = cluster_id
+
+    def as_dict(self):
+        return self.__dict__.copy()
 
 
 class Message(object):
@@ -25,7 +60,7 @@ class Message(object):
 
     def __init__(self, header, body, delivery_tag=None, routing_key=None,
                  channel=None):
-        if not isinstance(header, AttributeDict):  # pika.spec.BasicProperties
+        if not isinstance(header, Properties):
             header = self.convert_header(header)
         self.header = header
         if not isinstance(body, (basestring, types.NoneType)):
@@ -39,37 +74,39 @@ class Message(object):
 
     def convert_header(self, header):
         header = header.copy()
-        result = AttributeDict()  # pika.spec.BasicProperties()
-        result.timestamp = int(time.time())
-        result.delivery_mode = 2  # persistent
-        result.message_id = email.utils.make_msgid('gocept.amqprun')
-        for key, value in header.items():
+        result = Properties(
+            timestamp=int(time.time()),
+            delivery_mode=2,
+            message_id=email.utils.make_msgid('gocept.amqprun'))
+
+        for key in result.as_dict():
+            value = header.pop(key, self)
             if isinstance(value, unicode):
                 value = value.encode('UTF-8')
-            if key not in result:
+            if value is not self:
                 setattr(result, key, value)
         result.headers = header
         return result
 
     def as_amqp_message(self):
         """Return an amqp.Message from our data."""
-        return amqp.Message(self.body, **self.header)
+        return amqp.Message(self.body, **self.header.as_dict())
 
-    # def generate_filename(self, pattern):
-    #     pattern = string.Template(pattern)
-    #     if self.header.timestamp is not None:
-    #         timestamp = datetime.fromtimestamp(self.header.timestamp)
-    #     else:
-    #         timestamp = datetime.now()
-    #     variables = dict(
-    #         date=timestamp.strftime('%Y-%m-%d'),
-    #         msgid=self.header.message_id,
-    #         xfilename=(self.header.headers and
-    #                    self.header.headers.get('X-Filename')),
-    #         routing_key=self.routing_key,
-    #         unique='%f' % time.time(),
-    #     )
-    #     return pattern.substitute(variables)
+    def generate_filename(self, pattern):
+        pattern = string.Template(pattern)
+        if self.header.timestamp is not None:
+            timestamp = datetime.fromtimestamp(self.header.timestamp)
+        else:
+            timestamp = datetime.now()
+        variables = dict(
+            date=timestamp.strftime('%Y-%m-%d'),
+            msgid=self.header.message_id,
+            xfilename=(self.header.headers and
+                       self.header.headers.get('X-Filename')),
+            routing_key=self.routing_key,
+            unique='%f' % time.time(),
+        )
+        return pattern.substitute(variables)
 
     def reference(self, message):
         """Make the current message referencing `message`."""
