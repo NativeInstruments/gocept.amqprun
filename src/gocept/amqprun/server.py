@@ -188,8 +188,8 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
                 gocept.amqprun.interfaces.IHandler):
             queue_name = unicode(handler.queue_name).encode('UTF-8')
             if queue_name in bound_queues:
-                raise ValueError('Queue %r already bound to handler for %r' % (
-                    queue_name, bound_queues[queue_name]))
+                raise ValueError('Queue %r already bound to handler %r for %r' % (
+                    queue_name, handler, bound_queues[queue_name]))
             else:
                 bound_queues[queue_name] = handler.routing_key
             handler_args = handler.arguments or {}
