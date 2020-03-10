@@ -92,11 +92,6 @@ class Worker(object):
                         exc_info=True)
                     raise
                 finally:
-                    # try:
-                    #     session.channel.release()  # It is a IChannelManager.
-                    # except CounterBelowZero:
-                    #     # Reached an undefined state -> kill the whole process.
-                    #     os.kill(os.getpid(), signal.SIGUSR1)
                     end_interaction()
 
     def _send_response(self, session, message, response):

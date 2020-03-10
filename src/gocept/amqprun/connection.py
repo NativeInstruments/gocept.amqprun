@@ -1,11 +1,5 @@
-import asyncore
-import gocept.amqprun.channel
 import kombu
 import logging
-import os
-import socket
-import threading
-import time
 
 
 log = logging.getLogger(__name__)
@@ -53,7 +47,7 @@ class Connection(kombu.Connection):
 
     # _close_now = False
 
-    def __init__(self, *args, **kw):  # parameters, reconnection_strategy=None):
+    def __init__(self, *args, **kw):
         # self.lock = threading.Lock()
         # self._main_thread_lock = threading.RLock()
         # self._main_thread_lock.acquire()
@@ -101,23 +95,6 @@ class Connection(kombu.Connection):
 
     # def notify(self):
     #     os.write(self.notifier_w, 'R')
-
-    # def drain_events(self, timeout=None):
-    #     # The actual communication takes *only* place in the main thread. If
-    #     # another thread detects that there is data to be written, it notifies
-    #     # the main thread about it using the notifier pipe.
-    #     if self.is_main_thread:
-    #         # hub.run_once()
-    #         # pika.asyncore_loop(self.socket_map, count=1, timeout=timeout)
-    #         if self._close_now:
-    #             self.close()
-    #     else:
-    #         # Another thread may notify the main thread about changes. Write
-    #         # exactly 1 byte. This corresponds to handle_read() reading exactly
-    #         # one byte.
-    #         if self.outbound_buffer:
-    #             self.notify()
-    #             time.sleep(0.05)
 
 #     def channel(self):
 #         return gocept.amqprun.channel.Channel(

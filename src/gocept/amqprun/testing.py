@@ -188,26 +188,6 @@ class LoopTestCase(unittest.TestCase):
 
     def setUp(self):
         super(LoopTestCase, self).setUp()
-        # self.loop = None
-
-    # def tearDown(self):
-    #     if self.loop is not None:
-    #         self.loop.stop()
-    #         self.thread.join()
-    #     super(LoopTestCase, self).tearDown()
-    #     # if self.loop is not None and getattr(self.loop, 'connection', None):
-    #     #     self.assertEqual({}, self.loop.connection.socket_map)
-
-    # def start_thread(self, loop):
-    #     self.loop = loop
-    #     self.thread = self._start_thread(loop)
-
-    # def _start_thread(self, loop):
-    #     thread = threading.Thread(target=loop.start)
-    #     thread.start()
-    #     if not loop.wait_until_running(2.5):
-    #         self.fail('Loop did not start up.')
-    #     return thread
 
 
 def set_zca_registry(registry):

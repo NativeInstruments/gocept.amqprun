@@ -67,10 +67,6 @@ class Message(object):
     #         xfilename=(self.header.headers and
     #                    self.header.headers.get('X-Filename')),
     #         routing_key=self.routing_key,
-    #         # since CPython doesn't use OS-level threads, there won't be actual
-    #         # concurrency, so we can get away with using the current time to
-    #         # uniquify the filename -- we have to take care about the
-    #         # precision, though: '%s' loses digits, but '%f' doesn't.
     #         unique='%f' % time.time(),
     #     )
     #     return pattern.substitute(variables)
