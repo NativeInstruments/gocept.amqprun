@@ -87,22 +87,6 @@ class ReaderIntegrationTest(gocept.amqprun.testing.MainTestCase):
         super(ReaderIntegrationTest, self).tearDown()
         shutil.rmtree(self.tmpdir)
 
-    def test_should_send_message_and_move_file(self):
-        self.make_config(__name__, 'readfiles')
-        self.expect_message_on('test.data')
-        self.start_server_in_subprocess(
-            self.tmpdir, 'test.data', module='gocept.amqprun.readfiles')
-        f = open(os.path.join(self.tmpdir, 'new', 'foo.xml'), 'w')
-        f.write('contents')
-        f.close()
-        message = self.wait_for_message()
-        self.assertEqual('contents', message.body)
-        self.assertEqual(
-            'foo.xml', message.properties['application_headers']['X-Filename'])
-        self.assertEqual(0, len(os.listdir(os.path.join(self.tmpdir, 'new'))))
-        self.assertEqual(1, len(os.listdir(os.path.join(self.tmpdir, 'cur'))))
-        self.stop_server_in_subprocess()
-
     def wait_for_directory_present(self, path, timeout=10):
         wait = 0
         while wait < timeout:
@@ -111,6 +95,26 @@ class ReaderIntegrationTest(gocept.amqprun.testing.MainTestCase):
             time.sleep(0.25)
             wait += 0.25
         raise RuntimeError
+
+    def test_should_send_message_and_move_file(self):
+        self.make_config(__name__, 'readfiles')
+        self.expect_message_on('test.data')
+        self.start_server_in_subprocess(
+            self.tmpdir, 'test.data', module='gocept.amqprun.readfiles')
+
+        new_path = os.path.join(self.tmpdir, 'new')
+        self.wait_for_directory_present(new_path)
+
+        with open(os.path.join(new_path, 'foo.xml'), 'w') as f:
+            f.write('contents')
+
+        message = self.wait_for_message()
+        self.assertEqual('contents', message.body)
+        self.assertEqual(
+            'foo.xml', message.properties['application_headers']['X-Filename'])
+        self.assertEqual(0, len(os.listdir(os.path.join(self.tmpdir, 'new'))))
+        self.assertEqual(1, len(os.listdir(os.path.join(self.tmpdir, 'cur'))))
+        self.stop_server_in_subprocess()
 
     def test_process_should_exit_on_filesystem_error(self):
         self.make_config(__name__, 'readfiles-error')
