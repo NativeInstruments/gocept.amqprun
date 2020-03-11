@@ -2,11 +2,11 @@
 # See also LICENSE.txt
 
 import amqp.channel
-import Queue
 import collections
 import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import gocept.amqprun.testing
+import kombu
 import mock
 import os
 import random
@@ -14,7 +14,6 @@ import signal
 import subprocess
 import sys
 import tempfile
-import threading
 import time
 import unittest
 import zope.component
@@ -218,11 +217,11 @@ class TestChannelSwitch(unittest.TestCase):
         from gocept.amqprun.server import Server
         server = Server(mock.sentinel.hostname)
         server.connection = mock.Mock()
-        server.connection.lock = threading.Lock()
-        server.channel = mock.Mock(spec=amqp.channel.Channel)
+        server.channel = mock.Mock(spec=amqp.channel.Channel, channel_id=1)
         server.channel.callbacks = collections.OrderedDict()
-        new_channel = mock.Mock(amqp.channel.Channel)
+        new_channel = mock.Mock(spec=amqp.channel.Channel, channel_id=2)
         new_channel.callbacks = {}
+        new_channel.basic_get.return_value = None
         new_channel.handler = mock.Mock()
         server.connection.channel.return_value = new_channel
         return server
@@ -236,15 +235,6 @@ class TestChannelSwitch(unittest.TestCase):
         self.assertEqual(2, channel.basic_cancel.call_count)
         channel.basic_cancel.assert_called_with(mock.sentinel.ct2)
 
-    def test_switch_channel_should_empty_tasks_and_release_channel(self):
-        server = self.create_server()
-        channel = server.channel
-        server.tasks.put(mock.sentinel.task1)
-        server.tasks.put(mock.sentinel.task2)
-        server.switch_channel()
-        self.assertEqual(0, server.tasks.qsize())
-        self.assertEqual(2, channel.release.call_count)
-
     def test_switch_channel_should_open_new_channel(self):
         server = self.create_server()
         server.switch_channel()
@@ -252,82 +242,45 @@ class TestChannelSwitch(unittest.TestCase):
         new_channel = server.connection.channel()
         self.assertEqual(new_channel, server.channel)
 
-    def test_switch_channel_calls_consume_on_new_channel(self):
+    def test_switch_channel_calls_get_on_new_channel(self):
         from gocept.amqprun.handler import Handler
         server = self.create_server()
         handler = Handler('queue_name', 'routing_key', lambda x: None)
         zope.component.provideUtility(handler, name='handler')
+        old_channel = server.channel
         server.switch_channel()
-        self.assertTrue(server.channel.basic_consume.called)
-
-    def test_switch_channel_should_acquire_and_release_connection_lock(self):
-        server = self.create_server()
-        server.connection.lock = mock.Mock()
-        server.switch_channel()
-        self.assertTrue(server.connection.lock.acquire.called)
-        self.assertTrue(server.connection.lock.release.called)
-        self.assertTrue(server._switching_channels)
-
-    def test_close_old_channel_should_acquire_and_release_lock(self):
-        server = self.create_server()
-        server.connection.lock = mock.Mock()
-        server.switch_channel()
-        server.close_old_channel()
-        self.assertTrue(server.connection.lock.acquire.called)
-        self.assertTrue(server.connection.lock.release.called)
-        self.assertFalse(server._switching_channels)
+        assert old_channel != server.channel
+        server.run_once()
+        self.assertTrue(server.channel.basic_get.called)
 
     def test_run_calls_switch_channel_once_in_a_while(self):
         server = self.create_server()
-        server.channel.close_if_possible.return_value = False
         self.assertEquals(360, server.CHANNEL_LIFE_TIME)
         server.CHANNEL_LIFE_TIME = 0.4
         server._channel_opened = time.time()
         # Channels are not switched immediately after startup
-        server.run_once()
-        self.assertFalse(server._switching_channels)
-        # Channels are switched only after the set channel life time.
-        time.sleep(0.25)
-        server.run_once()
-        self.assertFalse(server._switching_channels)
-        # Channels are switched after the set channel life time.
-        time.sleep(0.25)
-        server.run_once()
-        self.assertTrue(server._switching_channels)
+        with mock.patch.object(server, 'switch_channel') as switch_channel:
+            server.run_once()
+            assert not switch_channel.called
+            # Channels are switched only after the set channel life time.
+            time.sleep(0.25)
+            server.run_once()
+            assert not switch_channel.called
+            # Channels are switched after the set channel life time.
+            time.sleep(0.25)
+            server.run_once()
+            assert switch_channel.called
 
     def test_old_channel_should_be_closed(self):
         server = self.create_server()
         old_channel = server.channel
-        old_channel.close_if_possible.return_value = True
         server.switch_channel()
-        self.assertEqual(old_channel, server._old_channel)
-        server.run_once()
-        self.assertTrue(old_channel.close_if_possible.called)
-        self.assertIsNone(server._old_channel)
-        self.assertFalse(server._switching_channels)
-
-    def test_old_channel_should_remain_if_closing_is_not_possible(self):
-        server = self.create_server()
-        old_channel = server.channel
-        old_channel.close_if_possible.return_value = False
-        server.switch_channel()
-        self.assertEqual(old_channel, server._old_channel)
-        server.run_once()
-        self.assertTrue(old_channel.close_if_possible.called)
-        self.assertIsNotNone(server._old_channel)
-        self.assertTrue(server._switching_channels)
+        assert old_channel.close.called
 
     def test_active_connection_lock_should_defer_switch_channel(self):
         server = self.create_server()
         server.connection.lock.acquire()
         self.assertFalse(server.switch_channel())
-
-    def test_active_connection_lock_should_defer_close_old_channel(self):
-        server = self.create_server()
-        server.connection.lock.acquire()
-        server._old_channel = mock.sentinel.channel
-        # The assertion is that the call doesn't hang :/
-        server.close_old_channel()
 
 
 class DyingRabbitTest(
@@ -417,11 +370,12 @@ class ConsumerTest(unittest.TestCase):
     def test_routing_key_should_be_transferred_to_message(self):
         from gocept.amqprun.server import Consumer
         handler = mock.Mock()
-        tasks = Queue.Queue()
-        consumer = Consumer(handler, tasks)
-        method = mock.Mock()
-        method.routing_key = 'route'
-        channel = mock.Mock()
-        consumer(channel, method, {}, '')
-        session, handler = tasks.get()
-        self.assertEqual('route', session.received_message.routing_key)
+        consumer = Consumer(handler)
+        delivery_info = {
+            'delivery_tag': 'delivery_tag',
+            'routing_key': 'route'}
+        message = kombu.Message(
+            delivery_info=delivery_info,
+            channel=mock.Mock(channel_id=1))
+        consumer(message)
+        assert handler.call_args[0][0].routing_key == 'route'

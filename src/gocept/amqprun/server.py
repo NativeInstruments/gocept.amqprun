@@ -1,4 +1,3 @@
-import Queue
 import gocept.amqprun.connection
 import gocept.amqprun.interfaces
 import gocept.amqprun.message
@@ -45,13 +44,11 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
 
     def __init__(self, connection_parameters, setup_handlers=True):
         self.connection_parameters = connection_parameters
-        # # self.tasks = Queue.Queue()
         # self.local = threading.local()
         # self._running = threading.Event()
         self.connection = None
         self.channel = None
         self._old_channel = None
-        self._switching_channels = False
         self.setup_handlers = setup_handlers
         self.bound_consumers = {}
 
@@ -105,10 +102,8 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
                 "Select error")
             self.channel = self._old_channel = None
             return
-        # if self.connection.is_alive():
-        #     if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
-        #         self.switch_channel()
-        #     self.close_old_channel()
+        if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
+            self.switch_channel()
 
     # def stop(self):
     #     log.info('Stopping message reader.')
@@ -140,42 +135,12 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
         if not zope.component.getUtilitiesFor(
                 gocept.amqprun.interfaces.IHandler):
             return
-        if self._switching_channels:
-            return
-        locked = self.connection.lock.acquire(False)
-        if not locked:
-            log.debug(
-                'Want to switch channel, but connection lock not available;'
-                ' will try again later.')
-            return
-        try:
-            self._switching_channels = True
-            log.info('Switching to a new channel')
-            for consumer_tag in self.channel.callbacks.keys():
-                self.channel.basic_cancel(consumer_tag)
-            while True:
-                try:
-                    self.tasks.get(block=False)
-                except Queue.Empty:
-                    break
-            self._old_channel = self.channel
-            self.channel = None
-            self.open_channel()
-        finally:
-            self.connection.lock.release()
-
-    def close_old_channel(self):
-        if self._old_channel is None:
-            return
-        locked = self.connection.lock.acquire(False)
-        if not locked:
-            return False
-        try:
-            self._old_channel.close()
-            self._old_channel = None
-            self._switching_channels = False
-        finally:
-            self.connection.lock.release()
+        log.info('Switching to a new channel')
+        for consumer_tag in self.channel.callbacks.keys():
+            self.channel.basic_cancel(consumer_tag)
+        self.channel.close()
+        self.channel = None
+        self.open_channel()
 
     def _declare_and_bind_queues(self):
         if not self.setup_handlers:

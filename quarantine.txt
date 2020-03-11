@@ -1,13 +1,3 @@
-src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_close_old_channel_should_acquire_and_release_lock
-src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_old_channel_should_be_closed
-src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_old_channel_should_remain_if_closing_is_not_possible
-src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_run_calls_switch_channel_once_in_a_while
-src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_switch_channel_calls_consume_on_new_channel
-src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_switch_channel_should_acquire_and_release_connection_lock
-src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_switch_channel_should_cancel_consume_on_old_channel
-src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_switch_channel_should_empty_tasks_and_release_channel
-src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_switch_channel_should_open_new_channel
-src/gocept/amqprun/tests/test_server.py::ConsumerTest::test_routing_key_should_be_transferred_to_message
 src/gocept/amqprun/tests/test_session.py::DataManagerTest::test_commit_should_send_queued_messages
 src/gocept/amqprun/tests/test_session.py::DataManagerTest::test_existing_references_header_should_not_be_overwritten
 src/gocept/amqprun/tests/test_session.py::DataManagerTest::test_messages_should_be_sent_with_references_header
