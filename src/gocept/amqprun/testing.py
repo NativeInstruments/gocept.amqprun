@@ -43,7 +43,9 @@ class SettingsLayer(plone.testing.Layer):
 SETTINGS_LAYER = SettingsLayer()
 
 
-class ZCMLSandbox(plone.testing.zca.ZCMLSandbox):
+class ZCASandbox(plone.testing.Layer):
+
+    defaultBases = [plone.testing.zca.LAYER_CLEANUP]
 
     def testSetUp(self):
         plone.testing.zca.pushGlobalRegistry()
@@ -52,13 +54,12 @@ class ZCMLSandbox(plone.testing.zca.ZCMLSandbox):
         plone.testing.zca.popGlobalRegistry()
 
 
-ZCML_LAYER = ZCMLSandbox(
-    filename='configure.zcml', package=gocept.amqprun, module=__name__)
+ZCA_LAYER = ZCASandbox()
 
 
 class QueueLayer(plone.testing.Layer):
 
-    defaultBases = [ZCML_LAYER]
+    defaultBases = [ZCA_LAYER]
     RABBITMQCTL_COMMAND = os.environ.get(
         'AMQP_RABBITMQCTL', 'sudo rabbitmqctl')
 

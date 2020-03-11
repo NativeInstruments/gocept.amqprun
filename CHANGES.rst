@@ -13,6 +13,8 @@ Breaking changes
 
 - Remove gocept.amqprun.main.main_server as main loop.
 
+- Remove ``configure.zcml`` and ``meta.zcml``.
+
 - Remove writing messages in files and the amqp:writefile directive.
 
 - Remove writefiles extra in setup.py.

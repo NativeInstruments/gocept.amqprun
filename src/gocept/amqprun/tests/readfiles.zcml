@@ -1,6 +1,2 @@
-<configure xmlns="http://namespaces.zope.org/zope"
-           xmlns:amqp="http://namespaces.gocept.com/amqp">
-
-  <include package="gocept.amqprun" file="meta.zcml" />
-
+<configure xmlns="http://namespaces.zope.org/zope">
 </configure>

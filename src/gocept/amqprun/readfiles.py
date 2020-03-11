@@ -122,27 +122,6 @@ class FileStoreDataManager(object):
         return "~gocept.amqprun.readfiles:%f" % time.time()
 
 
-class IReadFilesDirective(zope.interface.Interface):
-
-    directory = zope.configuration.fields.Path(
-        title=u"Path to the directory from which to read files")
-
-    routing_key = zope.schema.TextLine(
-        title=u"Routing key to send to")
-
-
-def readfiles_directive(_context, directory, routing_key):
-    reader = FileStoreReader(directory, routing_key)
-    zope.component.zcml.subscriber(
-        _context,
-        for_=(gocept.amqprun.interfaces.IProcessStarted,),
-        handler=lambda event: reader.start())
-    zope.component.zcml.subscriber(
-        _context,
-        for_=(gocept.amqprun.interfaces.IProcessStopping,),
-        handler=lambda event: reader.stop())
-
-
 def main(config_file, path, routing_key):
     server = create_configured_server(config_file)
     server.connect()
