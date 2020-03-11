@@ -66,6 +66,10 @@ class Message(object):
         if not isinstance(body, (basestring, types.NoneType)):
             raise ValueError(
                 'Message body must be basestring, not %s' % type(body))
+
+        if isinstance(body, unicode) and not header.content_encoding:
+            raise ValueError('If body is unicode provide a content_encoding.')
+
         self.body = body
         self.delivery_tag = delivery_tag
         self.routing_key = (

@@ -4,6 +4,7 @@
 from datetime import datetime
 from gocept.amqprun.message import Properties, Message
 import gocept.testing.assertion
+import pytest
 import time
 import unittest
 import zope.interface.verify
@@ -41,6 +42,13 @@ class TestMessage(unittest.TestCase):
     def test_given_message_id_should_not_be_overwritten(self):
         message = Message(dict(message_id='myid'), '')
         self.assertEqual('myid', message.header.message_id)
+
+    def test_message_with_unicode_body_needs_content_encoding(self):
+        with pytest.raises(ValueError):
+            Message({}, u'')
+        message = Message({'content_encoding': 'UTF-8'}, u'')
+
+        assert message
 
 
 class GenerateFilename(unittest.TestCase,
