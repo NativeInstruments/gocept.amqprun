@@ -5,7 +5,7 @@ import gocept.amqprun.session
 import gocept.amqprun.worker
 import kombu
 import logging
-import select
+import socket
 import time
 import zope.component
 import zope.event
@@ -89,18 +89,20 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
             self.connection.close()
             # XXX self.connection.ensure_closed()
             self.connection = None
+            raise
 
     def run_once(self, timeout=None):
+        if not self.channel:
+            self.open_channel()
+            return
         try:
             for queue, consumer in self.bound_consumers.items():
                 message = self.channel.basic_get(queue)
                 if message:
                     consumer(message)
-        except select.error:
-            log.error("Error while draining events", exc_info=True)
-            self.connection._disconnect_transport(
-                "Select error")
-            self.channel = self._old_channel = None
+        except socket.error:
+            log.error("Error while pulling messages", exc_info=True)
+            self.channel = None
             return
         if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
             self.switch_channel()
@@ -136,10 +138,12 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
                 gocept.amqprun.interfaces.IHandler):
             return
         log.info('Switching to a new channel')
-        for consumer_tag in self.channel.callbacks.keys():
-            self.channel.basic_cancel(consumer_tag)
-        self.channel.close()
-        self.channel = None
+        try:
+            self.channel.close()
+        except socket.error:
+            return
+        finally:
+            self.channel = None
         self.open_channel()
 
     def _declare_and_bind_queues(self):

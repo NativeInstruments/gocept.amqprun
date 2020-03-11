@@ -8,12 +8,7 @@ import gocept.amqprun.interfaces
 import gocept.amqprun.testing
 import kombu
 import mock
-import os
-import random
-import signal
-import subprocess
-import sys
-import tempfile
+import socket
 import time
 import unittest
 import zope.component
@@ -199,15 +194,6 @@ class TestChannelSwitch(unittest.TestCase):
         server.connection.channel.return_value = new_channel
         return server
 
-    def test_switch_channel_should_cancel_consume_on_old_channel(self):
-        server = self.create_server()
-        channel = server.channel
-        channel.callbacks[mock.sentinel.ct1] = mock.sentinel.callback1
-        channel.callbacks[mock.sentinel.ct2] = mock.sentinel.callback2
-        server.switch_channel()
-        self.assertEqual(2, channel.basic_cancel.call_count)
-        channel.basic_cancel.assert_called_with(mock.sentinel.ct2)
-
     def test_switch_channel_should_open_new_channel(self):
         server = self.create_server()
         server.switch_channel()
@@ -260,82 +246,33 @@ class DyingRabbitTest(
         gocept.amqprun.testing.LoopTestCase,
         gocept.amqprun.testing.QueueTestCase):
 
-    pid = None
+    def start_server(self):
+        self.server = self.create_server()
+        self.server.connect()
 
-    def tearDown(self):
-        super(DyingRabbitTest, self).tearDown()
-        if self.pid:
-            os.kill(self.pid, signal.SIGINT)
-
-    def start_server(self, port=5672):  # pika.spec.PORT
-        self.server = super(DyingRabbitTest, self).create_server(port=port)
-        self.start_thread(self.server)
-
-    def test_socket_close_should_not_stop_main_loop_and_open_connection(self):
-        # This hopefully simulates local errors
+    def test_socket_close_should_not_stop_main_loop_and_reopen_channel(self):
+        handler = gocept.amqprun.handler.Handler(
+            'test.queuename',
+            'test.routingkey', mock.Mock())
+        zope.component.provideUtility(handler, name='1')
         self.start_server()
-        self.assertTrue(self.server.connection.is_alive())
-        time.sleep(0.5)
-        self.server.connection.dispatcher.socket.close()
-        self.server.connection.notify()
-        time.sleep(3)
 
-        self.assertTrue(self.thread.is_alive())
-        self.assertTrue(self.server.connection.is_alive())
-        self.assertEqual(self.server.connection.channels[1],
-                         self.server.channel.handler)
-        # Do something with the channel
-        self.server.channel.tx_select()
+        with mock.patch.object(
+                self.server.channel, 'basic_get', side_effect=socket.error):
+            self.server.run_once()
+        assert self.server.channel is None
 
-    def test_remote_close_should_reopen_connection(self):
-        port = random.randint(30000, 40000)
-        pid = self.tcpwatch(port)
-        self.start_server(port)
-        old_channel = self.server.channel
-        self.assertTrue(self.server.connection.is_alive())
-
-        os.kill(pid, signal.SIGINT)
-        self.pid = self.tcpwatch(port)
-        time.sleep(1)
-
-        self.assertTrue(self.thread.is_alive())
-        self.assertTrue(self.server.connection.is_alive())
-        self.assertEqual(self.server.connection.channels[1],
-                         self.server.channel.handler)
-        self.assertNotEqual(old_channel, self.server.channel)
-        # Do something with the channel
-        self.server.channel.tx_select()
+        self.server.run_once()
+        assert self.server.channel is not None
 
     def test_remote_close_should_not_break_switch_channel(self):
-        port = random.randint(30000, 40000)
-        pid = self.tcpwatch(port)
-        self.start_server(port)
-        self.assertTrue(self.server.connection.is_alive())
-
-        os.kill(pid, signal.SIGINT)
-        self.server.switch_channel()
-        self.pid = self.tcpwatch(port)
-        time.sleep(1)
-
-        self.assertTrue(self.thread.is_alive())
-        self.assertTrue(self.server.connection.is_alive())
-        # Do something with the channel
-        self.server.channel.tx_select()
-
-    def tcpwatch(self, port):
-        script = tempfile.NamedTemporaryFile(suffix='.py')
-        script.write("""
-import sys
-sys.path[:] = %(path)r
-import tcpwatch
-tcpwatch.main(['-L', '%(src)s:%(dest)s', '-s'])
-        """ % dict(path=sys.path, src=port, dest=5672))  # pika.spec.PORT
-        script.flush()
-        process = subprocess.Popen(
-            [sys.executable, script.name],
-            stdout=open('/dev/null', 'w'), stderr=subprocess.STDOUT)
-        time.sleep(0.5)
-        return process.pid
+        self.start_server()
+        with mock.patch.object(
+                self.server.channel, 'close', side_effect=socket.error):
+            self.server.switch_channel()
+        assert self.server.channel is None
+        self.server.run_once()
+        assert self.server.channel is not None
 
 
 class ConsumerTest(unittest.TestCase):
