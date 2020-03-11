@@ -15,7 +15,7 @@ import zope.event
 log = logging.getLogger(__name__)
 
 
-def get_configured_server(config_file):
+def create_configured_server(config_file):
     schema = ZConfig.loadSchemaFile(pkg_resources.resource_stream(
         __name__, 'schema.xml'))
     conf, handler = ZConfig.loadConfigFile(schema, open(config_file))
@@ -44,5 +44,5 @@ def get_configured_server(config_file):
 
 
 def main(config_file):
-    server = get_configured_server(config_file)
+    server = create_configured_server(config_file)
     server.start()

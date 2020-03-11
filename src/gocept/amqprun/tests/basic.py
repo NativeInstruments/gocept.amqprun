@@ -17,7 +17,7 @@ def basic_handler(message):
 
 
 def send_messages(config_file):
-    server = gocept.amqprun.main.get_configured_server(config_file)
+    server = gocept.amqprun.main.create_configured_server(config_file)
     server.connect()
     for x in range(10):
         message = gocept.amqprun.message.Message(
