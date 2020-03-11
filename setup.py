@@ -13,10 +13,6 @@ install_requires = [
     'zope.schema',
 ]
 
-writefiles_require = [
-    'zope.xmlpickle',
-]
-
 readfiles_require = [
     'gocept.filestore',
 ]
@@ -31,7 +27,6 @@ testing_require = [
 
 tests_require = (
     testing_require +
-    writefiles_require +
     readfiles_require +
     security_require + [
         'gocept.testing',
@@ -86,7 +81,6 @@ setup(
     extras_require=dict(
         test=tests_require,
         testing=testing_require,  # use it to use amqprun's test infrastructure
-        writefiles=writefiles_require,
         readfiles=readfiles_require,
         security=security_require,
     ),
