@@ -85,7 +85,7 @@ class Message(object):
                 value = value.encode('UTF-8')
             if value is not self:
                 setattr(result, key, value)
-        result.headers = header
+        result.application_headers = header
         return result
 
     def as_amqp_message(self):

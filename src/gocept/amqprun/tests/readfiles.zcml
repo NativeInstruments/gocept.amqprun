@@ -3,9 +3,4 @@
 
   <include package="gocept.amqprun" file="meta.zcml" />
 
-  <amqp:readfiles
-    routing_key="${routing_key}"
-    directory="${directory}"
-    />
-
 </configure>

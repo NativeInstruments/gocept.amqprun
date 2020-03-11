@@ -326,6 +326,11 @@ When started ``test_sender`` emits 10 messages routed to ``test.routing``.
 from ``test.routing`` are sent to and a handler logging every incoming message
 from ``test.queue``.
 
+bin/test_send_files
+-------------------
+``test_send_files`` starts a server that watches the ./testdir/new directory
+and sends files copied into it as an amqp message to ``test.routing``. Its
+entrypoint is ``gocept.amqprun.readfiles:main``. 
 
 Development
 ===========

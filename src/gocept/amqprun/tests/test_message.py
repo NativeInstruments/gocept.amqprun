@@ -26,7 +26,7 @@ class TestMessage(unittest.TestCase):
             delivery_tag=1)
         header = message.header
         self.assertTrue(isinstance(header, Properties))
-        self.assertEqual(dict(foo='bar'), header.headers)
+        self.assertEqual(dict(foo='bar'), header.application_headers)
         self.assertTrue(header.timestamp >= now)
         self.assertEqual('text/xml', header.content_type)
         self.assertEqual(2, header.delivery_mode)  # persistent

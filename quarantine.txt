@@ -1,4 +1,3 @@
-src/gocept/amqprun/tests/test_readfiles.py::ReaderTest::test_loop_can_be_stopped_from_outside
 src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_close_old_channel_should_acquire_and_release_lock
 src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_old_channel_should_be_closed
 src/gocept/amqprun/tests/test_server.py::TestChannelSwitch::test_old_channel_should_remain_if_closing_is_not_possible
@@ -43,7 +42,6 @@ src/gocept/amqprun/tests/test_main.py::ReceiveMessages::test_technical_errors_sh
 src/gocept/amqprun/tests/test_main.py::SendMessages::test_processstart_event_means_messages_can_be_sent
 src/gocept/amqprun/tests/test_main.py::TestMainProcess::test_sigint_shuts_down_process_properly
 src/gocept/amqprun/tests/test_main.py::TestMainProcess::test_sigterm_shuts_down_process_properly
-src/gocept/amqprun/tests/test_readfiles.py::ReaderIntegrationTest::test_should_send_message_and_move_file
 src/gocept/amqprun/tests/test_server.py::MessageReaderTest::test_different_handlers_should_be_handled_separately
 src/gocept/amqprun/tests/test_server.py::MessageReaderTest::test_handlers_disabled_should_not_handle_messages
 src/gocept/amqprun/tests/test_server.py::MessageReaderTest::test_messages_with_handler_should_arrive_in_task_queue

@@ -245,14 +245,17 @@ class MainTestCase(LoopTestCase, QueueTestCase):
         self.loop = gocept.amqprun.main.main_server
         self.server_started.wait()
 
-    def start_server_in_subprocess(self):
+    def start_server_in_subprocess(self, *args, **kwargs):
         script = tempfile.NamedTemporaryFile(suffix='.py')
+        module = kwargs.pop('module', 'gocept.amqprun.main')
+        config = [self.config.name]
+        config.extend(args)
         script.write("""
 import sys
 sys.path[:] = %(path)r
-import gocept.amqprun.main
-gocept.amqprun.main.main('%(config)s')
-        """ % dict(path=sys.path, config=self.config.name))
+import %(module)s
+%(module)s.main%(config)r
+        """ % dict(path=sys.path, config=tuple(config), module=module))
         script.flush()
         self.stdout = tempfile.TemporaryFile()
         process = subprocess.Popen(
@@ -260,6 +263,11 @@ gocept.amqprun.main.main('%(config)s')
             stdout=self.stdout, stderr=subprocess.STDOUT)
         time.sleep(1)
         self.pid = process.pid
+
+    def stop_server_in_subprocess(self):
+        os.kill(self.pid, signal.SIGINT)
+        self.wait_for_subprocess_exit()
+        self.pid = None
 
     def wait_for_subprocess_exit(self, timeout=30):
         for i in range(timeout):

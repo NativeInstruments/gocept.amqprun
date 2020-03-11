@@ -10,6 +10,7 @@ import shutil
 import tempfile
 import unittest
 import zope.component
+import time
 
 
 class ReaderTest(gocept.amqprun.testing.LoopTestCase):
@@ -53,14 +54,6 @@ class ReaderTest(gocept.amqprun.testing.LoopTestCase):
         reader.scan()
         self.assertFalse(reader.session.mark_done.called)
 
-    def create_reader(self):
-        reader = FileStoreReader(self.tmpdir, 'route')
-        self.start_thread(reader)
-
-    def test_loop_can_be_stopped_from_outside(self):
-        # this test simply should not hang indefinitely
-        self.create_reader()
-
 
 class FileStoreDataManagerTest(unittest.TestCase):
 
@@ -89,21 +82,16 @@ class ReaderIntegrationTest(gocept.amqprun.testing.MainTestCase):
     def setUp(self):
         super(ReaderIntegrationTest, self).setUp()
         self.tmpdir = tempfile.mkdtemp()
-        os.mkdir(os.path.join(self.tmpdir, 'new'))
-        os.mkdir(os.path.join(self.tmpdir, 'cur'))
 
     def tearDown(self):
         super(ReaderIntegrationTest, self).tearDown()
         shutil.rmtree(self.tmpdir)
 
     def test_should_send_message_and_move_file(self):
-        self.make_config(
-            __name__, 'readfiles', dict(
-                routing_key='test.data',
-                directory=self.tmpdir))
-
+        self.make_config(__name__, 'readfiles')
         self.expect_message_on('test.data')
-        self.start_server()
+        self.start_server_in_subprocess(
+            self.tmpdir, 'test.data', module='gocept.amqprun.readfiles')
         f = open(os.path.join(self.tmpdir, 'new', 'foo.xml'), 'w')
         f.write('contents')
         f.close()
@@ -113,13 +101,24 @@ class ReaderIntegrationTest(gocept.amqprun.testing.MainTestCase):
             'foo.xml', message.properties['application_headers']['X-Filename'])
         self.assertEqual(0, len(os.listdir(os.path.join(self.tmpdir, 'new'))))
         self.assertEqual(1, len(os.listdir(os.path.join(self.tmpdir, 'cur'))))
+        self.stop_server_in_subprocess()
+
+    def wait_for_directory_present(self, path, timeout=10):
+        wait = 0
+        while wait < timeout:
+            if os.path.exists(path):
+                return
+            time.sleep(0.25)
+            wait += 0.25
+        raise RuntimeError
 
     def test_process_should_exit_on_filesystem_error(self):
-        self.make_config(
-            __name__, 'readfiles-error', dict(
-                routing_key='test.data', directory=self.tmpdir))
-        self.start_server_in_subprocess()
-        os.rmdir(os.path.join(self.tmpdir, 'new'))
+        self.make_config(__name__, 'readfiles-error')
+        self.start_server_in_subprocess(
+            self.tmpdir, 'test.route', module='gocept.amqprun.readfiles')
+        directory_path = os.path.join(self.tmpdir, 'new')
+        self.wait_for_directory_present(directory_path)
+        os.rmdir(directory_path)
         status = self.wait_for_subprocess_exit()
         self.assertNotEqual(0, status)
         self.stdout.seek(0)
