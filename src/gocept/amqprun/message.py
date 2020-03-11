@@ -101,8 +101,8 @@ class Message(object):
         variables = dict(
             date=timestamp.strftime('%Y-%m-%d'),
             msgid=self.header.message_id,
-            xfilename=(self.header.headers and
-                       self.header.headers.get('X-Filename')),
+            xfilename=(self.header.application_headers and
+                       self.header.application_headers.get('X-Filename')),
             routing_key=self.routing_key,
             unique='%f' % time.time(),
         )
@@ -116,15 +116,16 @@ class Message(object):
             return
         if not self.header.correlation_id:
             self.header.correlation_id = message.header.message_id
-        if self.header.headers is None:
-            self.header.headers = {}
-        if 'references' not in self.header.headers:
-            if (message.header.headers and
-                    message.header.headers.get('references')):
-                parent_references = message.header.headers['references'] + '\n'
+        if self.header.application_headers is None:
+            self.header.application_headers = {}
+        if 'references' not in self.header.application_headers:
+            if (message.header.application_headers and
+                    message.header.application_headers.get('references')):
+                parent_references = (
+                    message.header.application_headers['references'] + '\n')
             else:
                 parent_references = ''
-            self.header.headers['references'] = (
+            self.header.application_headers['references'] = (
                 parent_references + message.header.message_id)
 
     def acknowledge(self):

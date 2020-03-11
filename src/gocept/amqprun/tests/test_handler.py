@@ -159,14 +159,15 @@ class ErrorHandlingHandlerTest(
 
     def test_error_message_references_message_on_non_recoverable_error(self):
         self.message.header.message_id = 'orig message id'
-        self.message.header.headers = {'references': 'a\nb'}
+        self.message.header.application_headers = {'references': 'a\nb'}
         handler = self.get_handler()
         handler.run.side_effect = RuntimeError('asdf')
         handler.handle()
         error_msg = handler.responses[0]
         self.assertEqual('orig message id', error_msg.header.correlation_id)
         self.assertEqual(
-            'a\nb\norig message id', error_msg.header.headers['references'])
+            'a\nb\norig message id',
+            error_msg.header.application_headers['references'])
 
     def test_raises_exceptions_defined_in_error_reraise(self):
         handler = self.get_handler()

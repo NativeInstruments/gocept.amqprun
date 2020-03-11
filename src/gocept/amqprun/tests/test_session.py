@@ -2,6 +2,7 @@
 # See also LICENSE.txt
 
 import amqp.channel
+import gocept.amqprun.message
 import mock
 import threading
 import time
@@ -50,11 +51,6 @@ class DataManagerTest(unittest.TestCase):
         self.channel_manager.acquire = assert_locked
         self.get_dm()
 
-    def test_tpc_begin_should_acquire_connection_lock(self):
-        dm = self.get_dm()
-        dm.tpc_begin(None)
-        self.assertFalse(self.connection.lock.acquire(False))
-
     def test_tpc_begin_should_call_tx_select(self):
         dm = self.get_dm()
         dm.tpc_begin(None)
@@ -70,12 +66,6 @@ class DataManagerTest(unittest.TestCase):
         dm = self.get_dm()
         dm.tpc_vote(None)
         self.assertTrue(self.channel.tx_commit.called)
-
-    def test_tpc_finish_should_release_connection_lock(self):
-        dm = self.get_dm()
-        self.connection.lock.acquire()
-        dm.tpc_finish(None)
-        self.assertTrue(self.connection.lock.acquire(False))
 
     def test_tpc_abort_should_release_connection_lock(self):
         dm = self.get_dm()
@@ -132,7 +122,9 @@ class DataManagerTest(unittest.TestCase):
         dm.commit(None)
         self.assertEqual(2, self.channel.basic_publish.call_count)
         self.channel.basic_publish.assert_called_with(
-            m2.exchange, m2.routing_key, m2.body, m2.header)
+            m2.as_amqp_message(),
+            exchange=m2.exchange,
+            routing_key=m2.routing_key)
 
     def test_messages_should_be_sent_with_correlation_id(self):
         dm = self.get_dm()
@@ -159,21 +151,22 @@ class DataManagerTest(unittest.TestCase):
         msg = self.get_message()
         self.session.send(msg)
         dm.commit(None)
-        ((_, _, _, header), _) = self.channel.basic_publish.call_args
-        self.assertIn('references', header.headers)
-        self.assertEqual('message id', header.headers['references'])
+        message = self.channel.basic_publish.call_args[0][0]
+        self.assertIn('references', message.headers)
+        self.assertEqual('message id', message.headers['references'])
 
     def test_references_header_contains_parents_references(self):
         dm = self.get_dm()
         dm.session.received_message.header.message_id = 'message id'
-        dm.session.received_message.header.headers = {
+        dm.session.received_message.header.application_headers = {
             'references': 'parent id'}
         msg = self.get_message()
         self.session.send(msg)
         dm.commit(None)
-        ((_, _, _, header), _) = self.channel.basic_publish.call_args
-        self.assertIn('references', header.headers)
-        self.assertEqual('parent id\nmessage id', header.headers['references'])
+        message = self.channel.basic_publish.call_args[0][0]
+        self.assertIn('references', message.headers)
+        self.assertEqual(
+            'parent id\nmessage id', message.headers['references'])
 
     def test_no_references_when_parent_has_no_reference_header(self):
         dm = self.get_dm()
@@ -182,30 +175,31 @@ class DataManagerTest(unittest.TestCase):
         msg = self.get_message()
         self.session.send(msg)
         dm.commit(None)
-        ((_, _, _, header), _) = self.channel.basic_publish.call_args
-        self.assertIn('references', header.headers)
-        self.assertEqual('message id', header.headers['references'])
+        message = self.channel.basic_publish.call_args[0][0]
+        self.assertIn('references', message.headers)
+        self.assertEqual('message id', message.headers['references'])
 
     def test_existing_references_header_should_not_be_overwritten(self):
         dm = self.get_dm()
         dm.session.received_message.header.message_id = 'message id'
-        msg = mock.Mock()
-        msg.header.headers = {'references': 'custom id'}
+        msg = gocept.amqprun.message.Message(
+            {'references': 'custom id'},
+            'body'
+        )
         self.session.send(msg)
         dm.commit(None)
-        ((_, _, _, header), _) = self.channel.basic_publish.call_args
-        self.assertEqual('custom id', header.headers['references'])
+        message = self.channel.basic_publish.call_args[0][0]
+        self.assertEqual('custom id', message.headers['references'])
 
     def test_no_references_should_be_created_when_parent_lacks_message_id(
             self):
         dm = self.get_dm()
         dm.session.received_message.header.message_id = None
-        msg = mock.Mock()
-        msg.header.headers = {}
+        msg = self.get_message()
         self.session.send(msg)
         dm.commit(None)
-        ((_, _, _, header), _) = self.channel.basic_publish.call_args
-        self.assertNotIn('references', header.headers)
+        message = self.channel.basic_publish.call_args[0][0]
+        self.assertNotIn('references', message.headers)
 
     def test_abort_should_discard_queued_messages(self):
         dm = self.get_dm()
