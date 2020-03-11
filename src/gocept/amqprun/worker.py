@@ -90,7 +90,6 @@ class Worker(object):
                     self.log.error(
                         'Unhandled exception, prevent thread from crashing',
                         exc_info=True)
-                    raise
                 finally:
                     end_interaction()
 
@@ -100,8 +99,3 @@ class Worker(object):
                 'Sending message to %s in response to message %s',
                 msg.routing_key, message.delivery_tag)
             session.send(msg)
-
-    # def stop(self):
-    #     self.log.info('stopping')
-    #     self.running = False
-    #     self.join()
