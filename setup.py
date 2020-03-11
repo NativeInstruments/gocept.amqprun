@@ -42,7 +42,7 @@ setup(
     version='2.0.dev0',
     author='gocept <mail at gocept dot com>',
     author_email='mail@gocept.com',
-    url='https://github.com/gocept/gocept.amqprun',
+    url='https://github.com/NativeInstruments/gocept.amqprun',
     description=(
         "gocept.amqprun helps you writing and running AMQP consumers, and"
         " sending AMQP messages. It currently only supports AMQP 0-9-1 and"
@@ -58,7 +58,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Framework :: Zope :: 3',
         'Intended Audience :: Developers',

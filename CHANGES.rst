@@ -1,11 +1,48 @@
 CHANGES
 =======
 
-1.9 (unreleased)
+2.0 (unreleased)
 ----------------
 
-- Nothing changed yet.
+Breaking changes
+++++++++++++++++
 
+- Use kombu/py-amqp instead of pika for basic abstraction over amqp methods.
+
+- Remove multithreading – servers and workers run in the current process.
+
+- Remove gocept.amqprun.main.main_server as main loop.
+
+- Remove writing messages in files and the amqp:writefile directive.
+
+- Remove writefiles extra in setup.py.
+
+- Remove amqp:readfile zcml directive and add send_files entrypoint for
+  readfiles process. It takes three parameters: a configuration file path, a
+  watch directory path and a route to send the file to.
+  (see bin/test_send_files, details are in the README.rst).
+
+- Remove ``.channel.Channel`` and use ``amqp.channel.Channel`` instead.
+
+- Remove ``.interfaces.IChannelManager``.
+
+- Remove ``.connection.Connection`` and use ``kombu.Connection`` instead.
+
+- Rename conf key ``heartbeat_interval`` to ``heartbeat`` in zconfig
+  configuration.
+
+- Enforce content_encoding header for Message bodies that are unicode.
+
+- Rename ``.message.Message.header.headers`` to
+  ``.message.Message.header.application_headers``.
+
+Features
+++++++++
+ 
+- Add ``bin/test_sender`` and ``bin/test_server`` scripts to smoke test sending
+  and receiving behaviour. See README.rst.
+
+- Add representation for ``.handler.Handler`` class.
 
 1.8 (2019-09-11)
 ----------------

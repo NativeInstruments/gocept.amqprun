@@ -44,5 +44,6 @@ def create_configured_server(config_file):
 
 
 def main(config_file):
+    """"Main loop – does not return."""
     server = create_configured_server(config_file)
     server.start()
