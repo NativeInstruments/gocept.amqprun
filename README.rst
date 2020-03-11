@@ -84,7 +84,6 @@ The handler function needs to be registered as a named utility. With ZCML this
 looks like this [#grok]_::
 
     <configure xmlns="http://namespaces.zope.org/zope">
-      <include package="gocept.amqprun" />
       <utility component="path.to.package.log_message_body" name="basic" />
     </configure>
 
@@ -145,7 +144,6 @@ the component configuration and uses ZDaemon to daemonize the process::
     path = ${deployment:etc-directory}/queue.zcml
     content =
         <configure xmlns="http://namespaces.zope.org/zope">
-          <include package="gocept.amqprun" />
           <include package="your.package" />
         </configure>
 
@@ -217,43 +215,12 @@ Interfacing with the file system
 Reading
 -------
 
-You can also set up a thread to read files from a directory and publish them
-onto the queue, using the ``<amqp:readfiles>`` ZCML directive (the filename
-will be transmitted in the ``X-Filename`` header). You need the `readfiles`
-extra to enable this directive::
-
-    <configure xmlns="http://namespaces.zope.org/zope"
-               xmlns:amqp="http://namespaces.gocept.com/amqp">
-
-      <include package="gocept.amqprun" file="meta.zcml" />
-
-      <amqp:readfiles
-        directory="/path/to/input-directory"
-        routing_key="test.data"
-        />
-    </configure>
-
-The input-directory is expected to be a Maildir, i.e. files to be read should
-appear in ``input-directory/new` which will be polled every second. After the
-files have been published to the given routing key, they will be moved to
-``input-directory/cur``.
-
-
-bin/test_sender and bin/test_server
------------------------------------
-
-``test_sender`` and ``test_server`` are scripts that provide basic sender and handler
-capabilities to smoke test the behaviour of our current implementation.
-When started ``test_sender`` emits 10 messages routed to ``test.routing``. 
-``test.server`` declares a ``test.queue`` which all messages
-from ``test.routing`` are sent to and a handler logging every incoming message
-from ``test.queue``.
-
-bin/test_send_files
--------------------
-``test_send_files`` starts a server that watches the ./testdir/new directory
-and sends files copied into it as an amqp message to ``test.routing``. Its
-entrypoint is ``gocept.amqprun.readfiles:main``. 
+There is a ``send_files`` entrypoint in the setup.py. It can be configured with
+three arguments: The path of the zconfig file, a watch path and a routing key. 
+It reads new files in the directory named ``new`` in the watch path and sends
+a message with its content as the body and the filename as an X-Filename header
+to the route. Sent files are moved to the directory called ``cur`` in the
+watch path.
 
 Development
 ===========
@@ -283,4 +250,19 @@ https://github.com/gocept/gocept.amqprun
 Please report any bugs you find at
 https://github.com/gocept/gocept.amqprun/issues
 
-.. vim: set ft=rst:
+
+bin/test_sender and bin/test_server
+-----------------------------------
+
+``test_sender`` and ``test_server`` are scripts that provide basic sender and handler
+capabilities to smoke test the behaviour of our current implementation.
+When started ``test_sender`` emits 10 messages routed to ``test.routing``. 
+``test.server`` declares a ``test.queue`` which all messages
+from ``test.routing`` are sent to and a handler logging every incoming message
+from ``test.queue``.
+
+bin/test_send_files
+-------------------
+``test_send_files`` starts a server that watches the ./testdir/new directory
+and sends files copied into it as an amqp message to ``test.routing``. Its
+entrypoint is ``gocept.amqprun.readfiles:main``. 
