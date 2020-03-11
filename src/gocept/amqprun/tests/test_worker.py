@@ -120,22 +120,3 @@ class WorkerTest(unittest.TestCase):
         self.worker()
         self.assertEqual('userid', self.principal)
         self.assertFalse(zope.security.management.queryInteraction())
-
-
-class WorkerITests(gocept.amqprun.testing.MainTestCase):
-    """Integration testing ..worker.Worker."""
-
-    def setUp(self):
-        super(WorkerITests, self).setUp()
-        self.make_config(__name__, 'integration')
-        self.start_server_in_subprocess()
-
-    def test_worker__Worker__run__1(self):
-        """It kills the server on a `CounterBelowZero` exception.
-
-        This exception is provoked by the handler for this routing key by
-        decrementing the channel reference counter.
-
-        """
-        self.send_message('peng!', routing_key='test.counterbelowzero')
-        self.wait_for_subprocess_exit()

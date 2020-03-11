@@ -1,6 +1,3 @@
 src/gocept/amqprun/tests/test_server.py::DyingRabbitTest::test_remote_close_should_not_break_switch_channel
 src/gocept/amqprun/tests/test_server.py::DyingRabbitTest::test_remote_close_should_reopen_connection
 src/gocept/amqprun/tests/test_server.py::DyingRabbitTest::test_socket_close_should_not_stop_main_loop_and_open_connection
-src/gocept/amqprun/tests/test_worker.py::WorkerITests::test_worker__Worker__run__1
-src/gocept/amqprun/tests/test_writefiles.py::WriterIntegrationTest::test_message_should_be_processed
-src/gocept/amqprun/tests/test_writefiles.py::WriterIntegrationTest::test_message_should_not_be_written_on_error
