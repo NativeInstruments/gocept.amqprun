@@ -44,38 +44,9 @@ class MessageReaderTest(
         gocept.amqprun.testing.QueueTestCase):
 
     def start_server(self, **kw):
-        return self.create_server(**kw)
-
-    def test_loop_can_be_stopped_from_outside(self):
-        # this test simply should not hang indefinitely
-        self.start_server()
-
-    def test_messages_wo_handler_should_not_arrive_in_tasks(self):
-        self.start_server()
-        self.send_message('foo')
-        self.assertEqual(0, self.server.tasks.qsize())
-
-    def test_messages_with_handler_should_arrive_in_task_queue(self):
-        # Provide a handler
-        handle_message = mock.Mock()
-        handler = gocept.amqprun.handler.Handler(
-            self.get_queue_name('test.case.1'),
-            'test.messageformat.1', handle_message)
-        zope.component.provideUtility(handler, name='queue')
-        self.start_server()
-
-        # Without routing key, the message is not delivered
-        self.assertEqual(0, self.server.tasks.qsize())
-        self.send_message('foo')
-        self.assertEqual(0, self.server.tasks.qsize())
-        # With routing key, the message is delivered
-        self.send_message('foo', routing_key='test.messageformat.1')
-        self.assertEqual(1, self.server.tasks.qsize())
-        session, handler = self.server.tasks.get()
-        handler(session.received_message)
-        self.assertTrue(handle_message.called)
-        message = handle_message.call_args[0][0]
-        self.assertEquals('foo', message.body)
+        self.server = self.create_server(**kw)
+        self.server.connect()
+        return self.server
 
     def test_different_handlers_should_be_handled_separately(self):
         # Provide two handlers
@@ -90,13 +61,9 @@ class MessageReaderTest(
         zope.component.provideUtility(handler_1, name='1')
         zope.component.provideUtility(handler_2, name='2')
         self.start_server()
-
-        self.assertEqual(0, self.server.tasks.qsize())
         # With routing key, the message is delivered to the correct handler
         self.send_message('foo', routing_key='test.messageformat.2')
-        self.assertEqual(1, self.server.tasks.qsize())
-        session, handler = self.server.tasks.get()
-        handler(session.received_message)
+        self.server.run_once()
         self.assertFalse(handle_message_2.called)
         self.assertTrue(handle_message_1.called)
 
@@ -110,7 +77,7 @@ class MessageReaderTest(
         self.start_server(setup_handlers=False)
 
         self.send_message('foo', routing_key='test.messageformat.1')
-        self.assertEqual(0, self.server.tasks.qsize())
+        assert not handle_message.called
 
     def test_unicode_queue_names_should_work(self):
         import gocept.amqprun.interfaces
@@ -161,7 +128,9 @@ class MessageReaderTest(
         import transaction
         self.start_server()
         self.server.send(gocept.amqprun.message.Message(
-            {}, u'body', routing_key='test.routing'))
+            {'content_encoding': 'UTF-8'},
+            u'body',
+            routing_key='test.routing'))
         transaction.commit()
 
     def test_unicode_header_should_work_for_message(self):
@@ -180,22 +149,26 @@ class MessageReaderTest(
             ['route.1', 'route.2'], handle_message)
         zope.component.provideUtility(handler, name='handler')
         self.start_server()
-
-        self.assertEqual(0, self.server.tasks.qsize())
         self.send_message('foo', routing_key='route.1')
         self.send_message('bar', routing_key='route.2')
-        self.assertEqual(2, self.server.tasks.qsize())
+        self.server.run_once()
+        self.server.run_once()
 
-    def test_channel_of_any_task_in_the_queue_is_open(self):  # XXX wronly
+        assert handle_message.call_count == 2
+        message_1 = handle_message.call_args_list[0][0][0]
+        message_2 = handle_message.call_args_list[1][0][0]
+        assert message_1.routing_key == 'route.1'
+        assert message_2.routing_key == 'route.2'
+
+    def test_server_handles_messages(self):
         handle_message = MessageStoringHandler()
         handler = gocept.amqprun.handler.Handler(
             self.get_queue_name('test.case.1'),
             'test.messageformat.1', handle_message)
         zope.component.provideUtility(handler, name='queue')
-        server = self.start_server()
-        server.connect()
+        self.start_server()
         self.send_message('foo', routing_key='test.messageformat.1')
-        server.run_once(timeout=5)
+        self.server.run_once(timeout=5)
         assert handle_message.message.body == 'foo'
         assert handle_message.message.routing_key == 'test.messageformat.1'
 

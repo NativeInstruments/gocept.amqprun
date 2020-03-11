@@ -7,8 +7,9 @@ import email.utils
 import gocept.amqprun
 import gocept.amqprun.connection
 import gocept.amqprun.interfaces
+import gocept.amqprun.main
+import gocept.amqprun.worker
 import logging
-import mock
 import os
 import pkg_resources
 import plone.testing
@@ -18,7 +19,6 @@ import string
 import subprocess
 import sys
 import tempfile
-import threading
 import time
 import unittest
 import zope.component
@@ -198,24 +198,15 @@ def set_zca_registry(registry):
 class MainTestCase(LoopTestCase, QueueTestCase):
 
     def setUp(self):
-        import gocept.amqprun.worker
         super(MainTestCase, self).setUp()
         self._timeout = gocept.amqprun.worker.Worker.timeout
         gocept.amqprun.worker.Worker.timeout = 0.05
-        self.orig_signal = signal.signal
-        signal.signal = mock.Mock()
         self.orig_registry = zope.component.getGlobalSiteManager()
         set_zca_registry(
             zope.component.globalregistry.BaseGlobalComponents('amqprun-main'))
 
     def tearDown(self):
-        import gocept.amqprun.interfaces
-        import gocept.amqprun.worker
         zope.event.notify(gocept.amqprun.interfaces.ProcessStopping())
-        for t in list(threading.enumerate()):
-            if isinstance(t, gocept.amqprun.worker.Worker):
-                t.stop()
-        signal.signal = self.orig_signal
         set_zca_registry(self.orig_registry)
         super(MainTestCase, self).tearDown()
         gocept.amqprun.worker.Worker.timeout = self._timeout
@@ -226,24 +217,9 @@ class MainTestCase(LoopTestCase, QueueTestCase):
                 logging.root.handlers.pop()
 
     def start_server(self):
-        import gocept.amqprun.main
-        self.server_started = threading.Event()
-        zope.component.getSiteManager().registerHandler(
-            lambda x: self.server_started.set(),
-            [gocept.amqprun.interfaces.IProcessStarted])
-
-        self.thread = threading.Thread(
-            target=gocept.amqprun.main.main, args=(self.config.name,))
-        self.thread.start()
-        for i in range(200):
-            if (gocept.amqprun.main.main_server is not None and
-                    gocept.amqprun.main.main_server.running):
-                break
-            time.sleep(0.025)
-        else:
-            self.fail('Server did not start up.')
-        self.loop = gocept.amqprun.main.main_server
-        self.server_started.wait()
+        self.server = gocept.amqprun.main.create_configured_server(
+            self.config.name)
+        self.server.connect()
 
     def start_server_in_subprocess(self, *args, **kwargs):
         script = tempfile.NamedTemporaryFile(suffix='.py')
