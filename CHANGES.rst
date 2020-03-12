@@ -33,6 +33,8 @@ Breaking changes
 - Rename conf key ``heartbeat_interval`` to ``heartbeat`` in zconfig
   configuration.
 
+- Remove ``amount`` from worker zconfig.
+
 - Enforce content_encoding header for Message bodies that are unicode.
 
 - Rename ``.message.Message.header.headers`` to
@@ -42,7 +44,7 @@ Breaking changes
 
 - Remove ``.testing.LoopTestCase``, use ``unittest.TestCase`` instead.
 
-- Remove ``.interfaces.ProcessStopping``. 
+- Remove ``.interfaces.ProcessStopping``.
 
 Features
 ++++++++

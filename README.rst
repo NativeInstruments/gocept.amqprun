@@ -132,7 +132,6 @@ the component configuration and uses ZDaemon to daemonize the process::
         ${:eventlog}
         ${:amqp-server}
         <worker>
-          amount 10
           component-configuration ${zcml:path}
         </worker>
         <settings>

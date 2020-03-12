@@ -4,7 +4,6 @@
     <import package="gocept.amqprun" file="amqp.xml" />
 
     <sectiontype name="worker">
-        <key name="amount" datatype="integer" required="yes" />
         <key name="component-configuration" datatype="existing-file" required="yes" />
     </sectiontype>
 
