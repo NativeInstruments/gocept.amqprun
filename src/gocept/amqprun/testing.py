@@ -185,18 +185,12 @@ class QueueTestCase(unittest.TestCase):
             setup_handlers=setup_handlers)
 
 
-class LoopTestCase(unittest.TestCase):
-
-    def setUp(self):
-        super(LoopTestCase, self).setUp()
-
-
 def set_zca_registry(registry):
     plone.testing.zca._hookRegistry(registry)
     zope.component.getSiteManager.reset()
 
 
-class MainTestCase(LoopTestCase, QueueTestCase):
+class MainTestCase(QueueTestCase):
 
     def setUp(self):
         super(MainTestCase, self).setUp()

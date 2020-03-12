@@ -40,6 +40,8 @@ Breaking changes
 
 - Rename ``.testing.ZCML_LAYER`` to ``.testing.ZCA_LAYER``.
 
+- Remove ``.testing.LoopTestCase``, use ``unittest.TestCase`` instead.
+
 Features
 ++++++++
  

@@ -13,7 +13,7 @@ import zope.component
 import time
 
 
-class ReaderTest(gocept.amqprun.testing.LoopTestCase):
+class ReaderTest(unittest.TestCase):
 
     def setUp(self):
         super(ReaderTest, self).setUp()

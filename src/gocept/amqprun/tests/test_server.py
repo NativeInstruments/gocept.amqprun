@@ -34,9 +34,7 @@ class ServerTests(gocept.amqprun.testing.QueueTestCase):
         assert fn.called
 
 
-class MessageReaderTest(
-        gocept.amqprun.testing.LoopTestCase,
-        gocept.amqprun.testing.QueueTestCase):
+class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
 
     def start_server(self, **kw):
         self.server = self.create_server(**kw)
@@ -231,9 +229,7 @@ class TestChannelSwitch(unittest.TestCase):
         self.assertFalse(server.switch_channel())
 
 
-class DyingRabbitTest(
-        gocept.amqprun.testing.LoopTestCase,
-        gocept.amqprun.testing.QueueTestCase):
+class DyingRabbitTest(gocept.amqprun.testing.QueueTestCase):
 
     def start_server(self):
         self.server = self.create_server()

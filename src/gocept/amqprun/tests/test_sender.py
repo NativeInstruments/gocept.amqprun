@@ -5,9 +5,7 @@ import gocept.amqprun.testing
 import transaction
 
 
-class MessageSenderTest(
-        gocept.amqprun.testing.LoopTestCase,
-        gocept.amqprun.testing.QueueTestCase):
+class MessageSenderTest(gocept.amqprun.testing.QueueTestCase):
 
     def setUp(self):
         super(MessageSenderTest, self).setUp()
