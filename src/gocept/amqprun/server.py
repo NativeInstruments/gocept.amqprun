@@ -184,8 +184,6 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
 
         return bound_consumers
 
-    # Connection Strategy Interface
-
     def on_connection_open(self, connection):
         assert connection == self.connection
         assert connection.ensure_connection(max_retries=1)
@@ -194,15 +192,3 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
         self.open_channel()
         self.send_channel = self.connection.channel()
         log.info('Finished connection initialization')
-
-    def on_connection_closed(self, connection):
-        assert connection == self.connection
-        if self.connection.connection_close:
-            message = self.connection.connection_close.reply_text
-        else:
-            message = 'no detail available'
-        log.info('AMQP connection closed (%s)', message)
-        self._old_channel = self.channel = None
-        if self.running:
-            log.info('Reconnecting in 1s')
-            self.connection.delayed_call(1, self.connection.reconnect)

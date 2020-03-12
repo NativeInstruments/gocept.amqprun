@@ -16,7 +16,7 @@ def basic_handler(message):
     log.info('basic_handler: %s', message.body)
 
 
-def send_messages(config_file):
+def send_messages(config_file):  # pragma: no cover
     server = gocept.amqprun.main.create_configured_server(config_file)
     server.connect()
     for x in range(10):

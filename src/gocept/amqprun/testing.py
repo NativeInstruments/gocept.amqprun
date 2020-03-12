@@ -96,7 +96,8 @@ class QueueLayer(plone.testing.Layer):
         stdout = subprocess.check_output(
             'LANG=C %s' % command, stderr=subprocess.STDOUT, shell=True)
         if 'Error' in stdout:
-            raise RuntimeError('%s failed:\n%s' % (command, stdout))
+            raise RuntimeError(
+                '%s failed:\n%s' % (command, stdout))  # pragma: no cover
 
 
 QUEUE_LAYER = QueueLayer()
@@ -119,14 +120,11 @@ class QueueTestCase(unittest.TestCase):
 
     def tearDown(self):
         for queue_name in self._queues:
-            try:
-                # NOTE: we seem to need a new channel for each delete;
-                # trying to use self.channel for all queues results in its
-                # closing after the first delete
-                with self.connection.channel() as channel:
-                    channel.queue_delete(queue_name)
-            except amqp.AMQPChannelException:
-                pass
+            # NOTE: we seem to need a new channel for each delete;
+            # trying to use self.channel for all queues results in its
+            # closing after the first delete
+            with self.connection.channel() as channel:
+                channel.queue_delete(queue_name)
         super(QueueTestCase, self).tearDown()
 
     def get_queue_name(self, suffix):
@@ -166,9 +164,6 @@ class QueueTestCase(unittest.TestCase):
         else:
             raise RuntimeError('No message received')
         return message
-
-    # BBB
-    wait_for_response = wait_for_message
 
     def create_server(self, **kw):
         import gocept.amqprun.server
@@ -244,17 +239,15 @@ import %(module)s
             if (pid, status) != (0, 0):
                 return status
             time.sleep(0.5)
-        else:
+        else:  # pragma: no cover
             os.kill(self.pid, signal.SIGKILL)
             self.stdout.seek(0)
             self.fail('Child process did not exit\n' + self.stdout.read())
 
-    def make_config(self, package, name, mapping=None):
-        zcml_base = string.Template(
-            unicode(pkg_resources.resource_string(package, '%s.zcml' % name),
-                    'utf8'))
+    def make_config(self, package, name):
         self.zcml = tempfile.NamedTemporaryFile()
-        self.zcml.write(zcml_base.substitute(mapping).encode('utf8'))
+        self.zcml.write(
+            pkg_resources.resource_string(package, '%s.zcml' % name))
         self.zcml.flush()
 
         sub = dict(
@@ -264,8 +257,6 @@ import %(module)s
             amqp_password=self.layer['amqp-password'],
             amqp_virtualhost=self.layer['amqp-virtualhost'],
         )
-        if mapping:
-            sub.update(mapping)
 
         base = string.Template(
             unicode(pkg_resources.resource_string(package, '%s.conf' % name),
@@ -274,15 +265,3 @@ import %(module)s
         self.config.write(base.substitute(sub).encode('utf8'))
         self.config.flush()
         return self.config.name
-
-    def wait_for_processing(self, timeout=100):
-        for i in range(timeout):
-            if not self.loop.tasks.qsize():
-                break
-            time.sleep(0.05)
-        else:
-            self.fail('Message was not processed.')
-
-    def wait_for_response(self, timeout=100):
-        self.wait_for_processing(timeout)
-        return super(MainTestCase, self).wait_for_response(timeout)

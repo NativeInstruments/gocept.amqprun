@@ -38,7 +38,7 @@ class TestHandler(unittest.TestCase):
 
         @gocept.amqprun.handler.declare('queue.name', 'routing.key')
         def handler(message):
-            return None
+            return None  # pragma: no cover
         self.assertTrue(zope.interface.verify.verifyObject(
             gocept.amqprun.interfaces.IHandler, handler))
         self.assertEquals('queue.name', handler.queue_name)
@@ -59,7 +59,7 @@ class TestHandler(unittest.TestCase):
         @gocept.amqprun.handler.declare(
             'queue.name', 'routing.key', arguments={'x-ha-policy': 'all'})
         def handler(message):
-            return None
+            return None  # pragma: no cover
         self.assertTrue(zope.interface.verify.verifyObject(
             gocept.amqprun.interfaces.IHandler, handler))
         self.assertEquals('queue.name', handler.queue_name)
@@ -73,7 +73,7 @@ class TestHandler(unittest.TestCase):
         @gocept.amqprun.handler.declare(
             'queue.name', 'routing.key', principal='zope.user')
         def handler(message):
-            return None
+            return None  # pragma: no cover
         self.assertTrue(zope.interface.verify.verifyObject(
             gocept.amqprun.interfaces.IHandler, handler))
         self.assertEquals('queue.name', handler.queue_name)

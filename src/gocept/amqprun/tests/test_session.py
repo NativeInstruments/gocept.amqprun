@@ -43,14 +43,6 @@ class DataManagerTest(unittest.TestCase):
         zope.interface.verify.verifyObject(
             transaction.interfaces.IDataManager, self.get_dm())
 
-    def test_init_should_acquire_and_release_connection_lock(self):
-        # since getting the current channel from the Server must be locked
-        # against Server.switch_channel
-        def assert_locked():
-            self.assertFalse(self.connection.lock.acquire(False))
-        self.channel_manager.acquire = assert_locked
-        self.get_dm()
-
     def test_tpc_begin_should_call_tx_select(self):
         dm = self.get_dm()
         dm.tpc_begin(None)

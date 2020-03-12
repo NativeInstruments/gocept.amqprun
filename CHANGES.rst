@@ -46,6 +46,10 @@ Breaking changes
 
 - Remove ``.interfaces.ProcessStopping``.
 
+- Remove ``.testing.MainTestCase.wait_for_response``, use ``wait_for_message`` instead.
+
+- Remove ``mapping`` argument from ``.testing.MainTestCase.make_config``.
+
 Features
 ++++++++
  

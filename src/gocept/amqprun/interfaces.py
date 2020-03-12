@@ -1,4 +1,3 @@
-import re
 import zope.interface
 import zope.interface.common.mapping
 import zope.schema
@@ -104,24 +103,6 @@ class ISettings(zope.interface.common.mapping.IReadMapping):
         """Update the settings with ``a_dict``."""
 
 
-class ILoop(zope.interface.Interface):
-
-    running = zope.interface.Attribute('bool: is the loop running?')
-
-    def wait_until_running(timeout=None):
-        """Block until the loop is running.
-
-        Optionally apply a timeout given in seconds.
-
-        """
-
-    def start():
-        pass
-
-    def stop():
-        pass
-
-
 class ISender(zope.interface.Interface):
     """Sender for AMQP messages."""
 
@@ -149,46 +130,3 @@ class IProcessStarted(zope.interface.Interface):
 class ProcessStarted(object):
 
     zope.interface.implements(IProcessStarted)
-
-
-class IMessageStored(zope.interface.Interface):
-    """Event the FileWriter sends after it has written a message to the
-    filesystem."""
-
-    path = zope.interface.Attribute(
-        'The absolute path of the file the message was written to')
-
-    message = zope.interface.Attribute(
-        'The gocept.amqprun.message.Message object')
-
-
-class MessageStored(object):
-
-    zope.interface.implements(IMessageStored)
-
-    def __init__(self, message, path):
-        self.path = path
-        self.message = message
-
-
-@zope.interface.implementer(zope.schema.interfaces.IDict)
-class RepresentableDict(zope.schema.Dict):
-    """A field representing a Dict, but representable in ZCML."""
-
-    key_value_regex = re.compile(r'^(?P<key>[^:=\s[][^:=]*)'
-                                 r'(?P<sep>[:=]\s*)'
-                                 r'(?P<value>.*)$')
-
-    def fromUnicode(self, raw_value):
-        retval = {}
-        for line in raw_value.strip().splitlines():
-            m = self.key_value_regex.match(line.strip())
-            if m is None:
-                continue
-
-            key = m.group('key').rstrip()
-            value = m.group('value')
-            retval[key] = value
-
-        self.validate(retval)
-        return retval

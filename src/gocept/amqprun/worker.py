@@ -5,7 +5,7 @@ import transaction
 try:
     from zope.security.management import endInteraction as end_interaction
     from zope.security.testing import create_interaction
-except ImportError:
+except ImportError:  # pragma: no cover
     def create_interaction(principal):
         log.warn(
             'create_interaction(%s) called but zope.security is not available',

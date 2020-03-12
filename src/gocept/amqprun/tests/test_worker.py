@@ -21,11 +21,6 @@ class WorkerTest(unittest.TestCase):
             'test.queue', 'test.route', handler_function, principal=principal)
         self.worker = gocept.amqprun.worker.Worker(self.session, handler)
 
-    def _create_task(self, handler):
-        ANY = None
-        return (
-            self.session, gocept.amqprun.handler.Handler(ANY, ANY, handler))
-
     def test_worker_can_be_stopped_from_outside(self):
         # this test simply should not hang indefinitely
         self._create_worker()
