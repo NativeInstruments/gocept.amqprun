@@ -42,6 +42,8 @@ Breaking changes
 
 - Remove ``.testing.LoopTestCase``, use ``unittest.TestCase`` instead.
 
+- Remove ``.interfaces.ProcessStopping``. 
+
 Features
 ++++++++
  

@@ -23,7 +23,6 @@ import time
 import unittest
 import zope.component
 import zope.component.globalregistry
-import zope.event
 
 
 class SettingsLayer(plone.testing.Layer):
@@ -201,7 +200,6 @@ class MainTestCase(QueueTestCase):
             zope.component.globalregistry.BaseGlobalComponents('amqprun-main'))
 
     def tearDown(self):
-        zope.event.notify(gocept.amqprun.interfaces.ProcessStopping())
         set_zca_registry(self.orig_registry)
         super(MainTestCase, self).tearDown()
         gocept.amqprun.worker.Worker.timeout = self._timeout

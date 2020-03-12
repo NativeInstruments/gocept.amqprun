@@ -151,15 +151,6 @@ class ProcessStarted(object):
     zope.interface.implements(IProcessStarted)
 
 
-class IProcessStopping(zope.interface.Interface):
-    """Event to indicate the process is being stopped."""
-
-
-class ProcessStopping(object):
-
-    zope.interface.implements(IProcessStopping)
-
-
 class IMessageStored(zope.interface.Interface):
     """Event the FileWriter sends after it has written a message to the
     filesystem."""
