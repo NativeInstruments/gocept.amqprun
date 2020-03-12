@@ -75,7 +75,6 @@ class AMQPDataManager(object):
 
     def __init__(self, session):
         self.session = session
-        # self.connection_lock = session.channel.connection_lock
         self._channel = session.channel
         self._tpc_begin = False
 
@@ -92,7 +91,6 @@ class AMQPDataManager(object):
 
     def tpc_begin(self, transaction):
         self._tpc_begin = True
-        # self.connection_lock.acquire()
         self._channel.tx_select()
 
     def commit(self, transaction):
@@ -108,15 +106,11 @@ class AMQPDataManager(object):
             # On errors in savepoints tpc_abort is called without a prior
             # tpc_begin().
             log.debug('tx_rollback')
-            try:
-                # XXX The following should not fail. But if it raises an
-                # exception nevertheless we release the lock as otherwise the
-                # next `tpc_begin()` will block forever when acquiring the
-                # lock. Maybe there is a better solution.
-                self._channel.tx_rollback()
-            finally:
-                # self.connection_lock.release()
-                pass
+            # XXX The following should not fail. But if it raises an
+            # exception nevertheless we release the lock as otherwise the
+            # next `tpc_begin()` will block forever when acquiring the
+            # lock. Maybe there is a better solution.
+            self._channel.tx_rollback()
         self.session.reset()
 
     def tpc_vote(self, transaction):
@@ -125,7 +119,6 @@ class AMQPDataManager(object):
 
     def tpc_finish(self, transaction):
         pass
-        # self.connection_lock.release()
 
     def sortKey(self):
         # Try to sort last, so that we vote last.

@@ -32,7 +32,6 @@ class PrefixingLogger(object):
         return write
 
 
-# class Worker(threading.Thread):
 class Worker(object):
 
     timeout = 5

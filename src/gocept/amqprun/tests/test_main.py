@@ -65,28 +65,6 @@ class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
             self.assertTrue(self.messages_received[0]._exception)
 
 
-class SendMessages(gocept.amqprun.testing.MainTestCase):
-    pass
-    # XXX: IProcessStarted might be removed
-    # def test_processstart_event_means_messages_can_be_sent(self):
-    #     self.make_config(__name__, 'basic')
-    #     self.expect_message_on('test_send')
-
-    #     def handler(event):
-    #         message = gocept.amqprun.message.Message(
-    #             {}, 'foo', routing_key='test_send')
-    #         zope.component.getUtility(
-    #             gocept.amqprun.interfaces.ISender).send(message)
-    #         transaction.commit()
-
-    #     zope.component.provideHandler(
-    #         handler, (gocept.amqprun.interfaces.IProcessStarted,))
-    #     self.start_server()
-
-    #     self.server.run_once()
-    #     self.assertEqual('foo', message.body)
-
-
 class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
 
     def setUp(self):
