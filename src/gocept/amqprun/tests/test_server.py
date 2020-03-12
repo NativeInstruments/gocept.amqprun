@@ -168,17 +168,6 @@ class MessageReaderTest(
         assert handle_message.message.routing_key == 'test.messageformat.1'
 
 
-class MultipleServerTest(gocept.amqprun.testing.MainTestCase):
-
-    def setUp(self):
-        super(MultipleServerTest, self).setUp()
-        gocept.amqprun.tests.integration.messages_received = []
-
-    def tearDown(self):
-        gocept.amqprun.tests.integration.messages_received = None
-        super(MultipleServerTest, self).tearDown()
-
-
 class TestChannelSwitch(unittest.TestCase):
 
     def create_server(self):

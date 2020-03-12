@@ -38,6 +38,8 @@ Breaking changes
 - Rename ``.message.Message.header.headers`` to
   ``.message.Message.header.application_headers``.
 
+- Rename ``.testing.ZCML_LAYER`` to ``.testing.ZCA_LAYER``.
+
 Features
 ++++++++
  

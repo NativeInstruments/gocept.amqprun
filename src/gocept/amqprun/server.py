@@ -40,7 +40,6 @@ class Server(object):  # pika.connection.NullReconnectionStrategy
         gocept.amqprun.interfaces.ISender)
 
     CHANNEL_LIFE_TIME = 360
-    exit_status = 0
 
     def __init__(self, connection_parameters, setup_handlers=True):
         self.connection_parameters = connection_parameters
