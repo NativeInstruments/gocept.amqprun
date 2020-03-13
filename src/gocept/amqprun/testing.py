@@ -179,24 +179,17 @@ class QueueTestCase(unittest.TestCase):
             setup_handlers=setup_handlers)
 
 
-def set_zca_registry(registry):
-    plone.testing.zca._hookRegistry(registry)
-    zope.component.getSiteManager.reset()
-
-
 class MainTestCase(QueueTestCase):
 
     def setUp(self):
         super(MainTestCase, self).setUp()
         self._timeout = gocept.amqprun.worker.Worker.timeout
         gocept.amqprun.worker.Worker.timeout = 0.05
-        self.orig_registry = zope.component.getGlobalSiteManager()
-        set_zca_registry(
-            zope.component.globalregistry.BaseGlobalComponents('amqprun-main'))
+        plone.testing.zca.pushGlobalRegistry()
 
     def tearDown(self):
-        set_zca_registry(self.orig_registry)
         super(MainTestCase, self).tearDown()
+        plone.testing.zca.popGlobalRegistry()
         gocept.amqprun.worker.Worker.timeout = self._timeout
         # heuristic to avoid accreting more and more debug log output handlers
         if logging.root.handlers:
