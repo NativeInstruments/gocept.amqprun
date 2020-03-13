@@ -244,10 +244,12 @@ import %(module)s
             self.stdout.seek(0)
             self.fail('Child process did not exit\n' + self.stdout.read())
 
-    def make_config(self, package, name):
+    def make_config(self, package, name, mapping=None):
+        zcml_base = string.Template(
+            unicode(pkg_resources.resource_string(package, '%s.zcml' % name),
+                    'utf8'))
         self.zcml = tempfile.NamedTemporaryFile()
-        self.zcml.write(
-            pkg_resources.resource_string(package, '%s.zcml' % name))
+        self.zcml.write(zcml_base.substitute(mapping).encode('utf8'))
         self.zcml.flush()
 
         sub = dict(
@@ -257,6 +259,9 @@ import %(module)s
             amqp_password=self.layer['amqp-password'],
             amqp_virtualhost=self.layer['amqp-virtualhost'],
         )
+
+        if mapping:
+            sub.update(mapping)
 
         base = string.Template(
             unicode(pkg_resources.resource_string(package, '%s.conf' % name),

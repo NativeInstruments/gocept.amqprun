@@ -99,7 +99,11 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
     def test_configuration_should_load_logging(self):
         import gocept.amqprun.interfaces
         import gocept.amqprun.main
-        config = self.make_config(__name__, 'logging')
+        config = self.make_config(
+            __name__, 'logging', mapping={
+                'logger_info_name': 'foo',
+                'logger_debug_name': 'foo.bar'
+            })
         gocept.amqprun.main.main(config)
         self.assertEquals(1, self.server.call_count)
         self.assertEqual(logging.CRITICAL, logging.getLogger().level)
