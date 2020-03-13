@@ -2,9 +2,9 @@
 gocept.amqprun
 ==============
 
-gocept.amqprun helps you writing and running AMQP consumers, and sending AMQP
-messages. It currently only supports AMQP 0-8 and integrates with the Zope Tool
-Kit (ZTK) so you can use adapters, utilities and all the buzz.
+``gocept.amqprun`` helps you writing and running AMQP consumers, and sending
+AMQP messages. It currently only supports AMQP 0-9-1 and integrates with the
+Zope Tool Kit (ZTK) so you can use adapters, utilities and all the buzz.
 
 .. contents:: :depth: 1
 
@@ -24,14 +24,12 @@ Basic concepts and terms
   it.)
 
 * A message handler handles exactly one message at a time. Multiple messages
-  can be processed at the same time using threads. Those threads are called
-  *workers*.
+  can be processed at the same time using multiple processes. (Each process is
+  single-threaded.)
 
 
 Things you don't need to take care of
 =====================================
-
-* Threading of multiple workers
 
 * Socket handling and locking for communicating with the AMQP broker
 
@@ -60,7 +58,7 @@ supports an optional ``arguments`` argument that is a dictionary to be passed
 to the AMQP queue_declare call to, e.g., support mirrored queues on RabbitMQ.
 The optional argument ``principal`` specifies to wrap the handler call into a
 zope.security interaction using the given principal id (you need the
-``[security]`` extra to use this integration functionality).
+``[security]`` setup.py extra to use this integration functionality).
 
 ::
 
@@ -84,12 +82,12 @@ The handler function needs to be registered as a named utility. With ZCML this
 looks like this [#grok]_::
 
     <configure xmlns="http://namespaces.zope.org/zope">
-      <utility component="path.to.package.log_message_body" name="basic" />
+      <utility component="your.package.log_message_body" name="basic" />
     </configure>
 
 To set up a server, it's recommended to create a buildout. The following
-buildout creates a config file for gocept.amqprun as well as a ZCML file for
-the component configuration and uses ZDaemon to daemonize the process::
+buildout creates a config file for ``gocept.amqprun`` as well as a ZCML file
+for the component configuration and uses ZDaemon to daemonize the process::
 
     [buildout]
     parts =
@@ -173,16 +171,12 @@ handlers, but can use ``gocept.amqprun.server.Server.send()`` directly. While
 the handlers usually run in their own process, started by the ``server``
 entrypoint (as described above), if you're just sending messages, you can also
 skip the extra process and run the ``gocept.amqprun.server.Server`` in your
-original process, in its own thread. Here is some example code to do that::
+original process. Here is some example code to do that::
 
     def start_server(**kw):
         parameters = gocept.amqprun.connection.Parameters(**kw)
-        server = gocept.amqprun.server.Server(parameters)
-        server_thread = threading.Thread(target=server.start)
-        server_thread.daemon = True
-        server_thread.start()
-        import time
-        time.sleep(0.1)
+        server = gocept.amqprun.server.Server(parameters, setup_handlers=False)
+        server.connect()
         return server
 
 (When you're using the ZCA, you'll probably want to register the ``Server`` as
@@ -215,7 +209,7 @@ Reading
 -------
 
 There is a ``send_files`` entrypoint in the setup.py. It can be configured with
-three arguments: The path of the zconfig file, a watch path and a routing key. 
+three arguments: The path of the zconfig file, a watch path and a routing key.
 It reads new files in the directory named ``new`` in the watch path and sends
 a message with its content as the body and the filename as an X-Filename header
 to the route. Sent files are moved to the directory called ``cur`` in the
@@ -253,15 +247,15 @@ https://github.com/gocept/gocept.amqprun/issues
 bin/test_sender and bin/test_server
 -----------------------------------
 
-``test_sender`` and ``test_server`` are scripts that provide basic sender and handler
-capabilities to smoke test the behaviour of our current implementation.
-When started ``test_sender`` emits 10 messages routed to ``test.routing``. 
-``test.server`` declares a ``test.queue`` which all messages
-from ``test.routing`` are sent to and a handler logging every incoming message
-from ``test.queue``.
+``test_sender`` and ``test_server`` are scripts that provide basic sender and
+handler capabilities to smoke test the behaviour of our current implementation.
+When started ``test_sender`` emits 10 messages routed to ``test.routing``.
+``test.server`` declares a ``test.queue`` which all messages from
+``test.routing`` are sent to and a handler logging every incoming message from
+``test.queue``.
 
 bin/test_send_files
 -------------------
 ``test_send_files`` starts a server that watches the ./testdir/new directory
 and sends files copied into it as an amqp message to ``test.routing``. Its
-entrypoint is ``gocept.amqprun.readfiles:main``. 
+entrypoint is ``gocept.amqprun.readfiles:main``.
