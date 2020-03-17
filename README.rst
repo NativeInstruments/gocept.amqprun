@@ -174,8 +174,7 @@ skip the extra process and run the ``gocept.amqprun.server.Server`` in your
 original process. Here is some example code to do that::
 
     def start_server(**kw):
-        parameters = gocept.amqprun.connection.Parameters(**kw)
-        server = gocept.amqprun.server.Server(parameters, setup_handlers=False)
+        server = gocept.amqprun.server.Server(kw, setup_handlers=False)
         server.connect()
         return server
 

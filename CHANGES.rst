@@ -48,6 +48,10 @@ Breaking changes
 
 - Remove ``.testing.MainTestCase.wait_for_response``, use ``wait_for_message`` instead.
 
+- Move ``.connection.Parameters`` to ``.server``.
+
+- ``.server.Parameters`` returns a dict now.
+
 Features
 ++++++++
  

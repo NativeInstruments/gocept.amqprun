@@ -35,7 +35,13 @@ def create_configured_server(config_file):
 
     zope.configuration.xmlconfig.file(conf.worker.component_configuration)
 
-    server = gocept.amqprun.server.Server(conf.amqp_server)
+    params = {
+        key: getattr(conf.amqp_server, key)
+        for key in conf.amqp_server.getSectionAttributes()
+        if getattr(conf.amqp_server, key)
+    }
+
+    server = gocept.amqprun.server.Server(params)
     zope.component.provideUtility(server, gocept.amqprun.interfaces.ISender)
 
     zope.event.notify(gocept.amqprun.interfaces.ConfigFinished())

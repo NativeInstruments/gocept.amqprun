@@ -1,4 +1,3 @@
-import gocept.amqprun.connection
 import gocept.amqprun.interfaces
 import gocept.amqprun.message
 import gocept.amqprun.session
@@ -13,6 +12,23 @@ import zope.interface
 
 
 log = logging.getLogger(__name__)
+
+
+def Parameters(heartbeat=0,
+               hostname=NotImplemented,
+               password=None,
+               port=5672,
+               username=None,
+               virtual_host="/"):
+    """Connection parameters with sensible defaults."""
+    return {
+        'heartbeat': heartbeat,
+        'hostname': hostname,
+        'password': password,
+        'port': int(port),
+        'userid': username,
+        'virtual_host': virtual_host,
+    }
 
 
 class Consumer(object):
@@ -42,7 +58,7 @@ class Server(object):
     CHANNEL_LIFE_TIME = 360
 
     def __init__(self, connection_parameters, setup_handlers=True):
-        self.connection_parameters = connection_parameters
+        self.connection_parameters = Parameters(**connection_parameters)
         self.connection = None
         self.channel = None
         self._old_channel = None
@@ -51,11 +67,7 @@ class Server(object):
 
     def connect(self):
         log.info('Starting message reader.')
-        params = {
-            key: getattr(self.connection_parameters, key)
-            for key in self.connection_parameters.getSectionAttributes()
-        }
-        self.connection = kombu.Connection(**params)
+        self.connection = kombu.Connection(**self.connection_parameters)
         self.connection.ensure_connection(max_retries=1)
         self.on_connection_open(self.connection)
 

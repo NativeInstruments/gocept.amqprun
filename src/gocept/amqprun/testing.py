@@ -5,7 +5,6 @@ import amqp
 import datetime
 import email.utils
 import gocept.amqprun
-import gocept.amqprun.connection
 import gocept.amqprun.interfaces
 import gocept.amqprun.main
 import gocept.amqprun.worker
@@ -175,8 +174,7 @@ class QueueTestCase(unittest.TestCase):
         setup_handlers = kw.pop('setup_handlers', True)
         params.update(kw)
         return gocept.amqprun.server.Server(
-            gocept.amqprun.connection.Parameters(**params),
-            setup_handlers=setup_handlers)
+            params, setup_handlers=setup_handlers)
 
 
 class MainTestCase(QueueTestCase):

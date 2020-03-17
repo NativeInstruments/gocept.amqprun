@@ -1,18 +1,36 @@
 # Copyright (c) 2010-2012, 2020 gocept gmbh & co. kg
 # See also LICENSE.txt
 
-import amqp.channel
+from gocept.amqprun.server import Parameters
+import amqp
 import collections
 import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import gocept.amqprun.testing
 import kombu
 import mock
+import pytest
 import socket
 import time
 import unittest
 import zope.component
 import zope.interface
+
+
+class ParametersTest(unittest.TestCase):
+    """Testing ..server.Parameters."""
+
+    def test_bails_on_unknown_keyword_argument(self):
+        with self.assertRaises(TypeError) as err:
+            Parameters(virtualhost='vhost3')
+        self.assertEqual(
+            "Parameters() got an unexpected keyword argument 'virtualhost'",
+            str(err.exception))
+
+    def test_server__Parameters__1(self):
+        """It converts a strings to an integer as port number if necessary."""
+        params = Parameters(port='1234')
+        self.assertEqual(1234, params['port'])
 
 
 class MessageStoringHandler:
@@ -32,6 +50,16 @@ class ServerTests(gocept.amqprun.testing.QueueTestCase):
             self.create_server().connect()
 
         assert fn.called
+
+
+class ServerCredentialTests(gocept.amqprun.testing.MainTestCase):
+    """Testing ..server.Server"""
+
+    def test_server__Server__connect__2(self):
+        """It fails to connect when an incorrect username is given."""
+        self.make_config(__name__, 'basic', {'amqp_username': 'wrong'})
+        with pytest.raises(amqp.AccessRefused):
+            self.start_server()
 
 
 class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
@@ -170,11 +198,11 @@ class TestChannelSwitch(unittest.TestCase):
 
     def create_server(self):
         from gocept.amqprun.server import Server
-        server = Server(mock.sentinel.hostname)
+        server = Server({})
         server.connection = mock.Mock()
-        server.channel = mock.Mock(spec=amqp.channel.Channel, channel_id=1)
+        server.channel = mock.Mock(spec=amqp.Channel, channel_id=1)
         server.channel.callbacks = collections.OrderedDict()
-        new_channel = mock.Mock(spec=amqp.channel.Channel, channel_id=2)
+        new_channel = mock.Mock(spec=amqp.Channel, channel_id=2)
         new_channel.callbacks = {}
         new_channel.basic_get.return_value = None
         new_channel.handler = mock.Mock()
