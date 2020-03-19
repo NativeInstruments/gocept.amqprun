@@ -20,7 +20,7 @@ class Properties(object):
             self,
             content_type=None,
             content_encoding=None,
-            headers=None,
+            application_headers=None,
             delivery_mode=None,
             priority=None,
             correlation_id=None,
@@ -34,7 +34,7 @@ class Properties(object):
             cluster_id=None):
         self.content_type = content_type
         self.content_encoding = content_encoding
-        self.headers = headers
+        self.application_headers = application_headers or {}
         self.delivery_mode = delivery_mode
         self.priority = priority
         self.correlation_id = correlation_id
@@ -93,7 +93,7 @@ class Message(object):
                 value = value.encode('UTF-8')
             if value is not self:
                 setattr(result, key, value)
-        result.application_headers = header
+        result.application_headers.update(header)
         return result
 
     def as_amqp_message(self):

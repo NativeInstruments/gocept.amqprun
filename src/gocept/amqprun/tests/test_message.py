@@ -55,6 +55,22 @@ class TestMessage(unittest.TestCase):
 
         assert isinstance(message.body, str)
 
+    def test_message_additional_application_headers_get_merged(self):
+        headers = {
+            'test_header_1': 'test',
+            'application_headers': {
+                'test_header_2': 'test'
+            }}
+
+        message = Message(headers, '')
+
+        assert message.header.application_headers == {
+                'test_header_1': 'test',
+                'test_header_2': 'test'
+            }
+
+        assert 'test_header_1' not in message.header.as_dict()
+
 
 class GenerateFilename(unittest.TestCase,
                        gocept.testing.assertion.Exceptions):
