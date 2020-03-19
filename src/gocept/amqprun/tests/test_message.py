@@ -45,10 +45,15 @@ class TestMessage(unittest.TestCase):
 
     def test_message_with_unicode_body_needs_content_encoding(self):
         with pytest.raises(ValueError):
-            Message({}, u'')
-        message = Message({'content_encoding': 'UTF-8'}, u'')
+            Message({}, u'Test')
+        message = Message({'content_encoding': 'UTF-8'}, u'Test')
 
         assert message
+
+    def test_message_with_empty_unicode_body_gets_empty_string_body(self):
+        message = Message({}, u'')
+
+        assert isinstance(message.body, str)
 
 
 class GenerateFilename(unittest.TestCase,

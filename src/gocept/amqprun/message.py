@@ -67,6 +67,10 @@ class Message(object):
             raise ValueError(
                 'Message body must be basestring, not %s' % type(body))
 
+        # We don't want empty unicode strings. also u'' == ''
+        if body == u'':
+            body = ''
+
         if isinstance(body, unicode) and not header.content_encoding:
             raise ValueError('If body is unicode provide a content_encoding.')
 
