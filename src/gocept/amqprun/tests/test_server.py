@@ -189,7 +189,7 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
         zope.component.provideUtility(handler, name='queue')
         self.start_server()
         self.send_message('foo', routing_key='test.messageformat.1')
-        self.server.run_once(timeout=5)
+        self.server.run_once()
         assert handle_message.message.body == 'foo'
         assert handle_message.message.routing_key == 'test.messageformat.1'
 

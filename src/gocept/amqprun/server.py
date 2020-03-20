@@ -83,7 +83,7 @@ class Server(object):
             self.connection = None
             raise
 
-    def run_once(self, timeout=None):
+    def run_once(self):
         if not self.channel:
             self.open_channel()
             return
