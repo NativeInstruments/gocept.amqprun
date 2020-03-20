@@ -9,7 +9,7 @@ install_requires = [
     'zope.component[zcml]',
     'zope.configuration',
     'zope.event',
-    'zope.interface',
+    'zope.interface < 5',
     'zope.schema',
 ]
 
