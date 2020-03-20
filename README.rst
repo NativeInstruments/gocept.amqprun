@@ -2,9 +2,9 @@
 gocept.amqprun
 ==============
 
-gocept.amqprun helps you writing and running AMQP consumers, and sending AMQP
-messages. It currently only supports AMQP 0-8 and integrates with the Zope Tool
-Kit (ZTK) so you can use adapters, utilities and all the buzz.
+``gocept.amqprun`` helps you writing and running AMQP consumers, and sending
+AMQP messages. It currently only supports AMQP 0-9-1 and integrates with the
+Zope Tool Kit (ZTK) so you can use adapters, utilities and all the buzz.
 
 .. contents:: :depth: 1
 
@@ -24,14 +24,12 @@ Basic concepts and terms
   it.)
 
 * A message handler handles exactly one message at a time. Multiple messages
-  can be processed at the same time using threads. Those threads are called
-  *workers*.
+  can be processed at the same time using multiple processes. (Each process is
+  single-threaded.)
 
 
 Things you don't need to take care of
 =====================================
-
-* Threading of multiple workers
 
 * Socket handling and locking for communicating with the AMQP broker
 
@@ -60,7 +58,7 @@ supports an optional ``arguments`` argument that is a dictionary to be passed
 to the AMQP queue_declare call to, e.g., support mirrored queues on RabbitMQ.
 The optional argument ``principal`` specifies to wrap the handler call into a
 zope.security interaction using the given principal id (you need the
-``[security]`` extra to use this integration functionality).
+``[security]`` setup.py extra to use this integration functionality).
 
 ::
 
@@ -84,13 +82,12 @@ The handler function needs to be registered as a named utility. With ZCML this
 looks like this [#grok]_::
 
     <configure xmlns="http://namespaces.zope.org/zope">
-      <include package="gocept.amqprun" />
-      <utility component="path.to.package.log_message_body" name="basic" />
+      <utility component="your.package.log_message_body" name="basic" />
     </configure>
 
 To set up a server, it's recommended to create a buildout. The following
-buildout creates a config file for gocept.amqprun as well as a ZCML file for
-the component configuration and uses ZDaemon to daemonize the process::
+buildout creates a config file for ``gocept.amqprun`` as well as a ZCML file
+for the component configuration and uses ZDaemon to daemonize the process::
 
     [buildout]
     parts =
@@ -133,7 +130,6 @@ the component configuration and uses ZDaemon to daemonize the process::
         ${:eventlog}
         ${:amqp-server}
         <worker>
-          amount 10
           component-configuration ${zcml:path}
         </worker>
         <settings>
@@ -145,7 +141,6 @@ the component configuration and uses ZDaemon to daemonize the process::
     path = ${deployment:etc-directory}/queue.zcml
     content =
         <configure xmlns="http://namespaces.zope.org/zope">
-          <include package="gocept.amqprun" />
           <include package="your.package" />
         </configure>
 
@@ -176,16 +171,11 @@ handlers, but can use ``gocept.amqprun.server.Server.send()`` directly. While
 the handlers usually run in their own process, started by the ``server``
 entrypoint (as described above), if you're just sending messages, you can also
 skip the extra process and run the ``gocept.amqprun.server.Server`` in your
-original process, in its own thread. Here is some example code to do that::
+original process. Here is some example code to do that::
 
     def start_server(**kw):
-        parameters = gocept.amqprun.connection.Parameters(**kw)
-        server = gocept.amqprun.server.Server(parameters)
-        server_thread = threading.Thread(target=server.start)
-        server_thread.daemon = True
-        server_thread.start()
-        import time
-        time.sleep(0.1)
+        server = gocept.amqprun.server.Server(kw, setup_handlers=False)
+        server.connect()
         return server
 
 (When you're using the ZCA, you'll probably want to register the ``Server`` as
@@ -214,107 +204,15 @@ Limitations
 Interfacing with the file system
 ================================
 
-Writing
--------
-
-gocept.amqprun provides a quick way to set up a handler that writes incoming
-messages as individual files to a given directory, using the
-``<amqp:writefiles>`` ZCML directive. You need the `writefiles` extra to
-enable this directive::
-
-    <configure xmlns="http://namespaces.zope.org/zope"
-               xmlns:amqp="http://namespaces.gocept.com/amqp">
-
-      <include package="gocept.amqprun" file="meta.zcml" />
-
-      <amqp:writefiles
-        routing_key="test.data"
-        queue_name="test.queue"
-        directory="/path/to/output-directory"
-        />
-    </configure>
-
-All messages with routing key 'test.data' would then be written to
-'output-directory', two files per message, one containing the body and the
-other containing the headers (in ``zope.xmlpickle`` format).
-(Note that in the buildout example above, you would need to put the writefiles
-directive into the ``[zcml]`` section, not the ``[config]`` section.)
-
-You can specify multiple routing keys separated by spaces::
-
-    <amqp:writefiles
-      routing_key="test.foo test.bar"
-      queue_name="test.queue"
-      directory="/path/to/output-directory"
-      />
-
-You can configure the way files are named with the ``pattern`` parameter, for
-example::
-
-    <amqp:writefiles
-      routing_key="test.data"
-      queue_name="test.queue"
-      directory="/path/to/output-directory"
-      pattern="${routing_key}/${date}/${msgid}-${unique}.xml"
-      />
-
-``pattern`` performs a ``string.Template`` substitution. The following
-variables are available:
-
-  :date: The date the message arrived, formatted ``%Y-%m-%d``
-  :msgid: The value of the message-id header
-  :xfilename: The value of the X-Filename header
-  :routing_key: The routing key of the message
-  :unique: A token that guarantees the filename will be unique in its directory
-
-The default value for ``pattern`` is ``${routing_key}-${unique}``.
-
-To support zc.buildout, ``{variable}`` is accepted as an alternative syntax to
-``${variable}``. (zc.buildout uses ``${}`` for its own substitutions, but
-unfortunately does not support escaping them.)
-
-If ``pattern`` contains slashes, intermediate directories will be created below
-``directory``, so in the example, messages would be stored like this::
-
-    /path/to/output-directory/example.route/2011-04-07/asdf998-1234098791.xml
-
-Just like the ``declare`` decorator, the ``<amqp:writefiles>`` ZCML directive
-also supports an optional ``arguments`` parameter that is passed to the AMQP
-``queue_declare`` call to, e.g., support RabbitMQ mirrored queues::
-
-    <amqp:writefiles
-      routing_key="test.foo test.bar"
-      queue_name="test.queue"
-      directory="/path/to/output-directory"
-      arguments="
-      x-ha-policy = all
-      "
-      />
-
 Reading
 -------
 
-You can also set up a thread to read files from a directory and publish them
-onto the queue, using the ``<amqp:readfiles>`` ZCML directive (the filename
-will be transmitted in the ``X-Filename`` header). You need the `readfiles`
-extra to enable this directive::
-
-    <configure xmlns="http://namespaces.zope.org/zope"
-               xmlns:amqp="http://namespaces.gocept.com/amqp">
-
-      <include package="gocept.amqprun" file="meta.zcml" />
-
-      <amqp:readfiles
-        directory="/path/to/input-directory"
-        routing_key="test.data"
-        />
-    </configure>
-
-The input-directory is expected to be a Maildir, i.e. files to be read should
-appear in ``input-directory/new` which will be polled every second. After the
-files have been published to the given routing key, they will be moved to
-``input-directory/cur``.
-
+There is a ``send_files`` entrypoint in the setup.py. It can be configured with
+three arguments: The path of the zconfig file, a watch path and a routing key.
+It reads new files in the directory named ``new`` in the watch path and sends
+a message with its content as the body and the filename as an X-Filename header
+to the route. Sent files are moved to the directory called ``cur`` in the
+watch path.
 
 Development
 ===========
@@ -344,4 +242,19 @@ https://github.com/gocept/gocept.amqprun
 Please report any bugs you find at
 https://github.com/gocept/gocept.amqprun/issues
 
-.. vim: set ft=rst:
+
+bin/test_sender and bin/test_server
+-----------------------------------
+
+``test_sender`` and ``test_server`` are scripts that provide basic sender and
+handler capabilities to smoke test the behaviour of our current implementation.
+When started ``test_sender`` emits 10 messages routed to ``test.routing``.
+``test.server`` declares a ``test.queue`` which all messages from
+``test.routing`` are sent to and a handler logging every incoming message from
+``test.queue``.
+
+bin/test_send_files
+-------------------
+``test_send_files`` starts a server that watches the ./testdir/new directory
+and sends files copied into it as an amqp message to ``test.routing``. Its
+entrypoint is ``gocept.amqprun.readfiles:main``.

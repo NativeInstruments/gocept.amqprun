@@ -12,7 +12,6 @@ install:
   - buildout -n
 script: 
   - bin/test --cache-clear --cov-report term-missing --cov src
-after_success: 
 cache:
   pip: true
   directories: 

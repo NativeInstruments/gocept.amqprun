@@ -1,11 +1,70 @@
 CHANGES
 =======
 
-1.9 (unreleased)
+2.0 (unreleased)
 ----------------
 
-- Nothing changed yet.
+Breaking changes
+++++++++++++++++
 
+- Use kombu/py-amqp instead of pika for basic abstraction over amqp methods.
+
+- Remove multithreading – servers and workers run in the current process.
+
+- Remove gocept.amqprun.main.main_server as main loop.
+
+- Remove ``configure.zcml`` and ``meta.zcml``.
+
+- Remove writing messages in files and the amqp:writefile directive.
+
+- Remove writefiles extra in setup.py.
+
+- Remove amqp:readfile zcml directive and add send_files entrypoint for
+  readfiles process. It takes three parameters: a configuration file path, a
+  watch directory path and a route to send the file to.
+  (see bin/test_send_files, details are in the README.rst).
+
+- Remove ``.channel.Channel`` and use ``amqp.channel.Channel`` instead.
+
+- Remove ``.interfaces.IChannelManager``.
+
+- Remove ``.interfaces.ProcessStarted``.
+
+- Remove ``.interfaces.ProcessStopping``.
+
+- Remove ``.connection.Connection`` and use ``kombu.Connection`` instead.
+
+- Rename conf key ``heartbeat_interval`` to ``heartbeat`` in zconfig
+  configuration.
+
+- Remove ``amount`` from worker zconfig.
+
+- Enforce content_encoding header for Message bodies that are unicode.
+
+- Rename ``.message.Message.header.headers`` to
+  ``.message.Message.header.application_headers``.
+
+- Rename ``.testing.ZCML_LAYER`` to ``.testing.ZCA_LAYER``.
+
+- Remove ``.testing.LoopTestCase``, use ``unittest.TestCase`` instead.
+
+- Remove ``.testing.MainTestCase.wait_for_response``, use ``wait_for_message``
+  instead.
+
+- Remove ``.testing.SettingsLayer`` as it is not used here.
+
+- Move ``.connection.Parameters`` to ``.server``.
+
+- ``.server.Parameters`` returns a dict now.
+
+
+Features
+++++++++
+
+- Add ``bin/test_sender`` and ``bin/test_server`` scripts to smoke test sending
+  and receiving behaviour. See README.rst.
+
+- Add representation for ``.handler.Handler`` class.
 
 1.8 (2019-09-11)
 ----------------

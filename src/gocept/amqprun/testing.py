@@ -1,14 +1,14 @@
 # Copyright (c) 2010-2011 gocept gmbh & co. kg
 # See also LICENSE.txt
 
-import amqplib.client_0_8 as amqp
+import amqp
 import datetime
 import email.utils
 import gocept.amqprun
-import gocept.amqprun.connection
 import gocept.amqprun.interfaces
+import gocept.amqprun.main
+import gocept.amqprun.worker
 import logging
-import mock
 import os
 import pkg_resources
 import plone.testing
@@ -18,32 +18,13 @@ import string
 import subprocess
 import sys
 import tempfile
-import threading
 import time
 import unittest
-import zope.component
-import zope.component.globalregistry
-import zope.event
 
 
-class SettingsLayer(plone.testing.Layer):
+class ZCASandbox(plone.testing.Layer):
 
-    defaultBases = (plone.testing.zca.LAYER_CLEANUP,)
-
-    def setUp(self):
-        plone.testing.zca.pushGlobalRegistry()
-        settings = dict()
-        zope.component.provideUtility(
-            settings, provides=gocept.amqprun.interfaces.ISettings)
-
-    def tearDown(self):
-        plone.testing.zca.popGlobalRegistry()
-
-
-SETTINGS_LAYER = SettingsLayer()
-
-
-class ZCMLSandbox(plone.testing.zca.ZCMLSandbox):
+    defaultBases = [plone.testing.zca.LAYER_CLEANUP]
 
     def testSetUp(self):
         plone.testing.zca.pushGlobalRegistry()
@@ -52,13 +33,12 @@ class ZCMLSandbox(plone.testing.zca.ZCMLSandbox):
         plone.testing.zca.popGlobalRegistry()
 
 
-ZCML_LAYER = ZCMLSandbox(
-    filename='configure.zcml', package=gocept.amqprun, module=__name__)
+ZCA_LAYER = ZCASandbox()
 
 
 class QueueLayer(plone.testing.Layer):
 
-    defaultBases = [ZCML_LAYER]
+    defaultBases = [ZCA_LAYER]
     RABBITMQCTL_COMMAND = os.environ.get(
         'AMQP_RABBITMQCTL', 'sudo rabbitmqctl')
 
@@ -79,6 +59,7 @@ class QueueLayer(plone.testing.Layer):
             userid=self['amqp-username'],
             password=self['amqp-password'],
             virtual_host=self['amqp-virtualhost'])
+        self['amqp-connection'].connect()
         self['amqp-channel'] = self['amqp-connection'].channel()
 
     def tearDown(self):
@@ -95,7 +76,8 @@ class QueueLayer(plone.testing.Layer):
         stdout = subprocess.check_output(
             'LANG=C %s' % command, stderr=subprocess.STDOUT, shell=True)
         if 'Error' in stdout:
-            raise RuntimeError('%s failed:\n%s' % (command, stdout))
+            raise RuntimeError(
+                '%s failed:\n%s' % (command, stdout))  # pragma: no cover
 
 
 QUEUE_LAYER = QueueLayer()
@@ -118,14 +100,11 @@ class QueueTestCase(unittest.TestCase):
 
     def tearDown(self):
         for queue_name in self._queues:
-            try:
-                # NOTE: we seem to need a new channel for each delete;
-                # trying to use self.channel for all queues results in its
-                # closing after the first delete
-                with self.connection.channel() as channel:
-                    channel.queue_delete(queue_name)
-            except amqp.AMQPChannelException:
-                pass
+            # NOTE: we seem to need a new channel for each delete;
+            # trying to use self.channel for all queues results in its
+            # closing after the first delete
+            with self.connection.channel() as channel:
+                channel.queue_delete(queue_name)
         super(QueueTestCase, self).tearDown()
 
     def get_queue_name(self, suffix):
@@ -135,10 +114,12 @@ class QueueTestCase(unittest.TestCase):
 
     def send_message(self, body, routing_key='', headers=None, **kw):
         self.channel.basic_publish(
-            amqp.Message(body, timestamp=datetime.datetime.now(),
-                         application_headers=headers or {},
-                         msgid=email.utils.make_msgid('gocept.amqprun.test'),
-                         **kw),
+            amqp.Message(
+                body,
+                timestamp=time.mktime(datetime.datetime.now().timetuple()),
+                application_headers=headers or {},
+                msgid=email.utils.make_msgid('gocept.amqprun.test'),
+                **kw),
             'amq.topic', routing_key=routing_key)
         time.sleep(0.1)
 
@@ -149,7 +130,7 @@ class QueueTestCase(unittest.TestCase):
     # BBB
     expect_response_on = expect_message_on
 
-    def wait_for_message(self, timeout=100):
+    def wait_for_message(self, timeout=10):
         """Wait for a response on `self.receive_queue`.
 
         timeout ... wait for n seconds.
@@ -164,9 +145,6 @@ class QueueTestCase(unittest.TestCase):
             raise RuntimeError('No message received')
         return message
 
-    # BBB
-    wait_for_response = wait_for_message
-
     def create_server(self, **kw):
         import gocept.amqprun.server
         params = dict(hostname=self.layer['amqp-hostname'],
@@ -177,65 +155,18 @@ class QueueTestCase(unittest.TestCase):
         setup_handlers = kw.pop('setup_handlers', True)
         params.update(kw)
         return gocept.amqprun.server.Server(
-            gocept.amqprun.connection.Parameters(**params),
-            setup_handlers=setup_handlers)
+            params, setup_handlers=setup_handlers)
 
 
-class LoopTestCase(unittest.TestCase):
-
-    def setUp(self):
-        super(LoopTestCase, self).setUp()
-        self.loop = None
-
-    def tearDown(self):
-        if self.loop is not None:
-            self.loop.stop()
-            self.thread.join()
-        super(LoopTestCase, self).tearDown()
-        if self.loop is not None and getattr(self.loop, 'connection', None):
-            self.assertEqual({}, self.loop.connection.socket_map)
-
-    def start_thread(self, loop):
-        self.loop = loop
-        self.thread = self._start_thread(loop)
-
-    def _start_thread(self, loop):
-        thread = threading.Thread(target=loop.start)
-        thread.start()
-        if not loop.wait_until_running(2.5):
-            self.fail('Loop did not start up.')
-        return thread
-
-
-def set_zca_registry(registry):
-    plone.testing.zca._hookRegistry(registry)
-    zope.component.getSiteManager.reset()
-
-
-class MainTestCase(LoopTestCase, QueueTestCase):
+class MainTestCase(QueueTestCase):
 
     def setUp(self):
-        import gocept.amqprun.worker
         super(MainTestCase, self).setUp()
-        self._timeout = gocept.amqprun.worker.Worker.timeout
-        gocept.amqprun.worker.Worker.timeout = 0.05
-        self.orig_signal = signal.signal
-        signal.signal = mock.Mock()
-        self.orig_registry = zope.component.getGlobalSiteManager()
-        set_zca_registry(
-            zope.component.globalregistry.BaseGlobalComponents('amqprun-main'))
+        plone.testing.zca.pushGlobalRegistry()
 
     def tearDown(self):
-        import gocept.amqprun.interfaces
-        import gocept.amqprun.worker
-        zope.event.notify(gocept.amqprun.interfaces.ProcessStopping())
-        for t in list(threading.enumerate()):
-            if isinstance(t, gocept.amqprun.worker.Worker):
-                t.stop()
-        signal.signal = self.orig_signal
-        set_zca_registry(self.orig_registry)
         super(MainTestCase, self).tearDown()
-        gocept.amqprun.worker.Worker.timeout = self._timeout
+        plone.testing.zca.popGlobalRegistry()
         # heuristic to avoid accreting more and more debug log output handlers
         if logging.root.handlers:
             handler = logging.root.handlers[-1]
@@ -243,33 +174,21 @@ class MainTestCase(LoopTestCase, QueueTestCase):
                 logging.root.handlers.pop()
 
     def start_server(self):
-        import gocept.amqprun.main
-        self.server_started = threading.Event()
-        zope.component.getSiteManager().registerHandler(
-            lambda x: self.server_started.set(),
-            [gocept.amqprun.interfaces.IProcessStarted])
+        self.server = gocept.amqprun.main.create_configured_server(
+            self.config.name)
+        self.server.connect()
 
-        self.thread = threading.Thread(
-            target=gocept.amqprun.main.main, args=(self.config.name,))
-        self.thread.start()
-        for i in range(200):
-            if (gocept.amqprun.main.main_server is not None and
-                    gocept.amqprun.main.main_server.running):
-                break
-            time.sleep(0.025)
-        else:
-            self.fail('Server did not start up.')
-        self.loop = gocept.amqprun.main.main_server
-        self.server_started.wait()
-
-    def start_server_in_subprocess(self):
+    def start_server_in_subprocess(self, *args, **kwargs):
         script = tempfile.NamedTemporaryFile(suffix='.py')
+        module = kwargs.pop('module', 'gocept.amqprun.main')
+        config = [self.config.name]
+        config.extend(args)
         script.write("""
 import sys
 sys.path[:] = %(path)r
-import gocept.amqprun.main
-gocept.amqprun.main.main('%(config)s')
-        """ % dict(path=sys.path, config=self.config.name))
+import %(module)s
+%(module)s.main%(config)r
+        """ % dict(path=sys.path, config=tuple(config), module=module))
         script.flush()
         self.stdout = tempfile.TemporaryFile()
         process = subprocess.Popen(
@@ -278,13 +197,18 @@ gocept.amqprun.main.main('%(config)s')
         time.sleep(1)
         self.pid = process.pid
 
+    def stop_server_in_subprocess(self):
+        os.kill(self.pid, signal.SIGINT)
+        self.wait_for_subprocess_exit()
+        self.pid = None
+
     def wait_for_subprocess_exit(self, timeout=30):
         for i in range(timeout):
             pid, status = os.waitpid(self.pid, os.WNOHANG)
             if (pid, status) != (0, 0):
                 return status
             time.sleep(0.5)
-        else:
+        else:  # pragma: no cover
             os.kill(self.pid, signal.SIGKILL)
             self.stdout.seek(0)
             self.fail('Child process did not exit\n' + self.stdout.read())
@@ -304,6 +228,7 @@ gocept.amqprun.main.main('%(config)s')
             amqp_password=self.layer['amqp-password'],
             amqp_virtualhost=self.layer['amqp-virtualhost'],
         )
+
         if mapping:
             sub.update(mapping)
 
@@ -314,15 +239,3 @@ gocept.amqprun.main.main('%(config)s')
         self.config.write(base.substitute(sub).encode('utf8'))
         self.config.flush()
         return self.config.name
-
-    def wait_for_processing(self, timeout=100):
-        for i in range(timeout):
-            if not self.loop.tasks.qsize():
-                break
-            time.sleep(0.05)
-        else:
-            self.fail('Message was not processed.')
-
-    def wait_for_response(self, timeout=100):
-        self.wait_for_processing(timeout)
-        return super(MainTestCase, self).wait_for_response(timeout)

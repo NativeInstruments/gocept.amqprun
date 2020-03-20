@@ -49,13 +49,3 @@ def handle_message_iresponse(message):
 
 handler_iresponse = gocept.amqprun.handler.Handler(
     'test.queue.iresponse', 'test.iresponse', handle_message_iresponse)
-
-
-@gocept.amqprun.handler.declare(
-    'test.queue.counterbelowzero', 'test.counterbelowzero')
-def handler_CounterBelowZero(message):
-    """Handler provoking `CounterBelowZero` after the message was handled."""
-    # This should never be done by a handler as it breaks reference counting
-    # on the channel.
-    message._channel.release()
-    return []

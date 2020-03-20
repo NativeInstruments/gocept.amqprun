@@ -5,6 +5,6 @@
     <key name="username" datatype="string" required="no" />
     <key name="password" datatype="string" required="no" />
     <key name="virtual_host" datatype="string" required="no" default="/" />
-    <key name="heartbeat_interval" datatype="integer" required="no" default="0" />
+    <key name="heartbeat" datatype="integer" required="no" default="0" />
   </sectiontype>
 </component>

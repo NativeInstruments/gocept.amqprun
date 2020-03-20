@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 install_requires = [
     'ZConfig',
-    'pika < 0.9',
+    'kombu',
     'setuptools',
     'transaction',
     'zope.component[zcml]',
@@ -11,10 +11,6 @@ install_requires = [
     'zope.event',
     'zope.interface < 5',
     'zope.schema',
-]
-
-writefiles_require = [
-    'zope.xmlpickle',
 ]
 
 readfiles_require = [
@@ -26,31 +22,30 @@ security_require = [
 ]
 
 testing_require = [
-    'amqplib',
+    'amqp',
 ]
 
 tests_require = (
     testing_require +
-    writefiles_require +
     readfiles_require +
     security_require + [
         'gocept.testing',
         'mock>=0.8.0, < 4',
         'plone.testing',
-        'tcpwatch',
         'zope.testing',
+        'zipp < 2',
     ])
 
 
 setup(
     name='gocept.amqprun',
-    version='1.9.dev0',
+    version='2.0.dev0',
     author='gocept <mail at gocept dot com>',
     author_email='mail@gocept.com',
-    url='https://github.com/gocept/gocept.amqprun',
+    url='https://github.com/NativeInstruments/gocept.amqprun',
     description=(
         "gocept.amqprun helps you writing and running AMQP consumers, and"
-        " sending AMQP messages. It currently only supports AMQP 0-8 and"
+        " sending AMQP messages. It currently only supports AMQP 0-9-1 and"
         " integrates with the Zope Tool Kit (ZTK) so you can use adapters,"
         " utilities and all the buzz."
     ),
@@ -63,9 +58,9 @@ setup(
     include_package_data=True,
     zip_safe=False,
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
-        'Framework :: Zope3',
+        'Framework :: Zope :: 3',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Zope Public License',
         'License :: OSI Approved',
@@ -85,11 +80,12 @@ setup(
     extras_require=dict(
         test=tests_require,
         testing=testing_require,  # use it to use amqprun's test infrastructure
-        writefiles=writefiles_require,
         readfiles=readfiles_require,
         security=security_require,
     ),
     entry_points=dict(console_scripts=[
         'server = gocept.amqprun.main:main',
+        'send_files = gocept.amqprun.readfiles:main',
+        'test_sender = gocept.amqprun.tests.basic:send_messages',
     ]),
 )

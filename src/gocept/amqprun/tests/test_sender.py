@@ -5,16 +5,14 @@ import gocept.amqprun.testing
 import transaction
 
 
-class MessageSenderTest(
-        gocept.amqprun.testing.LoopTestCase,
-        gocept.amqprun.testing.QueueTestCase):
+class MessageSenderTest(gocept.amqprun.testing.QueueTestCase):
 
     def setUp(self):
         super(MessageSenderTest, self).setUp()
         transaction.abort()
         self.expect_message_on('test.key')
         self.sender = self.create_server()
-        self.start_thread(self.sender)
+        self.sender.connect()
 
     def send(self, body='message 1'):
         from gocept.amqprun.message import Message

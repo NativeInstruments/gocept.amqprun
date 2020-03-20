@@ -1,13 +1,12 @@
 # Copyright (c) 2010-2014 gocept gmbh & co. kg
 # See also LICENSE.txt
-
+from .main import create_configured_server
 import gocept.amqprun.interfaces
 import gocept.filestore
 import logging
 import os
 import os.path
 import signal
-import threading
 import time
 import transaction
 import zope.component
@@ -20,29 +19,18 @@ import zope.schema
 log = logging.getLogger(__name__)
 
 
-class FileStoreReader(threading.Thread):
-
-    zope.interface.Interface(gocept.amqprun.interfaces.ILoop)
+class FileStoreReader(object):
 
     def __init__(self, path, routing_key):
-        self.running = False
         self.routing_key = routing_key
         self.filestore = gocept.filestore.FileStore(path)
         self.filestore.prepare()
         self.session = Session(self)
         super(FileStoreReader, self).__init__()
-        self.daemon = True
-
-    def wait_until_running(self, timeout=None):
-        deadline = time.time() + timeout
-        while not self.running or time.time() > deadline:
-            time.sleep(0.025)
-        return self.running
 
     def run(self):
         log.info('starting to watch %s', self.filestore.path)
-        self.running = True
-        while self.running:
+        while True:
             try:
                 self.scan()
                 time.sleep(1)
@@ -50,15 +38,10 @@ class FileStoreReader(threading.Thread):
                 log.error('Unhandled exception, terminating.', exc_info=True)
                 os.kill(os.getpid(), signal.SIGUSR1)
 
-    def stop(self):
-        log.info('stopping')
-        self.running = False
-        self.join()
-
     def scan(self):
         for filename in self.filestore.list('new'):
             transaction.begin()
-            log.debug('sending %r to %r' % (filename, self.routing_key))
+            log.info('sending %r to %r' % (filename, self.routing_key))
             try:
                 self.send(filename)
                 self.session.mark_done(filename)
@@ -139,22 +122,7 @@ class FileStoreDataManager(object):
         return "~gocept.amqprun.readfiles:%f" % time.time()
 
 
-class IReadFilesDirective(zope.interface.Interface):
-
-    directory = zope.configuration.fields.Path(
-        title=u"Path to the directory from which to read files")
-
-    routing_key = zope.schema.TextLine(
-        title=u"Routing key to send to")
-
-
-def readfiles_directive(_context, directory, routing_key):
-    reader = FileStoreReader(directory, routing_key)
-    zope.component.zcml.subscriber(
-        _context,
-        for_=(gocept.amqprun.interfaces.IProcessStarted,),
-        handler=lambda event: reader.start())
-    zope.component.zcml.subscriber(
-        _context,
-        for_=(gocept.amqprun.interfaces.IProcessStopping,),
-        handler=lambda event: reader.stop())
+def main(config_file, path, routing_key):
+    server = create_configured_server(config_file)
+    server.connect()
+    FileStoreReader(path, routing_key).run()

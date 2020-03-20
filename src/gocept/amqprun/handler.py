@@ -31,6 +31,10 @@ class Handler(object):
     def __call__(self, message):
         return self.handler_function(message) or []
 
+    def __repr__(self):
+        return '<gocept.amqprun.handler.Handler(%r, %r, %r)>' % (
+            self.handler_function, self.queue_name, self.routing_key)
+
 
 def declare(queue_name, routing_key, arguments=None, principal=None):
     return lambda handler_function: Handler(

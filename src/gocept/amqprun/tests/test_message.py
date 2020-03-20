@@ -2,7 +2,9 @@
 # See also LICENSE.txt
 
 from datetime import datetime
+from gocept.amqprun.message import Properties, Message
 import gocept.testing.assertion
+import pytest
 import time
 import unittest
 import zope.interface.verify
@@ -11,8 +13,6 @@ import zope.interface.verify
 class TestMessage(unittest.TestCase):
 
     def test_message_should_provide_IMessage(self):
-        from gocept.amqprun.message import Message
-        import gocept.amqprun.interfaces
         message = Message({}, 'body')
         zope.interface.verify.verifyObject(
             gocept.amqprun.interfaces.IMessage,
@@ -20,39 +20,62 @@ class TestMessage(unittest.TestCase):
         self.assertEqual('body', message.body)
         self.assertEqual('amq.topic', message.exchange)
 
-    def test_header_should_be_converted_to_BasicProperties(self):
-        from gocept.amqprun.message import Message
-        import pika.spec
+    def test_header_should_be_converted_to_Properties(self):
         now = int(time.time())
         message = Message(
             dict(foo='bar', content_type='text/xml', app_id='myapp'), None,
             delivery_tag=1)
         header = message.header
-        self.assertTrue(isinstance(header, pika.spec.BasicProperties))
-        self.assertEqual(dict(foo='bar'), header.headers)
+        self.assertTrue(isinstance(header, Properties))
+        self.assertEqual(dict(foo='bar'), header.application_headers)
         self.assertTrue(header.timestamp >= now)
         self.assertEqual('text/xml', header.content_type)
         self.assertEqual(2, header.delivery_mode)  # persistent
         self.assertEqual('myapp', header.app_id)
 
     def test_converted_header_should_contain_message_id(self):
-        from gocept.amqprun.message import Message
         message = Message({}, '')
         self.assertRegexpMatches(
             message.header.message_id,
             r'<(\d+\.)+gocept\.amqprun@.*>$')
 
     def test_given_message_id_should_not_be_overwritten(self):
-        from gocept.amqprun.message import Message
         message = Message(dict(message_id='myid'), '')
         self.assertEqual('myid', message.header.message_id)
+
+    def test_message_with_unicode_body_needs_content_encoding(self):
+        with pytest.raises(ValueError):
+            Message({}, u'Test')
+        message = Message({'content_encoding': 'UTF-8'}, u'Test')
+
+        assert message
+
+    def test_message_with_empty_unicode_body_gets_empty_string_body(self):
+        message = Message({}, u'')
+
+        assert isinstance(message.body, str)
+
+    def test_message_additional_application_headers_get_merged(self):
+        headers = {
+            'test_header_1': 'test',
+            'application_headers': {
+                'test_header_2': 'test'
+            }}
+
+        message = Message(headers, '')
+
+        assert message.header.application_headers == {
+                'test_header_1': 'test',
+                'test_header_2': 'test'
+            }
+
+        assert 'test_header_1' not in message.header.as_dict()
 
 
 class GenerateFilename(unittest.TestCase,
                        gocept.testing.assertion.Exceptions):
 
     def create_message(self, body='testbody'):
-        from gocept.amqprun.message import Message
         message = Message({}, body, routing_key='routing')
         message.header.message_id = 'myid'
         message.header.timestamp = time.mktime(
