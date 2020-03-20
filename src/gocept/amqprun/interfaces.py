@@ -121,12 +121,3 @@ class IConfigFinished(zope.interface.Interface):
 class ConfigFinished(object):
 
     zope.interface.implements(IConfigFinished)
-
-
-class IProcessStarted(zope.interface.Interface):
-    """Event to indicate the server has been started."""
-
-
-class ProcessStarted(object):
-
-    zope.interface.implements(IProcessStarted)

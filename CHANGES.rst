@@ -55,6 +55,8 @@ Breaking changes
 
 - ``.server.Parameters`` returns a dict now.
 
+- Remove ``ProcessStarted`` event.
+
 Features
 ++++++++
 

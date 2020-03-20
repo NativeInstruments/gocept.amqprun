@@ -73,7 +73,6 @@ class Server(object):
 
     def start(self):
         self.connect()
-        zope.event.notify(gocept.amqprun.interfaces.ProcessStarted())
         try:
             while True:
                 self.run_once()
