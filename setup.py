@@ -39,7 +39,7 @@ tests_require = (
 
 setup(
     name='gocept.amqprun',
-    version='2.0.dev0',
+    version='2.0a1',
     author='gocept <mail at gocept dot com>',
     author_email='mail@gocept.com',
     url='https://github.com/NativeInstruments/gocept.amqprun',
