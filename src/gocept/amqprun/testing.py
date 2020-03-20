@@ -130,7 +130,7 @@ class QueueTestCase(unittest.TestCase):
     # BBB
     expect_response_on = expect_message_on
 
-    def wait_for_message(self, timeout=100):
+    def wait_for_message(self, timeout=10):
         """Wait for a response on `self.receive_queue`.
 
         timeout ... wait for n seconds.
