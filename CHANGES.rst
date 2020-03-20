@@ -27,6 +27,8 @@ Breaking changes
 - Remove ``.channel.Channel`` and use ``amqp.channel.Channel`` instead.
 
 - Remove ``.interfaces.IChannelManager``.
+-
+- Remove ``.interfaces.ProcessStopping``.
 
 - Remove ``.connection.Connection`` and use ``kombu.Connection`` instead.
 
@@ -44,9 +46,10 @@ Breaking changes
 
 - Remove ``.testing.LoopTestCase``, use ``unittest.TestCase`` instead.
 
-- Remove ``.interfaces.ProcessStopping``.
+- Remove ``.testing.MainTestCase.wait_for_response``, use ``wait_for_message``
+  instead.
 
-- Remove ``.testing.MainTestCase.wait_for_response``, use ``wait_for_message`` instead.
+- Remove ``.testing.SettingsLayer`` as it is not used here.
 
 - Move ``.connection.Parameters`` to ``.server``.
 
@@ -54,7 +57,7 @@ Breaking changes
 
 Features
 ++++++++
- 
+
 - Add ``bin/test_sender`` and ``bin/test_server`` scripts to smoke test sending
   and receiving behaviour. See README.rst.
 
