@@ -5,7 +5,7 @@ CHANGES
 ----------------
 
 Breaking changes
-++++++++++++++++
+~~~~~~~~~~~~~~~~
 
 - Use kombu/py-amqp instead of pika for basic abstraction over amqp methods.
 
@@ -53,10 +53,7 @@ Breaking changes
 
 - Remove ``.testing.SettingsLayer`` as it is not used here.
 
-- Move ``.connection.Parameters`` to ``.server``.
-
-- ``.server.Parameters`` returns a dict now.
-
+- Move ``.connection.Parameters`` to ``.server``, it now returns a dict.
 
 Features
 ++++++++
@@ -65,6 +62,7 @@ Features
   and receiving behaviour. See README.rst.
 
 - Add representation for ``.handler.Handler`` class.
+
 
 1.8 (2019-09-11)
 ----------------
