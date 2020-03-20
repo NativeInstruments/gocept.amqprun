@@ -302,3 +302,37 @@ class ConsumerTest(unittest.TestCase):
             channel=mock.Mock(channel_id=1))
         consumer(message)
         assert handler.call_args[0][0].routing_key == 'route'
+
+
+class EndToEndTest(gocept.amqprun.testing.MainTestCase):
+    """Testing .server.Server when started in a seperate subprocess."""
+
+    def setUp(self):
+        super(EndToEndTest, self).setUp()
+        self.make_config(__name__, 'server')
+        self.expect_message_on('test.echoed')
+        self.start_server_in_subprocess()
+        self.wait_for_queue_declared('test.queue')
+
+    def tearDown(self):
+        self.stop_server_in_subprocess()
+        super(EndToEndTest, self).tearDown()
+
+    def wait_for_queue_declared(self, queue_name, timeout=5):
+        wait = 0
+        while wait < timeout:
+            try:
+                self.channel.basic_get(queue_name, no_ack=False)
+            except amqp.NotFound as e:
+                print(e)
+                time.sleep(1)
+                wait += 1
+            else:
+                print('found!')
+                return
+        raise RuntimeError
+
+    def test_server_receives_messages_in_subprocess(self):
+        self.send_message('test echo!', 'test.echo')
+        message = self.wait_for_message()
+        assert message.body == 'test echo!'
