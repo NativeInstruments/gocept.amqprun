@@ -10,11 +10,6 @@ class WorkerTest(unittest.TestCase):
 
     def setUp(self):
         self.session = mock.Mock()
-        self._timeout = gocept.amqprun.worker.Worker.timeout
-        gocept.amqprun.worker.Worker.timeout = 0.05
-
-    def tearDown(self):
-        gocept.amqprun.worker.Worker.timeout = self._timeout
 
     def _create_worker(self, handler_function=lambda msg: [], principal=None):
         handler = gocept.amqprun.handler.Handler(

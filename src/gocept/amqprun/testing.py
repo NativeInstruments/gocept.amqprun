@@ -162,14 +162,11 @@ class MainTestCase(QueueTestCase):
 
     def setUp(self):
         super(MainTestCase, self).setUp()
-        self._timeout = gocept.amqprun.worker.Worker.timeout
-        gocept.amqprun.worker.Worker.timeout = 0.05
         plone.testing.zca.pushGlobalRegistry()
 
     def tearDown(self):
         super(MainTestCase, self).tearDown()
         plone.testing.zca.popGlobalRegistry()
-        gocept.amqprun.worker.Worker.timeout = self._timeout
         # heuristic to avoid accreting more and more debug log output handlers
         if logging.root.handlers:
             handler = logging.root.handlers[-1]

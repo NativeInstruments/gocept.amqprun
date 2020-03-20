@@ -34,8 +34,6 @@ class PrefixingLogger(object):
 
 class Worker(object):
 
-    timeout = 5
-
     def __init__(self, session, handler):
         self.session = session
         self.handler = handler
