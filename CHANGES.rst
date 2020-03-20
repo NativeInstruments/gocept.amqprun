@@ -27,7 +27,9 @@ Breaking changes
 - Remove ``.channel.Channel`` and use ``amqp.channel.Channel`` instead.
 
 - Remove ``.interfaces.IChannelManager``.
--
+
+- Remove ``.interfaces.ProcessStarted``.
+
 - Remove ``.interfaces.ProcessStopping``.
 
 - Remove ``.connection.Connection`` and use ``kombu.Connection`` instead.
@@ -55,7 +57,6 @@ Breaking changes
 
 - ``.server.Parameters`` returns a dict now.
 
-- Remove ``ProcessStarted`` event.
 
 Features
 ++++++++
