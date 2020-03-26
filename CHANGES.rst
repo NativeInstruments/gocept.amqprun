@@ -1,8 +1,8 @@
 CHANGES
 =======
 
-1.9 (unreleased)
-----------------
+1.8.1 (2020-03-26)
+------------------
 
 - Keep Python 2 compatibility.
 
