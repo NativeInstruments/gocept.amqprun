@@ -1,12 +1,12 @@
-syntax: glob
-
 *.egg-info
 *.pyc
 .Python
 .cache
+.coverage
 .installed.cfg
 .pytest_cache
 bin
+coverage-report/
 develop-eggs
 include
 lib
