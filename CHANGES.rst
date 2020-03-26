@@ -4,7 +4,9 @@ CHANGES
 1.9 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Keep Python 2 compatibility.
+
+- Require ``zope.interface < 5``.
 
 
 1.8 (2019-09-11)

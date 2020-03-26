@@ -10,7 +10,7 @@ install_requires = [
     'zope.configuration',
     'zope.event',
     'zope.interface < 5',
-    'zope.schema',
+    'zope.schema < 6',
 ]
 
 writefiles_require = [
