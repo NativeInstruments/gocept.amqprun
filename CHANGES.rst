@@ -7,6 +7,8 @@ CHANGES
 - Add support for ``zope.interface >= 5``.
   (`#13 <https://github.com/NativeInstruments/gocept.amqprun/pull/13>`_)
 
+- Change CI pipeline from Travis to GitHub Actions.
+
 
 2.0a1 (2020-03-20)
 ------------------
