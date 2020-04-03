@@ -1,0 +1,50 @@
+name: gocept.amqprun
+
+on:
+  push:
+  schedule:
+    - cron: '0 5 * * MON-FRI'
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      rabbitmq:
+        image: rabbitmq:latest
+        ports:
+          - 5672:5672
+        options: --label rabbitmq
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 2.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 2.7
+
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('buildout.cfg') }}-${{ hashFiles('setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - uses: actions/cache@v1
+      with:
+        path: eggs
+        key: ${{ runner.os }}-eggs-${{ hashFiles('buildout.cfg') }}-${{ hashFiles('setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-eggs-
+
+    - name: Install dependencies
+      run: |
+        pip install -U setuptools zc.buildout setuptools-scm
+        buildout -n
+
+    - name: Test
+      env:
+        AMQP_RABBITMQCTL: docker exec $(docker ps -aqf "label=rabbitmq") rabbitmqctl
+      run: |
+        bin/test --cache-clear --cov-report term-missing --cov src
