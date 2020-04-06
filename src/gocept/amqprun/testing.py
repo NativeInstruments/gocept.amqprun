@@ -20,6 +20,8 @@ import sys
 import tempfile
 import time
 import unittest
+import six
+from six.moves import range
 
 
 class ZCASandbox(plone.testing.Layer):
@@ -215,8 +217,9 @@ import %(module)s
 
     def make_config(self, package, name, mapping=None):
         zcml_base = string.Template(
-            unicode(pkg_resources.resource_string(package, '%s.zcml' % name),
-                    'utf8'))
+            six.text_type(
+                pkg_resources.resource_string(package, '%s.zcml' % name),
+                'utf8'))
         self.zcml = tempfile.NamedTemporaryFile()
         self.zcml.write(zcml_base.substitute(mapping).encode('utf8'))
         self.zcml.flush()
@@ -233,8 +236,9 @@ import %(module)s
             sub.update(mapping)
 
         base = string.Template(
-            unicode(pkg_resources.resource_string(package, '%s.conf' % name),
-                    'utf8'))
+            six.text_type(
+                pkg_resources.resource_string(package, '%s.conf' % name),
+                'utf8'))
         self.config = tempfile.NamedTemporaryFile()
         self.config.write(base.substitute(sub).encode('utf8'))
         self.config.flush()

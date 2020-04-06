@@ -5,8 +5,8 @@ import gocept.amqprun.interfaces
 import logging
 import string
 import time
-import types
 import zope.interface
+import six
 
 
 log = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class Message(object):
         if not isinstance(header, Properties):
             header = self.convert_header(header)
         self.header = header
-        if not isinstance(body, (basestring, types.NoneType)):
+        if not isinstance(body, (six.string_types, type(None))):
             raise ValueError(
                 'Message body must be basestring, not %s' % type(body))
 
@@ -71,13 +71,15 @@ class Message(object):
         if body == u'':
             body = ''
 
-        if isinstance(body, unicode) and not header.content_encoding:
+        if isinstance(body, six.text_type) and not header.content_encoding:
             raise ValueError('If body is unicode provide a content_encoding.')
 
         self.body = body
         self.delivery_tag = delivery_tag
         self.routing_key = (
-            unicode(routing_key).encode('UTF-8') if routing_key else None)
+            six.text_type(routing_key).encode('UTF-8')
+            if routing_key
+            else None)
         self._channel = channel  # received message from this channel
 
     def convert_header(self, header):
@@ -89,7 +91,7 @@ class Message(object):
 
         for key in result.as_dict():
             value = header.pop(key, self)
-            if isinstance(value, unicode):
+            if isinstance(value, six.text_type):
                 value = value.encode('UTF-8')
             if value is not self:
                 setattr(result, key, value)
