@@ -51,10 +51,8 @@ class Consumer(object):
         return worker()
 
 
+@zope.interface.implementer(gocept.amqprun.interfaces.ISender)
 class Server(object):
-
-    zope.interface.implements(
-        gocept.amqprun.interfaces.ISender)
 
     CHANNEL_LIFE_TIME = 360
 

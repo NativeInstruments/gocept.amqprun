@@ -90,9 +90,8 @@ class Session(object):
         self._needs_to_join = False
 
 
+@zope.interface.implementer(transaction.interfaces.IDataManager)
 class FileStoreDataManager(object):
-
-    zope.interface.implements(transaction.interfaces.IDataManager)
 
     def __init__(self, session):
         self.session = session

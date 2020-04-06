@@ -10,9 +10,8 @@ import zope.interface
 log = logging.getLogger(__name__)
 
 
+@zope.interface.implementer(gocept.amqprun.interfaces.IHandler)
 class Handler(object):
-
-    zope.interface.implements(gocept.amqprun.interfaces.IHandler)
 
     def __init__(self, queue_name, routing_key, handler_function,
                  arguments=None, principal=None):
@@ -45,6 +44,9 @@ def declare(queue_name, routing_key, arguments=None, principal=None):
 handle = declare
 
 
+@zope.interface.implementer(
+    gocept.amqprun.interfaces.IHandler,
+    gocept.amqprun.interfaces.IResponse)
 class ErrorHandlingHandler(object):
 
     queue_name = NotImplemented
@@ -57,10 +59,6 @@ class ErrorHandlingHandler(object):
     error_routing_key = NotImplemented
     # Exception(s) which are *not* treated in a special way.
     error_reraise = None
-
-    zope.interface.implements(
-        gocept.amqprun.interfaces.IHandler,
-        gocept.amqprun.interfaces.IResponse)
 
     def __init__(self, message=None):
         self.message = message

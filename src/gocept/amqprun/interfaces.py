@@ -118,6 +118,6 @@ class IConfigFinished(zope.interface.Interface):
     """Event indicating that the configuration of gocept.amqprun was loaded."""
 
 
+@zope.interface.implementer(IConfigFinished)
 class ConfigFinished(object):
-
-    zope.interface.implements(IConfigFinished)
+    """Event notified when the configuration was loaded."""

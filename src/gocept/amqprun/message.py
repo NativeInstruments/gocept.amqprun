@@ -51,10 +51,9 @@ class Properties(object):
         return self.__dict__.copy()
 
 
+@zope.interface.implementer(gocept.amqprun.interfaces.IMessage)
 class Message(object):
     """A message received from or sent to the queue."""
-
-    zope.interface.implements(gocept.amqprun.interfaces.IMessage)
 
     exchange = 'amq.topic'
 
