@@ -4,6 +4,8 @@ CHANGES
 2.0a2 (unreleased)
 ------------------
 
+- Add support for Python 3.7 and 3.8.
+
 - Add support for ``zope.interface >= 5``.
   (`#13 <https://github.com/NativeInstruments/gocept.amqprun/pull/13>`_)
 

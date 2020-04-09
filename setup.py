@@ -30,10 +30,11 @@ tests_require = (
     readfiles_require +
     security_require + [
         'gocept.testing',
-        'mock>=0.8.0, < 4',
+        'mock>=0.8.0, < 4',  # PY2
         'plone.testing',
         'zope.testing',
-        'zipp < 2',
+        'zipp < 2',  # PY2
+        'rpdb',
     ])
 
 
@@ -66,9 +67,11 @@ setup(
         'License :: OSI Approved',
         'Natural Language :: English',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2 :: Only',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python',
         'Topic :: Software Development :: Libraries :: Application Frameworks',

@@ -77,7 +77,7 @@ class QueueLayer(plone.testing.Layer):
         command = '%s %s' % (self.RABBITMQCTL_COMMAND, parameter)
         stdout = subprocess.check_output(
             'LANG=C %s' % command, stderr=subprocess.STDOUT, shell=True)
-        if 'Error' in stdout:
+        if b'Error' in stdout:
             raise RuntimeError(
                 '%s failed:\n%s' % (command, stdout))  # pragma: no cover
 
@@ -118,7 +118,8 @@ class QueueTestCase(unittest.TestCase):
         self.channel.basic_publish(
             amqp.Message(
                 body,
-                timestamp=time.mktime(datetime.datetime.now().timetuple()),
+                timestamp=int(
+                    time.mktime(datetime.datetime.now().timetuple())),
                 application_headers=headers or {},
                 msgid=email.utils.make_msgid('gocept.amqprun.test'),
                 **kw),
@@ -181,7 +182,11 @@ class MainTestCase(QueueTestCase):
         self.server.connect()
 
     def start_server_in_subprocess(self, *args, **kwargs):
-        script = tempfile.NamedTemporaryFile(suffix='.py')
+        if six.PY2:
+            script = tempfile.NamedTemporaryFile(suffix='.py')
+        else:
+            script = tempfile.NamedTemporaryFile(
+                mode='w', suffix='.py', encoding='utf-8')
         module = kwargs.pop('module', 'gocept.amqprun.main')
         config = [self.config.name]
         config.extend(args)
@@ -192,7 +197,10 @@ import %(module)s
 %(module)s.main%(config)r
         """ % dict(path=sys.path, config=tuple(config), module=module))
         script.flush()
-        self.stdout = tempfile.TemporaryFile()
+        if six.PY2:
+            self.stdout = tempfile.TemporaryFile()
+        else:
+            self.stdout = tempfile.TemporaryFile(mode='w+', encoding='utf-8')
         process = subprocess.Popen(
             [sys.executable, script.name],
             stdout=self.stdout, stderr=subprocess.STDOUT)

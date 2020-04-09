@@ -30,9 +30,12 @@ def create_configured_server(config_file):
     settings = gocept.amqprun.settings.Settings()
     zope.component.provideUtility(settings)
     if conf.settings:
-        settings.update(
-            {six.text_type(k): six.text_type(v, 'UTF-8')
-             for k, v in conf.settings.items()})
+        if six.PY2:
+            settings.update(
+                {six.text_type(k): six.text_type(v, 'UTF-8')
+                 for k, v in conf.settings.items()})
+        else:
+            settings.update(conf.settings.items())
 
     zope.configuration.xmlconfig.file(conf.worker.component_configuration)
 

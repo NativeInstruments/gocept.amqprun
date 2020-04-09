@@ -37,7 +37,7 @@ class Response(object):
     def exception(self):
         self._exception = True
         return [gocept.amqprun.message.Message(
-            {}, '', routing_key='test.iresponse-error')]
+            {}, b'', routing_key='test.iresponse-error')]
 
 
 def handle_message_iresponse(message):

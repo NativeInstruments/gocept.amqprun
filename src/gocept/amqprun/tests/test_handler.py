@@ -87,7 +87,7 @@ class ErrorHandlingHandlerTest(
     def setUp(self):
         import gocept.amqprun.message
         self.message = gocept.amqprun.message.Message(
-            {}, 'foo', channel=mock.Mock())
+            {}, b'foo', channel=mock.Mock())
 
     def get_declaration(self):
         import gocept.amqprun.handler
@@ -126,7 +126,7 @@ class ErrorHandlingHandlerTest(
         handler = self.get_handler()
 
         def run(self):
-            self.send('foo', 'success')
+            self.send(b'foo', 'success')
             raise RuntimeError('asdf')
         handler.run = run.__get__(handler)
         handler.handle()

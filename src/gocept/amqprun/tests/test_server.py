@@ -104,9 +104,8 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
     def test_unicode_queue_names_should_work(self):
         import gocept.amqprun.interfaces
 
+        @zope.interface.provider(gocept.amqprun.interfaces.IHandler)
         class Handler(object):
-            zope.interface.classProvides(
-                gocept.amqprun.interfaces.IHandler)
             queue_name = self.get_queue_name(u'test.case.2')
             routing_key = 'test.messageformat.2'
             arguments = {}
@@ -116,9 +115,8 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
     def test_unicode_routing_keys_should_work_for_handler(self):
         import gocept.amqprun.interfaces
 
+        @zope.interface.provider(gocept.amqprun.interfaces.IHandler)
         class Handler(object):
-            zope.interface.classProvides(
-                gocept.amqprun.interfaces.IHandler)
             queue_name = self.get_queue_name('test.case.2')
             routing_key = u'test.messageformat.2'
             arguments = {}
@@ -128,9 +126,8 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
     def test_unicode_arguments_should_work_for_handler(self):
         import gocept.amqprun.interfaces
 
+        @zope.interface.provider(gocept.amqprun.interfaces.IHandler)
         class Handler(object):
-            zope.interface.classProvides(
-                gocept.amqprun.interfaces.IHandler)
             queue_name = self.get_queue_name('test.case.2')
             routing_key = 'test.messageformat.2'
             arguments = {u'x-ha-policy': u'all'}
@@ -142,7 +139,7 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
         import transaction
         self.start_server()
         self.server.send(gocept.amqprun.message.Message(
-            {}, 'body', routing_key=u'test.routing'))
+            {}, b'body', routing_key=u'test.routing'))
         transaction.commit()
 
     def test_unicode_body_should_work_for_message(self):
@@ -160,8 +157,9 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
         import transaction
         self.start_server()
         self.server.send(gocept.amqprun.message.Message(
-            {u'content_type': u'text/plain'},
-            'body', routing_key='test.routing'))
+            {u'content_type': u'text/plain',
+             u'content_encoding': u'utf-8'},
+            u'body', routing_key='test.routing'))
         transaction.commit()
 
     def test_multiple_routing_keys_should_recieve_messages_for_all(self):

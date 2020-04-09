@@ -30,7 +30,7 @@ class DataManagerTest(unittest.TestCase):
     def get_message(self):
         import gocept.amqprun.message
         return gocept.amqprun.message.Message(
-            {}, '', 'mytag', channel=self.channel)
+            {}, b'', 'mytag', channel=self.channel)
 
     def get_dm(self):
         import gocept.amqprun.session
@@ -176,7 +176,7 @@ class DataManagerTest(unittest.TestCase):
         dm.session.received_message.header.message_id = 'message id'
         msg = gocept.amqprun.message.Message(
             {'references': 'custom id'},
-            'body'
+            b'body'
         )
         self.session.send(msg)
         dm.commit(None)

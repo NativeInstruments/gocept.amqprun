@@ -1,5 +1,3 @@
-# Copyright (c) 2010-2014 gocept gmbh & co. kg
-# See also LICENSE.txt
 from .main import create_configured_server
 import gocept.amqprun.interfaces
 import gocept.filestore
@@ -7,6 +5,7 @@ import logging
 import os
 import os.path
 import signal
+import six
 import time
 import transaction
 import zope.component
@@ -52,12 +51,17 @@ class FileStoreReader(object):
                 transaction.commit()
 
     def send(self, filename):
-        body = open(filename).read()
+        with open(filename) as f:
+            body = f.read()
         # XXX make content-type configurable?
+        headers = {
+            'content_type': 'text/xml',
+            'X-Filename': os.path.basename(filename).encode('utf-8'),
+        }
+        if six.PY3 and isinstance(body, str):
+            headers['content_encoding'] = 'utf-8'
         message = gocept.amqprun.message.Message(
-            {'content_type': 'text/xml',
-             'X-Filename': os.path.basename(filename).encode('utf-8')},
-            body, routing_key=self.routing_key)
+            headers, body, routing_key=self.routing_key)
         sender = zope.component.getUtility(gocept.amqprun.interfaces.ISender)
         sender.send(message)
 

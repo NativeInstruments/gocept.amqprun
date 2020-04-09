@@ -62,12 +62,12 @@ class Message(object):
         if not isinstance(header, Properties):
             header = self.convert_header(header)
         self.header = header
-        if not isinstance(body, (six.string_types, type(None))):
+        if not isinstance(body, (six.string_types, bytes, type(None))):
             raise ValueError(
                 'Message body must be basestring, not %s' % type(body))
 
         # We don't want empty unicode strings. also u'' == ''
-        if body == u'':
+        if six.PY2 and body == u'':
             body = ''
 
         if isinstance(body, six.text_type) and not header.content_encoding:
@@ -75,10 +75,13 @@ class Message(object):
 
         self.body = body
         self.delivery_tag = delivery_tag
-        self.routing_key = (
-            six.text_type(routing_key).encode('UTF-8')
-            if routing_key
-            else None)
+        if six.PY2:
+            self.routing_key = (
+                six.text_type(routing_key).encode('UTF-8')
+                if routing_key
+                else None)
+        else:
+            self.routing_key = str(routing_key) if routing_key else None
         self._channel = channel  # received message from this channel
 
     def convert_header(self, header):
@@ -90,7 +93,7 @@ class Message(object):
 
         for key in result.as_dict():
             value = header.pop(key, self)
-            if isinstance(value, six.text_type):
+            if six.PY2 and isinstance(value, six.text_type):
                 value = value.encode('UTF-8')
             if value is not self:
                 setattr(result, key, value)

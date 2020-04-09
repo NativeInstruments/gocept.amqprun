@@ -77,9 +77,9 @@ class ErrorHandlingHandler(object):
         try:
             self._decode_message()
             self.run()
-        except self.error_reraise:
-            raise
-        except Exception:
+        except Exception as e:
+            if self.error_reraise and isinstance(e, self.error_reraise):
+                raise
             # Solution for https://bitbucket.org/gocept/gocept.amqprun/issue/4:
             # Abort the transaction which caused the error to prevent it from
             # writing any data e. g. to a relational database when committing
@@ -107,16 +107,23 @@ class ErrorHandlingHandler(object):
     def exception(self):
         return [self._create_error_message()]
 
-    def send(self, content, routing_key):
-        self.responses.append(self._create_message(content, routing_key))
+    def send(self, content, routing_key, content_encoding=None):
+        self.responses.append(
+            self._create_message(
+                content, routing_key, content_encoding=content_encoding))
 
-    def _create_message(self, content, routing_key):
+    def _create_message(self, content, routing_key, content_encoding=None):
+        if content_encoding:
+            headers = {'content_encoding': content_encoding}
+        else:
+            headers = {}
         return gocept.amqprun.message.Message(
-            {}, content, routing_key=routing_key)
+            headers, content, routing_key=routing_key)
 
     def _create_error_message(self):
         content = '%s\n%s' % self._format_traceback()
-        message = self._create_message(content, self.error_routing_key)
+        message = self._create_message(
+            content, self.error_routing_key, content_encoding='utf-8')
         message.reference(self.message)
         return message
 
