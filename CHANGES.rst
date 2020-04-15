@@ -1,8 +1,8 @@
 CHANGES
 =======
 
-2.0a2 (unreleased)
-------------------
+2.0 (2020-04-15)
+----------------
 
 - Add support for ``zope.interface >= 5``.
   (`#13 <https://github.com/NativeInstruments/gocept.amqprun/pull/13>`_)
