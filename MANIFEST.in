@@ -6,6 +6,7 @@ include *.zcml
 include .coveragerc
 include buildout.cfg
 include pytest.ini
+include tox.ini
 recursive-include src *.conf
 recursive-include src *.xml
 recursive-include src *.zcml
