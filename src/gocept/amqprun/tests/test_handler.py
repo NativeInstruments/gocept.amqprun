@@ -2,9 +2,13 @@
 # See also LICENSE.txt
 
 import gocept.testing.assertion
-import mock
 import unittest
 import zope.interface.verify
+
+try:
+    from unittest import mock
+except ImportError:  # PY2
+    import mock
 
 
 class TestHandler(unittest.TestCase):

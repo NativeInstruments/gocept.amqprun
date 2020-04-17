@@ -9,13 +9,17 @@ import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import gocept.amqprun.testing
 import kombu
-import mock
 import pytest
 import socket
 import time
 import unittest
 import zope.component
 import zope.interface
+
+try:
+    from unittest import mock
+except ImportError:  # PY2
+    import mock
 
 
 class ParametersTest(unittest.TestCase):

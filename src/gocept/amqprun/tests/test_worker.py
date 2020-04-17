@@ -1,9 +1,13 @@
 import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import gocept.amqprun.worker
-import mock
 import unittest
 import zope.interface
+
+try:
+    from unittest import mock
+except ImportError:  # PY2
+    import mock
 
 
 class WorkerTest(unittest.TestCase):

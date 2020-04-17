@@ -5,9 +5,13 @@ import gocept.amqprun.session
 import gocept.amqprun.testing
 import gocept.amqprun.tests.integration
 import logging
-import mock
 import zope.component
 import six
+
+try:
+    from unittest import mock
+except ImportError:  # PY2
+    import mock
 
 
 class ReceiveMessages(gocept.amqprun.testing.MainTestCase):

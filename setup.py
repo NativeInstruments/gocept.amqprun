@@ -31,7 +31,7 @@ tests_require = (
     readfiles_require +
     security_require + [
         'gocept.testing',
-        'mock>=0.8.0, < 4',  # PY2
+        'mock>=0.8.0, < 4 ; python_version=="2.7"',  # PY2
         'plone.testing',
         'zope.testing',
         'zipp < 2 ; python_version=="2.7"',  # PY2
