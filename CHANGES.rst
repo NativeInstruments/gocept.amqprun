@@ -4,13 +4,11 @@ CHANGES
 2.1 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Add support for Python 3.7 and 3.8.
 
 
 2.0 (2020-04-15)
 ----------------
-
-- Add support for Python 3.7 and 3.8.
 
 - Add support for ``zope.interface >= 5``.
   (`#13 <https://github.com/NativeInstruments/gocept.amqprun/pull/13>`_)
