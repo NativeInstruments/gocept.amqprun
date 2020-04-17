@@ -1,6 +1,3 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 from gocept.amqprun.readfiles import FileStoreReader, FileStoreDataManager
 import gocept.amqprun.interfaces
 import gocept.amqprun.testing

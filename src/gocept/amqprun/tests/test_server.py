@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2012, 2020 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 from __future__ import print_function
 from gocept.amqprun.server import Parameters
 import amqp

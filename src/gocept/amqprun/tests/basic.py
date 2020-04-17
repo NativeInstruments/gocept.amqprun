@@ -1,6 +1,3 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import logging
 import gocept.amqprun.handler
 import gocept.amqprun.main
