@@ -5,6 +5,7 @@ install_requires = [
     'ZConfig',
     'kombu',
     'setuptools',
+    'six',
     'transaction',
     'zope.component[zcml]',
     'zope.configuration',
@@ -33,8 +34,7 @@ tests_require = (
         'mock>=0.8.0, < 4',  # PY2
         'plone.testing',
         'zope.testing',
-        'zipp < 2',  # PY2
-        'rpdb',
+        'zipp < 2 ; python_version=="2.7"',  # PY2
     ])
 
 
