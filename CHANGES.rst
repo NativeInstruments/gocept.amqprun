@@ -1,8 +1,8 @@
 CHANGES
 =======
 
-2.1 (unreleased)
-----------------
+2.1a1 (2020-04-17)
+------------------
 
 - Add support for Python 3.7 and 3.8.
 
