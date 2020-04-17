@@ -1,16 +1,17 @@
-# Copyright (c) 2010 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 from gocept.amqprun.readfiles import FileStoreReader, FileStoreDataManager
 import gocept.amqprun.interfaces
 import gocept.amqprun.testing
-import mock
 import os
 import shutil
 import tempfile
 import unittest
 import zope.component
 import time
+
+try:
+    from unittest import mock
+except ImportError:  # PY2
+    import mock
 
 
 class ReaderTest(unittest.TestCase):

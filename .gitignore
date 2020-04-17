@@ -3,8 +3,10 @@
 .Python
 .cache
 .coverage
+.idea
 .installed.cfg
 .pytest_cache
+.tox
 bin
 coverage-report
 develop-eggs
@@ -12,4 +14,3 @@ include
 lib
 local
 parts
-.idea

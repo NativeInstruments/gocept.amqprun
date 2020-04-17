@@ -1,9 +1,5 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import amqp.channel
 import gocept.amqprun.message
-import mock
 import threading
 import time
 import transaction
@@ -11,6 +7,11 @@ import unittest
 import zope.component
 import zope.component.testing
 import zope.interface.verify
+
+try:
+    from unittest import mock
+except ImportError:  # PY2
+    import mock
 
 
 class DataManagerTest(unittest.TestCase):
@@ -30,7 +31,7 @@ class DataManagerTest(unittest.TestCase):
     def get_message(self):
         import gocept.amqprun.message
         return gocept.amqprun.message.Message(
-            {}, '', 'mytag', channel=self.channel)
+            {}, b'', 'mytag', channel=self.channel)
 
     def get_dm(self):
         import gocept.amqprun.session
@@ -176,7 +177,7 @@ class DataManagerTest(unittest.TestCase):
         dm.session.received_message.header.message_id = 'message id'
         msg = gocept.amqprun.message.Message(
             {'references': 'custom id'},
-            'body'
+            b'body'
         )
         self.session.send(msg)
         dm.commit(None)

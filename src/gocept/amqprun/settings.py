@@ -1,6 +1,3 @@
-# Copyright (c) 2010, 2020 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import gocept.amqprun.interfaces
 import zope.interface
 

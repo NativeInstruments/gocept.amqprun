@@ -9,6 +9,7 @@ import time
 import zope.component
 import zope.event
 import zope.interface
+import six
 
 
 log = logging.getLogger(__name__)
@@ -50,10 +51,8 @@ class Consumer(object):
         return worker()
 
 
+@zope.interface.implementer(gocept.amqprun.interfaces.ISender)
 class Server(object):
-
-    zope.interface.implements(
-        gocept.amqprun.interfaces.ISender)
 
     CHANNEL_LIFE_TIME = 360
 
@@ -141,7 +140,7 @@ class Server(object):
         bound_consumers = {}
         for name, handler in zope.component.getUtilitiesFor(
                 gocept.amqprun.interfaces.IHandler):
-            queue_name = unicode(handler.queue_name).encode('UTF-8')
+            queue_name = six.text_type(handler.queue_name).encode('UTF-8')
             if queue_name in bound_queues:
                 raise ValueError(
                     'Queue %r already bound to handler %r for %r' % (
@@ -150,8 +149,9 @@ class Server(object):
                 bound_queues[queue_name] = handler.routing_key
             handler_args = handler.arguments or {}
             arguments = dict(
-                (unicode(key).encode('UTF-8'), unicode(value).encode('UTF-8'))
-                for key, value in handler_args.iteritems())
+                (six.text_type(key).encode('UTF-8'),
+                 six.text_type(value).encode('UTF-8'))
+                for key, value in six.iteritems(handler_args))
             log.info(
                 "Channel[%s]: Handling routing key(s) '%s' on queue '%s'"
                 " via '%s'",
@@ -164,7 +164,7 @@ class Server(object):
             if not isinstance(routing_keys, list):
                 routing_keys = [routing_keys]
             for routing_key in routing_keys:
-                routing_key = unicode(routing_key).encode('UTF-8')
+                routing_key = six.text_type(routing_key).encode('UTF-8')
                 self.channel.queue_bind(
                     queue=queue_name, exchange='amq.topic',
                     routing_key=routing_key)

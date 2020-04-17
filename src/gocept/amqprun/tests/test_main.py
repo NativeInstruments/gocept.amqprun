@@ -5,8 +5,13 @@ import gocept.amqprun.session
 import gocept.amqprun.testing
 import gocept.amqprun.tests.integration
 import logging
-import mock
 import zope.component
+import six
+
+try:
+    from unittest import mock
+except ImportError:  # PY2
+    import mock
 
 
 class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
@@ -127,7 +132,7 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         gocept.amqprun.main.main(config)
         settings = zope.component.getUtility(
             gocept.amqprun.interfaces.ISettings)
-        self.assertIsInstance(settings.get('test.setting.1'), unicode)
+        self.assertIsInstance(settings.get('test.setting.1'), six.text_type)
         self.assertEquals(u'Ümläuten', settings.get('test.setting.unicode'))
 
     def test_settings_should_allow_upper_case(self):

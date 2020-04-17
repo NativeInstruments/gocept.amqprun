@@ -1,6 +1,3 @@
-# Copyright (c) 2010-2011 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import amqp
 import datetime
 import email.utils
@@ -20,6 +17,8 @@ import sys
 import tempfile
 import time
 import unittest
+import six
+from six.moves import range
 
 
 class ZCASandbox(plone.testing.Layer):
@@ -75,7 +74,7 @@ class QueueLayer(plone.testing.Layer):
         command = '%s %s' % (self.RABBITMQCTL_COMMAND, parameter)
         stdout = subprocess.check_output(
             'LANG=C %s' % command, stderr=subprocess.STDOUT, shell=True)
-        if 'Error' in stdout:
+        if b'Error' in stdout:
             raise RuntimeError(
                 '%s failed:\n%s' % (command, stdout))  # pragma: no cover
 
@@ -116,7 +115,8 @@ class QueueTestCase(unittest.TestCase):
         self.channel.basic_publish(
             amqp.Message(
                 body,
-                timestamp=time.mktime(datetime.datetime.now().timetuple()),
+                timestamp=int(
+                    time.mktime(datetime.datetime.now().timetuple())),
                 application_headers=headers or {},
                 msgid=email.utils.make_msgid('gocept.amqprun.test'),
                 **kw),
@@ -179,7 +179,11 @@ class MainTestCase(QueueTestCase):
         self.server.connect()
 
     def start_server_in_subprocess(self, *args, **kwargs):
-        script = tempfile.NamedTemporaryFile(suffix='.py')
+        if six.PY2:
+            script = tempfile.NamedTemporaryFile(suffix='.py')
+        else:
+            script = tempfile.NamedTemporaryFile(
+                mode='w', suffix='.py', encoding='utf-8')
         module = kwargs.pop('module', 'gocept.amqprun.main')
         config = [self.config.name]
         config.extend(args)
@@ -190,7 +194,10 @@ import %(module)s
 %(module)s.main%(config)r
         """ % dict(path=sys.path, config=tuple(config), module=module))
         script.flush()
-        self.stdout = tempfile.TemporaryFile()
+        if six.PY2:
+            self.stdout = tempfile.TemporaryFile()
+        else:
+            self.stdout = tempfile.TemporaryFile(mode='w+', encoding='utf-8')
         process = subprocess.Popen(
             [sys.executable, script.name],
             stdout=self.stdout, stderr=subprocess.STDOUT)
@@ -215,8 +222,9 @@ import %(module)s
 
     def make_config(self, package, name, mapping=None):
         zcml_base = string.Template(
-            unicode(pkg_resources.resource_string(package, '%s.zcml' % name),
-                    'utf8'))
+            six.text_type(
+                pkg_resources.resource_string(package, '%s.zcml' % name),
+                'utf8'))
         self.zcml = tempfile.NamedTemporaryFile()
         self.zcml.write(zcml_base.substitute(mapping).encode('utf8'))
         self.zcml.flush()
@@ -233,8 +241,9 @@ import %(module)s
             sub.update(mapping)
 
         base = string.Template(
-            unicode(pkg_resources.resource_string(package, '%s.conf' % name),
-                    'utf8'))
+            six.text_type(
+                pkg_resources.resource_string(package, '%s.conf' % name),
+                'utf8'))
         self.config = tempfile.NamedTemporaryFile()
         self.config.write(base.substitute(sub).encode('utf8'))
         self.config.flush()

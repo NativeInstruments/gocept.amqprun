@@ -1,10 +1,11 @@
-# Copyright (c) 2010-2012 gocept gmbh & co. kg
-# See also LICENSE.txt
-
 import gocept.testing.assertion
-import mock
 import unittest
 import zope.interface.verify
+
+try:
+    from unittest import mock
+except ImportError:  # PY2
+    import mock
 
 
 class TestHandler(unittest.TestCase):
@@ -87,7 +88,7 @@ class ErrorHandlingHandlerTest(
     def setUp(self):
         import gocept.amqprun.message
         self.message = gocept.amqprun.message.Message(
-            {}, 'foo', channel=mock.Mock())
+            {}, b'foo', channel=mock.Mock())
 
     def get_declaration(self):
         import gocept.amqprun.handler
@@ -126,7 +127,7 @@ class ErrorHandlingHandlerTest(
         handler = self.get_handler()
 
         def run(self):
-            self.send('foo', 'success')
+            self.send(b'foo', 'success')
             raise RuntimeError('asdf')
         handler.run = run.__get__(handler)
         handler.handle()
