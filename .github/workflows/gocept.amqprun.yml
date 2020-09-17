@@ -43,11 +43,10 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -U setuptools zc.buildout setuptools-scm
-        buildout -n
+        pip install -U tox
 
     - name: Test
       env:
         AMQP_RABBITMQCTL: docker exec $(docker ps -aqf "label=rabbitmq") rabbitmqctl
       run: |
-        bin/test --cache-clear --cov-report term-missing --cov src
+        tox -e py
