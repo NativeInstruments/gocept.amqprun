@@ -1,8 +1,8 @@
 CHANGES
 =======
 
-2.1 (unreleased)
-----------------
+2.1a2 (unreleased)
+------------------
 
 - Nothing changed yet.
 

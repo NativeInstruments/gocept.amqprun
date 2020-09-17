@@ -228,11 +228,9 @@ class DataManagerTest(unittest.TestCase):
 class SessionTest(unittest.TestCase):
 
     def setUp(self):
-        self.patcher = mock.patch('gocept.amqprun.session.AMQPDataManager')
-        self.patcher.__enter__()
-
-    def tearDown(self):
-        self.patcher.__exit__()
+        patcher = mock.patch('gocept.amqprun.session.AMQPDataManager')
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def create_session(self, message=None):
         from gocept.amqprun.session import Session
