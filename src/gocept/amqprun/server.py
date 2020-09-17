@@ -93,8 +93,7 @@ class Server(object):
                     consumer(message)
         except socket.error:
             log.error("Error while pulling messages", exc_info=True)
-            self.channel = None
-            return
+            raise
         if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
             self.switch_channel()
 
@@ -110,12 +109,7 @@ class Server(object):
     def open_channel(self):
         assert self.channel is None
         log.debug('Opening new channel')
-        try:
-            self.channel = self.connection.channel()
-        except Exception:
-            log.debug('Opening new channel aborted due to closed connection,'
-                      ' since a reconnect should happen soon anyway.')
-            return
+        self.channel = self.connection.channel()
         self.bound_consumers = self._declare_and_bind_queues()
         self._channel_opened = time.time()
 
@@ -126,8 +120,6 @@ class Server(object):
         log.info('Switching to a new channel')
         try:
             self.channel.close()
-        except socket.error:
-            return
         finally:
             self.channel = None
         self.open_channel()

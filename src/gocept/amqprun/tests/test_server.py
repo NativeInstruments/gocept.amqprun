@@ -258,33 +258,39 @@ class TestChannelSwitch(unittest.TestCase):
 
 class DyingRabbitTest(gocept.amqprun.testing.QueueTestCase):
 
+    def setUp(self):
+        super(DyingRabbitTest, self).setUp()
+        self.handler = gocept.amqprun.handler.Handler(
+            'test.queuename',
+            'test.routingkey', mock.Mock())
+        zope.component.provideUtility(self.handler, name='1')
+
+    def tearDown(self):
+        gsm = zope.component.getSiteManager()
+        gsm.unregisterUtility(self.handler)
+        super(DyingRabbitTest, self).tearDown()
+
     def start_server(self):
         self.server = self.create_server()
         self.server.connect()
 
-    def test_socket_close_should_not_stop_main_loop_and_reopen_channel(self):
-        handler = gocept.amqprun.handler.Handler(
-            'test.queuename',
-            'test.routingkey', mock.Mock())
-        zope.component.provideUtility(handler, name='1')
+    def test_server__Server__run_once__1(self):
+        """It propagates a socket.error."""
         self.start_server()
 
         with mock.patch.object(
                 self.server.channel, 'basic_get', side_effect=socket.error):
-            self.server.run_once()
-        assert self.server.channel is None
+            with self.assertRaises(socket.error):
+                self.server.run_once()
 
-        self.server.run_once()
-        assert self.server.channel is not None
-
-    def test_remote_close_should_not_break_switch_channel(self):
+    def test_server__Server__switch_channel__1(self):
+        """It propagates a socket.error."""
         self.start_server()
+
         with mock.patch.object(
                 self.server.channel, 'close', side_effect=socket.error):
-            self.server.switch_channel()
-        assert self.server.channel is None
-        self.server.run_once()
-        assert self.server.channel is not None
+            with self.assertRaises(socket.error):
+                self.server.switch_channel()
 
 
 class ConsumerTest(unittest.TestCase):
