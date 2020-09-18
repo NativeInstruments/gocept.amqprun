@@ -1,8 +1,8 @@
 CHANGES
 =======
 
-2.1a2 (unreleased)
-------------------
+2.1 (2020-09-18)
+----------------
 
 - Let the Server exit in case of an ``socket.error``. We lost the re-connection
   feature in 2.0 already.
