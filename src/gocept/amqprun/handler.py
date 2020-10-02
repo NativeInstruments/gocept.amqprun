@@ -130,7 +130,7 @@ class ErrorHandlingHandler:
     def _format_traceback(self):
         class_, exc, tb = sys.exc_info()
         message = str(exc).replace('\x00', '')
-        message = '{}: {}'.format(class_.__name__, message)
+        message = f'{class_.__name__}: {message}'
         detail = ''.join(
             traceback.format_exception(class_, exc, tb)).replace(
                 '\x00', '')

@@ -69,12 +69,12 @@ class QueueLayer(plone.testing.Layer):
             del self['amqp-virtualhost-created']
 
     def rabbitmqctl(self, parameter):
-        command = '{} {}'.format(self.RABBITMQCTL_COMMAND, parameter)
+        command = f'{self.RABBITMQCTL_COMMAND} {parameter}'
         stdout = subprocess.check_output(
             'LANG=C %s' % command, stderr=subprocess.STDOUT, shell=True)
         if b'Error' in stdout:
             raise RuntimeError(
-                '{} failed:\n{}'.format(command, stdout))  # pragma: no cover
+                f'{command} failed:\n{stdout}')  # pragma: no cover
 
 
 QUEUE_LAYER = QueueLayer()
