@@ -5,7 +5,6 @@ install_requires = [
     'ZConfig',
     'kombu',
     'setuptools',
-    'six',
     'transaction',
     'zope.component[zcml]',
     'zope.configuration',
@@ -31,16 +30,14 @@ tests_require = (
     readfiles_require +
     security_require + [
         'gocept.testing',
-        'mock>=0.8.0, < 4 ; python_version=="2.7"',  # PY2
         'plone.testing',
         'zope.testing',
-        'zipp < 2 ; python_version=="2.7"',  # PY2
     ])
 
 
 setup(
     name='gocept.amqprun',
-    version='2.2.dev0',
+    version='3.0.dev0',
     author='gocept <mail at gocept dot com>',
     author_email='mail@gocept.com',
     url='https://github.com/NativeInstruments/gocept.amqprun',
@@ -67,11 +64,10 @@ setup(
         'License :: OSI Approved',
         'Natural Language :: English',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python',
         'Topic :: Software Development :: Libraries :: Application Frameworks',
@@ -79,6 +75,7 @@ setup(
     ],
     license='ZPL',
     namespace_packages=['gocept'],
+    python_requires='>=3.7, <4',
     install_requires=install_requires,
     extras_require=dict(
         test=tests_require,

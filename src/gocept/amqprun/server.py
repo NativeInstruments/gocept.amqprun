@@ -4,12 +4,10 @@ import gocept.amqprun.session
 import gocept.amqprun.worker
 import kombu
 import logging
-import socket
 import time
 import zope.component
 import zope.event
 import zope.interface
-import six
 
 
 log = logging.getLogger(__name__)
@@ -32,7 +30,7 @@ def Parameters(heartbeat=0,
     }
 
 
-class Consumer(object):
+class Consumer:
 
     def __init__(self, handler):
         self.handler = handler
@@ -52,7 +50,7 @@ class Consumer(object):
 
 
 @zope.interface.implementer(gocept.amqprun.interfaces.ISender)
-class Server(object):
+class Server:
 
     CHANNEL_LIFE_TIME = 360
 
@@ -91,7 +89,7 @@ class Server(object):
                 message = self.channel.basic_get(queue)
                 if message:
                     consumer(message)
-        except socket.error:
+        except OSError:
             log.error("Error while pulling messages", exc_info=True)
             raise
         if time.time() - self._channel_opened > self.CHANNEL_LIFE_TIME:
@@ -132,18 +130,18 @@ class Server(object):
         bound_consumers = {}
         for name, handler in zope.component.getUtilitiesFor(
                 gocept.amqprun.interfaces.IHandler):
-            queue_name = six.text_type(handler.queue_name).encode('UTF-8')
+            queue_name = str(handler.queue_name).encode('UTF-8')
             if queue_name in bound_queues:
                 raise ValueError(
-                    'Queue %r already bound to handler %r for %r' % (
+                    'Queue {!r} already bound to handler {!r} for {!r}'.format(
                         queue_name, handler, bound_queues[queue_name]))
             else:
                 bound_queues[queue_name] = handler.routing_key
             handler_args = handler.arguments or {}
-            arguments = dict(
-                (six.text_type(key).encode('UTF-8'),
-                 six.text_type(value).encode('UTF-8'))
-                for key, value in six.iteritems(handler_args))
+            arguments = {
+                # In case keys or values are numbers, we need text here.
+                str(key).encode('UTF-8'): str(value).encode('UTF-8')
+                for key, value in handler_args.items()}
             log.info(
                 "Channel[%s]: Handling routing key(s) '%s' on queue '%s'"
                 " via '%s'",
@@ -156,7 +154,7 @@ class Server(object):
             if not isinstance(routing_keys, list):
                 routing_keys = [routing_keys]
             for routing_key in routing_keys:
-                routing_key = six.text_type(routing_key).encode('UTF-8')
+                routing_key = str(routing_key).encode('UTF-8')
                 self.channel.queue_bind(
                     queue=queue_name, exchange='amq.topic',
                     routing_key=routing_key)

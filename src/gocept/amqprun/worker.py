@@ -18,7 +18,7 @@ except ImportError:  # pragma: no cover
 log = logging.getLogger(__name__)
 
 
-class PrefixingLogger(object):
+class PrefixingLogger:
     """Convenience for spelling log.foo(prefix + message)"""
 
     def __init__(self, log, prefix):
@@ -32,7 +32,7 @@ class PrefixingLogger(object):
         return write
 
 
-class Worker(object):
+class Worker:
 
     def __init__(self, session, handler):
         self.session = session

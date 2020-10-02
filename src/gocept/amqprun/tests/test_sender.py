@@ -5,7 +5,7 @@ import transaction
 class MessageSenderTest(gocept.amqprun.testing.QueueTestCase):
 
     def setUp(self):
-        super(MessageSenderTest, self).setUp()
+        super().setUp()
         transaction.abort()
         self.expect_message_on('test.key')
         self.sender = self.create_server()

@@ -1,11 +1,7 @@
+from unittest import mock
 import gocept.testing.assertion
 import unittest
 import zope.interface.verify
-
-try:
-    from unittest import mock
-except ImportError:  # PY2
-    import mock
 
 
 class TestHandler(unittest.TestCase):

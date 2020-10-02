@@ -1,3 +1,4 @@
+from unittest import mock
 import amqp.channel
 import gocept.amqprun.message
 import threading
@@ -7,11 +8,6 @@ import unittest
 import zope.component
 import zope.component.testing
 import zope.interface.verify
-
-try:
-    from unittest import mock
-except ImportError:  # PY2
-    import mock
 
 
 class DataManagerTest(unittest.TestCase):

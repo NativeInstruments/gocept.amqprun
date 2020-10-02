@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 @zope.interface.implementer(gocept.amqprun.interfaces.IHandler)
-class Handler(object):
+class Handler:
 
     def __init__(self, queue_name, routing_key, handler_function,
                  arguments=None, principal=None):
@@ -31,7 +31,7 @@ class Handler(object):
         return self.handler_function(message) or []
 
     def __repr__(self):
-        return '<gocept.amqprun.handler.Handler(%r, %r, %r)>' % (
+        return '<gocept.amqprun.handler.Handler({!r}, {!r}, {!r})>'.format(
             self.handler_function, self.queue_name, self.routing_key)
 
 
@@ -47,7 +47,7 @@ handle = declare
 @zope.interface.implementer(
     gocept.amqprun.interfaces.IHandler,
     gocept.amqprun.interfaces.IResponse)
-class ErrorHandlingHandler(object):
+class ErrorHandlingHandler:
 
     queue_name = NotImplemented
     routing_key = NotImplemented
@@ -130,7 +130,7 @@ class ErrorHandlingHandler(object):
     def _format_traceback(self):
         class_, exc, tb = sys.exc_info()
         message = str(exc).replace('\x00', '')
-        message = '%s: %s' % (class_.__name__, message)
+        message = f'{class_.__name__}: {message}'
         detail = ''.join(
             traceback.format_exception(class_, exc, tb)).replace(
                 '\x00', '')
