@@ -17,8 +17,6 @@ import sys
 import tempfile
 import time
 import unittest
-import six
-from six.moves import range
 
 
 class ZCASandbox(plone.testing.Layer):
@@ -71,12 +69,12 @@ class QueueLayer(plone.testing.Layer):
             del self['amqp-virtualhost-created']
 
     def rabbitmqctl(self, parameter):
-        command = '%s %s' % (self.RABBITMQCTL_COMMAND, parameter)
+        command = '{} {}'.format(self.RABBITMQCTL_COMMAND, parameter)
         stdout = subprocess.check_output(
             'LANG=C %s' % command, stderr=subprocess.STDOUT, shell=True)
         if b'Error' in stdout:
             raise RuntimeError(
-                '%s failed:\n%s' % (command, stdout))  # pragma: no cover
+                '{} failed:\n{}'.format(command, stdout))  # pragma: no cover
 
 
 QUEUE_LAYER = QueueLayer()
@@ -87,7 +85,7 @@ class QueueTestCase(unittest.TestCase):
     layer = QUEUE_LAYER
 
     def setUp(self):
-        super(QueueTestCase, self).setUp()
+        super().setUp()
         self._queue_prefix = 'test.%f.' % time.time()
         self._queues = []
         self.connection = self.layer['amqp-connection']
@@ -104,7 +102,7 @@ class QueueTestCase(unittest.TestCase):
             # closing after the first delete
             with self.connection.channel() as channel:
                 channel.queue_delete(queue_name)
-        super(QueueTestCase, self).tearDown()
+        super().tearDown()
 
     def get_queue_name(self, suffix):
         queue_name = self._queue_prefix + suffix
@@ -161,11 +159,11 @@ class QueueTestCase(unittest.TestCase):
 class MainTestCase(QueueTestCase):
 
     def setUp(self):
-        super(MainTestCase, self).setUp()
+        super().setUp()
         plone.testing.zca.pushGlobalRegistry()
 
     def tearDown(self):
-        super(MainTestCase, self).tearDown()
+        super().tearDown()
         plone.testing.zca.popGlobalRegistry()
         # heuristic to avoid accreting more and more debug log output handlers
         if logging.root.handlers:
@@ -179,11 +177,8 @@ class MainTestCase(QueueTestCase):
         self.server.connect()
 
     def start_server_in_subprocess(self, *args, **kwargs):
-        if six.PY2:
-            script = tempfile.NamedTemporaryFile(suffix='.py')
-        else:
-            script = tempfile.NamedTemporaryFile(
-                mode='w', suffix='.py', encoding='utf-8')
+        script = tempfile.NamedTemporaryFile(
+            mode='w', suffix='.py', encoding='utf-8')
         module = kwargs.pop('module', 'gocept.amqprun.main')
         config = [self.config.name]
         config.extend(args)
@@ -194,10 +189,7 @@ import %(module)s
 %(module)s.main%(config)r
         """ % dict(path=sys.path, config=tuple(config), module=module))
         script.flush()
-        if six.PY2:
-            self.stdout = tempfile.TemporaryFile()
-        else:
-            self.stdout = tempfile.TemporaryFile(mode='w+', encoding='utf-8')
+        self.stdout = tempfile.TemporaryFile(mode='w+', encoding='utf-8')
         process = subprocess.Popen(
             [sys.executable, script.name],
             stdout=self.stdout, stderr=subprocess.STDOUT)
@@ -222,8 +214,8 @@ import %(module)s
 
     def make_config(self, package, name, mapping=None):
         zcml_base = string.Template(
-            six.text_type(
-                pkg_resources.resource_string(package, '%s.zcml' % name),
+            # pkg_resources.resource_string actually provides bytes *sigh*
+            str(pkg_resources.resource_string(package, '%s.zcml' % name),
                 'utf8'))
         self.zcml = tempfile.NamedTemporaryFile()
         self.zcml.write(zcml_base.substitute(mapping).encode('utf8'))
@@ -241,8 +233,8 @@ import %(module)s
             sub.update(mapping)
 
         base = string.Template(
-            six.text_type(
-                pkg_resources.resource_string(package, '%s.conf' % name),
+            # pkg_resources.resource_string actually provides bytes *sigh*
+            str(pkg_resources.resource_string(package, '%s.conf' % name),
                 'utf8'))
         self.config = tempfile.NamedTemporaryFile()
         self.config.write(base.substitute(sub).encode('utf8'))

@@ -1,4 +1,4 @@
-# coding: utf8
+from unittest import mock
 import gocept.amqprun.interfaces
 import gocept.amqprun.message
 import gocept.amqprun.session
@@ -6,18 +6,12 @@ import gocept.amqprun.testing
 import gocept.amqprun.tests.integration
 import logging
 import zope.component
-import six
-
-try:
-    from unittest import mock
-except ImportError:  # PY2
-    import mock
 
 
 class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
 
     def setUp(self):
-        super(ReceiveMessages, self).setUp()
+        super().setUp()
         self.messages_received = []
         gocept.amqprun.tests.integration.messages_received = (
             self.messages_received)
@@ -28,7 +22,7 @@ class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
 
     def tearDown(self):
         gocept.amqprun.tests.integration.messages_received = None
-        super(ReceiveMessages, self).tearDown()
+        super().tearDown()
 
     def test_message_should_be_processed(self):
         self.assertEquals([], self.messages_received)
@@ -73,7 +67,7 @@ class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
 class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
 
     def setUp(self):
-        super(ConfigLoadingTest, self).setUp()
+        super().setUp()
         self.patchers = []
         patcher = mock.patch('gocept.amqprun.server.Server')
         self.server = patcher.start()
@@ -88,7 +82,7 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
     def tearDown(self):
         for patcher in self.patchers:
             patcher.stop()
-        super(ConfigLoadingTest, self).tearDown()
+        super().tearDown()
 
     def test_basic_configuration_should_load_zcml(self):
         import gocept.amqprun.interfaces
@@ -132,8 +126,8 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         gocept.amqprun.main.main(config)
         settings = zope.component.getUtility(
             gocept.amqprun.interfaces.ISettings)
-        self.assertIsInstance(settings.get('test.setting.1'), six.text_type)
-        self.assertEquals(u'Ümläuten', settings.get('test.setting.unicode'))
+        self.assertIsInstance(settings.get('test.setting.1'), str)
+        self.assertEquals('Ümläuten', settings.get('test.setting.unicode'))
 
     def test_settings_should_allow_upper_case(self):
         import gocept.amqprun.interfaces

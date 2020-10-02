@@ -119,5 +119,5 @@ class IConfigFinished(zope.interface.Interface):
 
 
 @zope.interface.implementer(IConfigFinished)
-class ConfigFinished(object):
+class ConfigFinished:
     """Event notified when the configuration was loaded."""

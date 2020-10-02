@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 from datetime import datetime
 from gocept.amqprun.message import Properties, Message
 import gocept.testing.assertion
 import pytest
-import six
 import time
 import unittest
 import zope.interface.verify
@@ -19,9 +17,9 @@ class TestMessage(unittest.TestCase):
         self.assertEqual(b'body', message.body)
         self.assertEqual('amq.topic', message.exchange)
 
-    def test_message_can_be_unicode_if_encoding_is_set(self):
-        message = Message({'content_encoding': 'utf-8'}, u'bödÿ')
-        self.assertEqual(u'bödÿ', message.body)
+    def test_message_can_be_text_if_encoding_is_set(self):
+        message = Message({'content_encoding': 'utf-8'}, 'bödÿ')
+        self.assertEqual('bödÿ', message.body)
 
     def test_header_should_be_converted_to_Properties(self):
         now = int(time.time())
@@ -46,19 +44,12 @@ class TestMessage(unittest.TestCase):
         message = Message(dict(message_id='myid'), b'')
         self.assertEqual('myid', message.header.message_id)
 
-    def test_message_with_unicode_body_needs_content_encoding(self):
+    def test_message_with_text_body_needs_content_encoding(self):
         with pytest.raises(ValueError):
-            Message({}, u'Test')
-        message = Message({'content_encoding': 'UTF-8'}, u'Test')
+            Message({}, 'Test')
+        message = Message({'content_encoding': 'UTF-8'}, 'Test')
 
         assert message
-
-    @pytest.mark.skipif(
-        six.PY3, reason='There is no special handling on Python 3')
-    def test_message_with_empty_unicode_body_gets_empty_string_body(self):
-        message = Message({}, u'')
-
-        assert isinstance(message.body, str)
 
     def test_message_additional_application_headers_get_merged(self):
         headers = {

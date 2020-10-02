@@ -26,7 +26,7 @@ handler_error = gocept.amqprun.handler.Handler(
 
 
 @zope.interface.implementer(gocept.amqprun.interfaces.IResponse)
-class Response(object):
+class Response:
 
     responses = []
     _exception = False

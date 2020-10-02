@@ -6,13 +6,12 @@ import logging
 import string
 import time
 import zope.interface
-import six
 
 
 log = logging.getLogger(__name__)
 
 
-class Properties(object):
+class Properties:
     """Header properties for our Message class.
     Partly taken from pika.spec.BasicProperties."""
 
@@ -52,7 +51,7 @@ class Properties(object):
 
 
 @zope.interface.implementer(gocept.amqprun.interfaces.IMessage)
-class Message(object):
+class Message:
     """A message received from or sent to the queue."""
 
     exchange = 'amq.topic'
@@ -62,26 +61,16 @@ class Message(object):
         if not isinstance(header, Properties):
             header = self.convert_header(header)
         self.header = header
-        if not isinstance(body, (six.string_types, bytes, type(None))):
+        if not isinstance(body, (str, bytes, type(None))):
             raise ValueError(
-                'Message body must be basestring, not %s' % type(body))
+                f'Message body must be text, bytes or None, not {type(body)}')
 
-        # We don't want empty unicode strings. also u'' == ''
-        if six.PY2 and body == u'':
-            body = ''
-
-        if isinstance(body, six.text_type) and not header.content_encoding:
-            raise ValueError('If body is unicode provide a content_encoding.')
+        if isinstance(body, str) and not header.content_encoding:
+            raise ValueError('If body is text provide a content_encoding.')
 
         self.body = body
         self.delivery_tag = delivery_tag
-        if six.PY2:
-            self.routing_key = (
-                six.text_type(routing_key).encode('UTF-8')
-                if routing_key
-                else None)
-        else:
-            self.routing_key = str(routing_key) if routing_key else None
+        self.routing_key = str(routing_key) if routing_key else None
         self._channel = channel  # received message from this channel
 
     def convert_header(self, header):
@@ -93,8 +82,6 @@ class Message(object):
 
         for key in result.as_dict():
             value = header.pop(key, self)
-            if six.PY2 and isinstance(value, six.text_type):
-                value = value.encode('UTF-8')
             if value is not self:
                 setattr(result, key, value)
         result.application_headers.update(header)

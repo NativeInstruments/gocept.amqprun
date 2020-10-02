@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 @zope.interface.implementer(gocept.amqprun.interfaces.ISession)
-class Session(object):
+class Session:
 
     def __init__(self, channel, received_message=None):
         self.messages = []
@@ -67,7 +67,7 @@ class Session(object):
 
 
 @zope.interface.implementer(transaction.interfaces.ISavepointDataManager)
-class AMQPDataManager(object):
+class AMQPDataManager:
 
     transaction_manager = None
 
@@ -126,12 +126,12 @@ class AMQPDataManager(object):
         return NoOpSavepoint()
 
     def __repr__(self):
-        return '<gocept.amqprun.session.DataManager for %s, %s>' % (
+        return '<gocept.amqprun.session.DataManager for {}, {}>'.format(
             transaction.get(), self.session)
 
 
 @zope.interface.implementer(transaction.interfaces.IDataManagerSavepoint)
-class NoOpSavepoint(object):
+class NoOpSavepoint:
 
     def rollback(self):
         pass

@@ -1,4 +1,5 @@
 from gocept.amqprun.server import Parameters
+from unittest import mock
 import amqp
 import collections
 import gocept.amqprun.handler
@@ -11,11 +12,6 @@ import time
 import unittest
 import zope.component
 import zope.interface
-
-try:
-    from unittest import mock
-except ImportError:  # PY2
-    import mock
 
 
 class ParametersTest(unittest.TestCase):
@@ -105,8 +101,8 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
         import gocept.amqprun.interfaces
 
         @zope.interface.provider(gocept.amqprun.interfaces.IHandler)
-        class Handler(object):
-            queue_name = self.get_queue_name(u'test.case.2')
+        class Handler:
+            queue_name = self.get_queue_name('test.case.2')
             routing_key = 'test.messageformat.2'
             arguments = {}
         zope.component.provideUtility(Handler, name='handler')
@@ -116,9 +112,9 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
         import gocept.amqprun.interfaces
 
         @zope.interface.provider(gocept.amqprun.interfaces.IHandler)
-        class Handler(object):
+        class Handler:
             queue_name = self.get_queue_name('test.case.2')
-            routing_key = u'test.messageformat.2'
+            routing_key = 'test.messageformat.2'
             arguments = {}
         zope.component.provideUtility(Handler, name='handler')
         self.start_server()
@@ -127,10 +123,10 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
         import gocept.amqprun.interfaces
 
         @zope.interface.provider(gocept.amqprun.interfaces.IHandler)
-        class Handler(object):
+        class Handler:
             queue_name = self.get_queue_name('test.case.2')
             routing_key = 'test.messageformat.2'
-            arguments = {u'x-ha-policy': u'all'}
+            arguments = {'x-ha-policy': 'all'}
         zope.component.provideUtility(Handler, name='handler')
         self.start_server()
 
@@ -139,7 +135,7 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
         import transaction
         self.start_server()
         self.server.send(gocept.amqprun.message.Message(
-            {}, b'body', routing_key=u'test.routing'))
+            {}, b'body', routing_key='test.routing'))
         transaction.commit()
 
     def test_unicode_body_should_work_for_message(self):
@@ -148,7 +144,7 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
         self.start_server()
         self.server.send(gocept.amqprun.message.Message(
             {'content_encoding': 'UTF-8'},
-            u'body',
+            'body',
             routing_key='test.routing'))
         transaction.commit()
 
@@ -157,9 +153,9 @@ class MessageReaderTest(gocept.amqprun.testing.QueueTestCase):
         import transaction
         self.start_server()
         self.server.send(gocept.amqprun.message.Message(
-            {u'content_type': u'text/plain',
-             u'content_encoding': u'utf-8'},
-            u'body', routing_key='test.routing'))
+            {'content_type': 'text/plain',
+             'content_encoding': 'utf-8'},
+            'body', routing_key='test.routing'))
         transaction.commit()
 
     def test_multiple_routing_keys_should_recieve_messages_for_all(self):
@@ -259,7 +255,7 @@ class TestChannelSwitch(unittest.TestCase):
 class DyingRabbitTest(gocept.amqprun.testing.QueueTestCase):
 
     def setUp(self):
-        super(DyingRabbitTest, self).setUp()
+        super().setUp()
         self.handler = gocept.amqprun.handler.Handler(
             'test.queuename',
             'test.routingkey', mock.Mock())
@@ -268,7 +264,7 @@ class DyingRabbitTest(gocept.amqprun.testing.QueueTestCase):
     def tearDown(self):
         gsm = zope.component.getSiteManager()
         gsm.unregisterUtility(self.handler)
-        super(DyingRabbitTest, self).tearDown()
+        super().tearDown()
 
     def start_server(self):
         self.server = self.create_server()
@@ -313,7 +309,7 @@ class EndToEndTest(gocept.amqprun.testing.MainTestCase):
     """Testing .server.Server when started in a seperate subprocess."""
 
     def setUp(self):
-        super(EndToEndTest, self).setUp()
+        super().setUp()
         self.make_config(__name__, 'server')
         self.expect_message_on('test.echoed')
         self.start_server_in_subprocess()
@@ -321,7 +317,7 @@ class EndToEndTest(gocept.amqprun.testing.MainTestCase):
 
     def tearDown(self):
         self.stop_server_in_subprocess()
-        super(EndToEndTest, self).tearDown()
+        super().tearDown()
 
     def wait_for_queue_declared(self, queue_name, timeout=5):
         wait = 0

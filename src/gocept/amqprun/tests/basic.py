@@ -5,7 +5,6 @@ import gocept.amqprun.message
 import gocept.amqprun.interfaces
 import transaction
 import zope.component
-from six.moves import range
 
 
 log = logging.getLogger(__name__)

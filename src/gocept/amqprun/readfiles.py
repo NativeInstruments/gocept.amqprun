@@ -5,7 +5,6 @@ import logging
 import os
 import os.path
 import signal
-import six
 import time
 import transaction
 import zope.component
@@ -18,14 +17,13 @@ import zope.schema
 log = logging.getLogger(__name__)
 
 
-class FileStoreReader(object):
+class FileStoreReader:
 
     def __init__(self, path, routing_key):
         self.routing_key = routing_key
         self.filestore = gocept.filestore.FileStore(path)
         self.filestore.prepare()
         self.session = Session(self)
-        super(FileStoreReader, self).__init__()
 
     def run(self):
         log.info('starting to watch %s', self.filestore.path)
@@ -40,7 +38,7 @@ class FileStoreReader(object):
     def scan(self):
         for filename in self.filestore.list('new'):
             transaction.begin()
-            log.info('sending %r to %r' % (filename, self.routing_key))
+            log.info('sending %r to %r', filename, self.routing_key)
             try:
                 self.send(filename)
                 self.session.mark_done(filename)
@@ -58,7 +56,7 @@ class FileStoreReader(object):
             'content_type': 'text/xml',
             'X-Filename': os.path.basename(filename).encode('utf-8'),
         }
-        if six.PY3 and isinstance(body, str):
+        if isinstance(body, str):
             headers['content_encoding'] = 'utf-8'
         message = gocept.amqprun.message.Message(
             headers, body, routing_key=self.routing_key)
@@ -66,7 +64,7 @@ class FileStoreReader(object):
         sender.send(message)
 
 
-class Session(object):
+class Session:
 
     def __init__(self, context):
         self.files = []
@@ -95,7 +93,7 @@ class Session(object):
 
 
 @zope.interface.implementer(transaction.interfaces.IDataManager)
-class FileStoreDataManager(object):
+class FileStoreDataManager:
 
     def __init__(self, session):
         self.session = session

@@ -1,4 +1,5 @@
 from gocept.amqprun.readfiles import FileStoreReader, FileStoreDataManager
+from unittest import mock
 import gocept.amqprun.interfaces
 import gocept.amqprun.testing
 import os
@@ -8,16 +9,11 @@ import unittest
 import zope.component
 import time
 
-try:
-    from unittest import mock
-except ImportError:  # PY2
-    import mock
-
 
 class ReaderTest(unittest.TestCase):
 
     def setUp(self):
-        super(ReaderTest, self).setUp()
+        super().setUp()
         self.sender = mock.Mock()
         zope.component.provideUtility(
             self.sender, gocept.amqprun.interfaces.ISender)
@@ -25,7 +21,7 @@ class ReaderTest(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
-        super(ReaderTest, self).tearDown()
+        super().tearDown()
 
     def test_empty_new_directory_nothing_happens(self):
         reader = FileStoreReader(self.tmpdir, 'route')
@@ -81,11 +77,11 @@ class FileStoreDataManagerTest(unittest.TestCase):
 class ReaderIntegrationTest(gocept.amqprun.testing.MainTestCase):
 
     def setUp(self):
-        super(ReaderIntegrationTest, self).setUp()
+        super().setUp()
         self.tmpdir = tempfile.mkdtemp()
 
     def tearDown(self):
-        super(ReaderIntegrationTest, self).tearDown()
+        super().tearDown()
         shutil.rmtree(self.tmpdir)
 
     def wait_for_directory_present(self, path, timeout=10):
