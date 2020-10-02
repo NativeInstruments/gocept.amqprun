@@ -55,6 +55,7 @@ class WorkerTest(unittest.TestCase):
 
     def test_on_exception_with_response_transaction_should_abort_then_commit(
             self):
+        """It also calls the exception method of the response."""
         calls = []
         self.commit_called = False
 
@@ -64,9 +65,13 @@ class WorkerTest(unittest.TestCase):
                 raise RuntimeError('provoked error')
             calls.append('commit')
 
+        def exception_effect():
+            calls.append('exception')
+            return []
+
         response = mock.Mock()
         response.responses = []
-        response.exception.return_value = []
+        response.exception.side_effect = exception_effect
         zope.interface.alsoProvides(
             response, gocept.amqprun.interfaces.IResponse)
         self._create_worker(lambda x: response)
@@ -78,7 +83,7 @@ class WorkerTest(unittest.TestCase):
             self.worker()
 
         self.assertTrue(response.exception.called)
-        self.assertEqual(['abort', 'commit'], calls)
+        self.assertEqual(['abort', 'exception', 'commit'], calls)
 
     def test_error_on_commit_should_abort_transaction(self):
         self._create_worker()

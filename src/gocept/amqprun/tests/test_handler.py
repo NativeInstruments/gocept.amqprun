@@ -1,3 +1,4 @@
+from gocept.amqprun.interfaces import RetryException
 from unittest import mock
 import gocept.testing.assertion
 import unittest
@@ -167,11 +168,31 @@ class ErrorHandlingHandlerTest(
             error_msg.header.application_headers['references'])
 
     def test_raises_exceptions_defined_in_error_reraise(self):
+        """It reraises a RetryException and wraps the message."""
         handler = self.get_handler()
         handler.run.side_effect = RuntimeError('asdf')
         handler.error_reraise = RuntimeError
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(RetryException) as err:
             handler.handle()
+
+        assert str(err.exception) == 'asdf'
+
+    def test_handler__ErrorHandlingHandler__exception__1(self):
+        """It reraises an Exception as RetryException and wraps the message.
+
+        In case of a retryable exception, it must be reraised to _not_ be
+        acked to rabbitmq and retried on next channel switch.
+        """
+        handler = self.get_handler()
+        handler.error_reraise = RuntimeError
+
+        try:
+            raise RuntimeError('asdf')
+        except RuntimeError:
+            with self.assertRaises(RetryException) as err:
+                handler.exception()
+
+        assert str(err.exception) == 'asdf'
 
     def test_wrapping_exceptions_should_not_fail_with_null_bytes(self):
         handler = self.get_handler()
