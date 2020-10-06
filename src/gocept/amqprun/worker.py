@@ -42,7 +42,6 @@ class Worker:
         session = self.session
         handler = self.handler
         self.log = PrefixingLogger(log, 'Worker ')
-        self.log.info('starting')
         try:
             message = session.received_message
             self.log.info('Processing message %s %s (%s)',
