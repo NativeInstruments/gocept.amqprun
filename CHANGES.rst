@@ -12,6 +12,13 @@ Breaking changes
 - Drop no longer used exception ``.interfaces.CounterBelowZero``.
 
 
+Features
+~~~~~~~~
+
+- Retry errors which happen during a transaction.commit and are configured for
+  reraise.
+
+
 2.1 (2020-09-18)
 ----------------
 

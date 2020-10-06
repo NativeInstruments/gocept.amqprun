@@ -74,12 +74,14 @@ class ErrorHandlingHandler:
         return handler
 
     def handle(self):
+        # The only possible Exception raised from this method is
+        # RetryException. Other Exceptions will be handled and reported by an
+        # deliverable error message.
         try:
             self._decode_message()
             self.run()
         except Exception as e:
-            if self.error_reraise and isinstance(e, self.error_reraise):
-                raise
+            self._handle_retry(e)
             # Solution for https://bitbucket.org/gocept/gocept.amqprun/issue/4:
             # Abort the transaction which caused the error to prevent it from
             # writing any data e. g. to a relational database when committing
@@ -105,7 +107,18 @@ class ErrorHandlingHandler:
         raise NotImplementedError()
 
     def exception(self):
+        try:
+            exc = sys.exc_info()[1]
+            self._handle_retry(exc)
+        finally:
+            del exc
         return [self._create_error_message()]
+
+    def _handle_retry(self, exc):
+        """(Re-)raise only configured exceptions."""
+        if self.error_reraise and isinstance(exc, self.error_reraise):
+            raise gocept.amqprun.interfaces.RetryException(
+                exc).with_traceback(exc.__traceback__)
 
     def send(self, content, routing_key, content_encoding=None):
         self.responses.append(

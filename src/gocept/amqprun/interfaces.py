@@ -110,6 +110,10 @@ class ISender(zope.interface.Interface):
         """Send a message using AMQP."""
 
 
+class RetryException(Exception):
+    """Signal that a message should be retried to handle."""
+
+
 class IConfigFinished(zope.interface.Interface):
     """Event indicating that the configuration of gocept.amqprun was loaded."""
 
