@@ -6,6 +6,12 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
+    services:
+      rabbitmq:
+        image: rabbitmq:latest
+        ports:
+          - 5672:5672
+        options: --label rabbitmq
     env:
       OS: ${{ matrix.os }}
       PYTHON: '3.8'
@@ -15,6 +21,22 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
+
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('buildout.cfg') }}-${{ hashFiles('setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - uses: actions/cache@v1
+      with:
+        path: eggs
+        key: ${{ runner.os }}-eggs-${{ hashFiles('buildout.cfg') }}-${{ hashFiles('setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-eggs-
+
+
     - name: Install dependencies
       run: |
         pip install -U tox
