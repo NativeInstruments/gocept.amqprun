@@ -3,7 +3,6 @@ import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import gocept.amqprun.worker
 import logging
-import pytest
 import unittest
 import zope.interface
 
