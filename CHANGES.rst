@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-3.0 (unreleased)
+3.0 (2020-10-06)
 ----------------
 
 Breaking changes
