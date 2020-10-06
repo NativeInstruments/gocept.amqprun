@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9-dev]
 
     services:
       rabbitmq:
@@ -24,13 +24,13 @@ jobs:
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
-      if: matrix.python != '3.9'
+      if: matrix.python-version != '3.9-dev'
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Set up Python ${{ matrix.python-version }} (deadsnakes)
       uses: deadsnakes/action@v1.0.0
-      if: matrix.python == '3.9'
+      if: matrix.python-version == '3.9-dev'
       with:
         python-version: ${{ matrix.python-version }}
 
