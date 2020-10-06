@@ -2,6 +2,9 @@
 gocept.amqprun
 ==============
 
+.. image:: https://img.shields.io/codecov/c/github/NativeInstruments/gocept.amqprun   :alt: Codecov
+
+
 ``gocept.amqprun`` helps you writing and running AMQP consumers, and sending
 AMQP messages. It currently only supports AMQP 0-9-1 and integrates with the
 Zope Tool Kit (ZTK) so you can use adapters, utilities and all the buzz.

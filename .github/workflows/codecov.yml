@@ -1,0 +1,32 @@
+name: Report coverage
+on: [push]
+jobs:
+  run:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    env:
+      OS: ${{ matrix.os }}
+      PYTHON: '3.8'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: |
+        pip install -U tox
+    - name: Generate coverage report
+      env:
+        AMQP_RABBITMQCTL: docker exec $(docker ps -aqf "label=rabbitmq") rabbitmqctl
+      run: |
+        tox -e coverage
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./coverage.xml
+        env_vars: OS,PYTHON
+        name: github actions coverage
+        fail_ci_if_error: true
