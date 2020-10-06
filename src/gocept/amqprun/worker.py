@@ -1,4 +1,5 @@
 from gocept.amqprun.interfaces import IResponse
+from gocept.amqprun.interfaces import RetryException
 import logging
 import transaction
 
@@ -54,32 +55,76 @@ class Worker:
                 create_interaction(handler.principal)
             session.join_transaction()
             response = None
+
+            # In general an exception leads to an un-acked message, which will
+            # be re-queued by RabbitMQ at channel switch. In case of an
+            # ErrorHandlingHandler, only RetryExceptions is allowed to be
+            # raised. Other exceptions are expected to be handled and should
+            # lead to acknowledging messages with content about the error. This
+            # can happen once during `handle()` and during
+            # `transaction.commit()`.
             try:
                 response = handler(message)
-                if IResponse.providedBy(response):
-                    response_messages = response.responses
-                else:
-                    response_messages = response
-                self._send_response(session, message, response_messages)
+            except RetryException as e:
+                transaction.abort()
+                self.log.info(
+                    'Retrying message %s after retryable exception %r.',
+                    message.delivery_tag, e)
+                # We can leave already, as we have an aborted transaction.
+                return
+            except Exception:
+                # This Exception is only possible, if we have no
+                # ErrorHandlingHandler. So we are not able to process it
+                # further.
+                transaction.abort()
+                self.log.error(
+                    'Error while processing message %s.'
+                    ' It will be re-queued at RabbitMQ and retried.',
+                    message.delivery_tag, exc_info=True)
+                # We can leave already, as we have an aborted transaction.
+                return
+
+            # We are either in the happy path or handled an non retryable error
+            # within ErrorHandlingHandler.
+            if IResponse.providedBy(response):
+                response_messages = response.responses
+            else:
+                response_messages = response
+            self._send_response(session, message, response_messages)
+            try:
                 transaction.commit()
             except Exception:
-                self.log.error(
-                    'Error while processing message %s',
-                    message.delivery_tag, exc_info=True)
                 transaction.abort()
                 if IResponse.providedBy(response):
+                    # We have an ErrorHandlingHandler here. In case the
+                    # exception is retryable, exception() will tell us.
                     try:
-                        session.received_message = message
                         error_messages = response.exception()
+                    except RetryException as e:
+                        self.log.info(
+                            'Retrying message %s after retryable'
+                            ' exception %r.', message.delivery_tag, e)
+                    else:
+                        # No retry, we send a message and acknowledge.
+                        session.received_message = message
                         self._send_response(session, message, error_messages)
-                        transaction.commit()
-                    except Exception:
-                        self.log.error(
-                            'Error during exception handling', exc_info=True)
-                        transaction.abort()
+                        try:
+                            transaction.commit()
+                        except Exception:
+                            transaction.abort()
+                            self.log.error(
+                                'Error during exception handling',
+                                exc_info=True)
+                else:
+                    self.log.error(
+                        'Error while processing message %s.'
+                        ' It will be re-queued at RabbitMQ and retried.',
+                        message.delivery_tag, exc_info=True)
+
         except Exception:
             self.log.error(
-                'Unhandled exception, prevent thread from crashing',
+                'Unhandled exception, prevent process from crashing.'
+                ' This is probably caused by a programming error.',
                 exc_info=True)
         finally:
             end_interaction()

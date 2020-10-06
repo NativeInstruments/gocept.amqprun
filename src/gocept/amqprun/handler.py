@@ -74,6 +74,9 @@ class ErrorHandlingHandler:
         return handler
 
     def handle(self):
+        # The only possible Exception raised from this method is
+        # RetryException. Other Exceptions will be handled and reported by an
+        # deliverable error message.
         try:
             self._decode_message()
             self.run()
