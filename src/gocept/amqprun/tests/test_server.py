@@ -224,7 +224,7 @@ class TestChannelSwitch(unittest.TestCase):
 
     def test_run_calls_switch_channel_once_in_a_while(self):
         server = self.create_server()
-        self.assertEquals(360, server.CHANNEL_LIFE_TIME)
+        self.assertEqual(360, server.CHANNEL_LIFE_TIME)
         server.CHANNEL_LIFE_TIME = 0.4
         server._channel_opened = time.time()
         # Channels are not switched immediately after startup

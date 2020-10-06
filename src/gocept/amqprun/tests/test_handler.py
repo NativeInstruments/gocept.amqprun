@@ -15,8 +15,8 @@ class TestHandler(unittest.TestCase):
         handler = self.get_handler(lambda x: None)
         self.assertTrue(zope.interface.verify.verifyObject(
             gocept.amqprun.interfaces.IHandler, handler))
-        self.assertEquals('queue.name', handler.queue_name)
-        self.assertEquals('routing.key', handler.routing_key)
+        self.assertEqual('queue.name', handler.queue_name)
+        self.assertEqual('routing.key', handler.routing_key)
 
     def test_calling_handler_should_return_messages(self):
         handler = mock.Mock()
@@ -24,7 +24,7 @@ class TestHandler(unittest.TestCase):
         message = mock.Mock()
         handler = self.get_handler(handler)
         result = handler(message)
-        self.assertEquals([mock.sentinel.msg1, mock.sentinel.msg2], result)
+        self.assertEqual([mock.sentinel.msg1, mock.sentinel.msg2], result)
 
     def test_invalid_handler_function_should_raise_typeerror(self):
         self.assertRaises(TypeError, self.get_handler, 'i-am-not-callable')
@@ -38,8 +38,8 @@ class TestHandler(unittest.TestCase):
             return None  # pragma: no cover
         self.assertTrue(zope.interface.verify.verifyObject(
             gocept.amqprun.interfaces.IHandler, handler))
-        self.assertEquals('queue.name', handler.queue_name)
-        self.assertEquals('routing.key', handler.routing_key)
+        self.assertEqual('queue.name', handler.queue_name)
+        self.assertEqual('routing.key', handler.routing_key)
 
     def test_handle_should_be_alias_for_declare(self):
         # for backwards compatibility reasons we want to keep the alternate
@@ -59,9 +59,9 @@ class TestHandler(unittest.TestCase):
             return None  # pragma: no cover
         self.assertTrue(zope.interface.verify.verifyObject(
             gocept.amqprun.interfaces.IHandler, handler))
-        self.assertEquals('queue.name', handler.queue_name)
-        self.assertEquals('routing.key', handler.routing_key)
-        self.assertEquals({'x-ha-policy': 'all'}, handler.arguments)
+        self.assertEqual('queue.name', handler.queue_name)
+        self.assertEqual('routing.key', handler.routing_key)
+        self.assertEqual({'x-ha-policy': 'all'}, handler.arguments)
 
     def test_decorator_supports_principal(self):
         import gocept.amqprun.handler
@@ -73,9 +73,9 @@ class TestHandler(unittest.TestCase):
             return None  # pragma: no cover
         self.assertTrue(zope.interface.verify.verifyObject(
             gocept.amqprun.interfaces.IHandler, handler))
-        self.assertEquals('queue.name', handler.queue_name)
-        self.assertEquals('routing.key', handler.routing_key)
-        self.assertEquals('zope.user', handler.principal)
+        self.assertEqual('queue.name', handler.queue_name)
+        self.assertEqual('routing.key', handler.routing_key)
+        self.assertEqual('zope.user', handler.principal)
 
 
 class ErrorHandlingHandlerTest(

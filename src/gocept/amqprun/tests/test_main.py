@@ -25,19 +25,19 @@ class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
         super().tearDown()
 
     def test_message_should_be_processed(self):
-        self.assertEquals([], self.messages_received)
+        self.assertEqual([], self.messages_received)
         self.send_message('blarf', routing_key='test.routing')
         self.server.run_once()
-        self.assertEquals(1, len(self.messages_received))
+        self.assertEqual(1, len(self.messages_received))
 
     def test_technical_errors_should_not_crash(self):
-        self.assertEquals([], self.messages_received)
+        self.assertEqual([], self.messages_received)
         self.send_message('blarf', routing_key='test.error')
         self.server.run_once()
-        self.assertEquals(1, len(self.messages_received))
+        self.assertEqual(1, len(self.messages_received))
 
     def test_exception_handling_with_iresponse_acks_original_message(self):
-        self.assertEquals([], self.messages_received)
+        self.assertEqual([], self.messages_received)
         self.expect_message_on('test.iresponse-error')
 
         def ack(session):
@@ -60,7 +60,7 @@ class ReceiveMessages(gocept.amqprun.testing.MainTestCase):
             self.server.run_once()
             self.wait_for_message()
             self.assertTrue(self.ack_called)
-            self.assertEquals(1, len(self.messages_received))
+            self.assertEqual(1, len(self.messages_received))
             self.assertTrue(self.messages_received[0]._exception)
 
 
@@ -89,11 +89,11 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         import gocept.amqprun.main
         config = self.make_config(__name__, 'basic')
         gocept.amqprun.main.main(config)
-        self.assertEquals(1, self.server.call_count)
+        self.assertEqual(1, self.server.call_count)
         utilities = list(zope.component.getUtilitiesFor(
             gocept.amqprun.interfaces.IHandler))
-        self.assertEquals(1, len(utilities))
-        self.assertEquals('basic', utilities[0][0])
+        self.assertEqual(1, len(utilities))
+        self.assertEqual('basic', utilities[0][0])
 
     def test_configuration_should_load_logging(self):
         import gocept.amqprun.interfaces
@@ -104,7 +104,7 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
                 'logger_debug_name': 'foo.bar'
             })
         gocept.amqprun.main.main(config)
-        self.assertEquals(1, self.server.call_count)
+        self.assertEqual(1, self.server.call_count)
         self.assertEqual(logging.CRITICAL, logging.getLogger().level)
         self.assertEqual(logging.INFO, logging.getLogger('foo').level)
         self.assertEqual(logging.DEBUG, logging.getLogger('foo.bar').level)
@@ -116,8 +116,8 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         gocept.amqprun.main.main(config)
         settings = zope.component.getUtility(
             gocept.amqprun.interfaces.ISettings)
-        self.assertEquals('foo', settings.get('test.setting.1'))
-        self.assertEquals('bar', settings.get('test.setting.2'))
+        self.assertEqual('foo', settings.get('test.setting.1'))
+        self.assertEqual('bar', settings.get('test.setting.2'))
 
     def test_settings_should_be_unicode(self):
         import gocept.amqprun.interfaces
@@ -127,7 +127,7 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         settings = zope.component.getUtility(
             gocept.amqprun.interfaces.ISettings)
         self.assertIsInstance(settings.get('test.setting.1'), str)
-        self.assertEquals('Ümläuten', settings.get('test.setting.unicode'))
+        self.assertEqual('Ümläuten', settings.get('test.setting.unicode'))
 
     def test_settings_should_allow_upper_case(self):
         import gocept.amqprun.interfaces
@@ -136,7 +136,7 @@ class ConfigLoadingTest(gocept.amqprun.testing.MainTestCase):
         gocept.amqprun.main.main(config)
         settings = zope.component.getUtility(
             gocept.amqprun.interfaces.ISettings)
-        self.assertEquals('qux', settings.get('test.SETTING.__default__'))
+        self.assertEqual('qux', settings.get('test.SETTING.__default__'))
 
     def test_main_should_send_configfinished_event(self):
         from gocept.amqprun.interfaces import ISender, IConfigFinished

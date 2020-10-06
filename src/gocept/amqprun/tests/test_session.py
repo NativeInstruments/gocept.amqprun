@@ -49,7 +49,7 @@ class DataManagerTest(unittest.TestCase):
         dm = self.get_dm()
         dm.commit(None)
         self.assertTrue(self.channel.basic_ack.called)
-        self.assertEquals(('mytag',), self.channel.basic_ack.call_args[0])
+        self.assertEqual(('mytag',), self.channel.basic_ack.call_args[0])
 
     def test_tpc_vote_should_commit_transaction(self):
         dm = self.get_dm()

@@ -36,7 +36,7 @@ class TestMessage(unittest.TestCase):
 
     def test_converted_header_should_contain_message_id(self):
         message = Message({}, b'')
-        self.assertRegexpMatches(
+        self.assertRegex(
             message.header.message_id,
             r'<(\d+\.)+gocept\.amqprun@.*>$')
 
