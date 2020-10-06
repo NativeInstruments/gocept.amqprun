@@ -9,6 +9,8 @@ Breaking changes
 
 - Drop support for Python 2.7.
 
+- Drop no longer used exception ``.interfaces.CounterBelowZero``.
+
 
 2.1 (2020-09-18)
 ----------------

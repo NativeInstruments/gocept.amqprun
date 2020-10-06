@@ -110,10 +110,6 @@ class ISender(zope.interface.Interface):
         """Send a message using AMQP."""
 
 
-class CounterBelowZero(Exception):
-    """The counter has fallen below zero."""
-
-
 class IConfigFinished(zope.interface.Interface):
     """Event indicating that the configuration of gocept.amqprun was loaded."""
 
