@@ -18,6 +18,8 @@ Features
 - Retry errors which happen during a transaction.commit and are configured for
   reraise.
 
+- Add support for Python 3.9.
+
 
 2.1 (2020-09-18)
 ----------------
