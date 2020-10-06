@@ -110,8 +110,8 @@ class ISender(zope.interface.Interface):
         """Send a message using AMQP."""
 
 
-class CounterBelowZero(Exception):
-    """The counter has fallen below zero."""
+class RetryException(Exception):
+    """Signal that a message should be retried to handle."""
 
 
 class IConfigFinished(zope.interface.Interface):

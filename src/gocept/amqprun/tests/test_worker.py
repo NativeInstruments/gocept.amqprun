@@ -2,6 +2,7 @@ from unittest import mock
 import gocept.amqprun.handler
 import gocept.amqprun.interfaces
 import gocept.amqprun.worker
+import logging
 import unittest
 import zope.interface
 
@@ -55,6 +56,7 @@ class WorkerTest(unittest.TestCase):
 
     def test_on_exception_with_response_transaction_should_abort_then_commit(
             self):
+        """It also calls the exception method of the response."""
         calls = []
         self.commit_called = False
 
@@ -64,9 +66,13 @@ class WorkerTest(unittest.TestCase):
                 raise RuntimeError('provoked error')
             calls.append('commit')
 
+        def exception_effect():
+            calls.append('exception')
+            return []
+
         response = mock.Mock()
         response.responses = []
-        response.exception.return_value = []
+        response.exception.side_effect = exception_effect
         zope.interface.alsoProvides(
             response, gocept.amqprun.interfaces.IResponse)
         self._create_worker(lambda x: response)
@@ -78,7 +84,7 @@ class WorkerTest(unittest.TestCase):
             self.worker()
 
         self.assertTrue(response.exception.called)
-        self.assertEqual(['abort', 'commit'], calls)
+        self.assertEqual(['abort', 'exception', 'commit'], calls)
 
     def test_error_on_commit_should_abort_transaction(self):
         self._create_worker()
@@ -110,3 +116,72 @@ class WorkerTest(unittest.TestCase):
         self.worker()
         self.assertEqual('userid', self.principal)
         self.assertFalse(zope.security.management.queryInteraction())
+
+
+class RuntimeErrorHandlingHandler(gocept.amqprun.handler.ErrorHandlingHandler):
+
+    routing_key = 'test.route'
+    queue_name = 'test.queue'
+    error_reraise = RuntimeError
+
+    def run(self):
+        raise RuntimeError('provoked error')
+
+
+class DummyErrorHandlingHandler(gocept.amqprun.handler.ErrorHandlingHandler):
+
+    routing_key = 'test.route'
+    queue_name = 'test.queue'
+    error_reraise = RuntimeError
+
+    def run(self):
+        pass
+
+
+def test_worker__Worker____call____1(caplog):
+    """It logs a message on RetryException during handle and aborts."""
+    session = mock.Mock()
+    handler = RuntimeErrorHandlingHandler()
+    worker = gocept.amqprun.worker.Worker(session, handler)
+
+    caplog.set_level(logging.INFO)
+    with mock.patch('transaction.abort') as abort:
+        worker()
+    assert ("retryable exception RetryException(RuntimeError('provoked error'"
+            in caplog.text)
+    assert abort.call_count == 1
+
+
+def test_worker__Worker____call____2(caplog):
+    """It logs a message on RetryException during commit and aborts."""
+    session = mock.Mock()
+    handler = DummyErrorHandlingHandler()
+    worker = gocept.amqprun.worker.Worker(session, handler)
+
+    caplog.set_level(logging.INFO)
+    with mock.patch('transaction.abort') as abort, \
+            mock.patch('transaction.commit') as commit:
+        commit.side_effect = RuntimeError('provoked error')
+        worker()
+    assert ("retryable exception RetryException(RuntimeError('provoked error'"
+            in caplog.text)
+    assert abort.call_count == 1
+
+
+def test_worker__Worker____call____3(caplog):
+    """It logs a message on error during error handling (sending message) and
+
+    aborts."""
+    session = mock.Mock()
+    handler = DummyErrorHandlingHandler()
+    worker = gocept.amqprun.worker.Worker(session, handler)
+
+    caplog.set_level(logging.INFO)
+    with mock.patch('transaction.abort') as abort, \
+            mock.patch('transaction.commit') as commit:
+        commit.side_effect = IndentationError('provoked error')
+        worker()
+    assert "Error during exception handling" in caplog.text
+    # One abort for the transaction after handle and one for the transaction to
+    # send the message.
+    assert abort.call_count == 2

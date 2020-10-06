@@ -9,8 +9,14 @@ Breaking changes
 
 - Drop support for Python 2.7.
 
+- Drop no longer used exception ``.interfaces.CounterBelowZero``.
+
+
 Features
---------
+~~~~~~~~
+
+- Retry errors which happen during a transaction.commit and are configured for
+  reraise.
 
 - Add support for Python 3.9.
 

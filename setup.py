@@ -31,6 +31,7 @@ tests_require = (
     security_require + [
         'gocept.testing',
         'plone.testing',
+        'pytest',
         'zope.testing',
     ])
 
