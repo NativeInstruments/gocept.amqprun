@@ -9,6 +9,11 @@ Breaking changes
 
 - Drop support for Python 2.7.
 
+Features
+--------
+
+- Add support for Python 3.9.
+
 
 2.1 (2020-09-18)
 ----------------
